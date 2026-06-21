@@ -62,5 +62,5 @@ jobs:
           cache: pnpm
           cache-dependency-path: admin_front/vue3-element-admin/pnpm-lock.yaml
       - run: pnpm install --ignore-scripts
-      - run: pnpm typecheck
-      - run: pnpm build:dev
+      - run: pnpm type-check
+      - run: pnpm build-only
