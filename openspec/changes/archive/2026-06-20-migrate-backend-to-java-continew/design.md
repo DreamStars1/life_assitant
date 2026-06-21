@@ -364,7 +364,7 @@ graph TB
 graph LR
     Server["continew-server<br/>启动 + config/core + Flyway"] --> SystemMod["continew-system<br/>auth / user / todo / activity<br/>sharedrecord / notification / monitor"]
     SystemMod --> Common["continew-common<br/>BaseDO / 异常 / 枚举 / 注解"]
-    
+
     Plugin["✗ continew-plugin<br/>(删除)"] -.->|移除| Server
     Extension["✗ continew-extension<br/>(删除)"] -.->|移除| Server
 ```
@@ -373,7 +373,7 @@ graph LR
 
 ### 核心业务逻辑
 
-**一起做过的事（第一优先）**: 
+**一起做过的事（第一优先）**:
 - 创建: `POST /shared-records` → `created_by = current_user.id`
 - 查询: `WHERE created_by IN (current_user.id, partner_id) ORDER BY occurred_at DESC` → 两人看到完全一致的列表
 - 权限: 仅创建者可修改/删除自己的记录

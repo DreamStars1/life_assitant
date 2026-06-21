@@ -1,7 +1,7 @@
 # 逐步最小版本开发计划
 
-> 核心原则：**每一步都能跑起来、能看到结果**，用 Cursor + DeepSeek 一步步搭建  
-> 关键策略：**站在模版基座的肩膀上**，不从零手搓  
+> 核心原则：**每一步都能跑起来、能看到结果**，用 Cursor + DeepSeek 一步步搭建
+> 关键策略：**站在模版基座的肩膀上**，不从零手搓
 > 开发哲学：**对话优先** — 先做一个能聊天的 AI 助手，再让 AI 逐步"学会"操作待办/日程/记录
 
 ## 模版基座总览
@@ -57,7 +57,7 @@ Full Stack FastAPI Template 自带：
 
 ```bash
 # 1. 克隆模版
-git clone https://github.com/fastapi/full-stack-fastapi-template.git 
+git clone https://github.com/fastapi/full-stack-fastapi-template.git
 rm -rf .git
 git init
 
@@ -740,4 +740,3 @@ npx cap open android
 6. **前端连不上后端** → 确认 Vite 代理配置、后端端口、CORS 设置
 7. **数据库迁移失败** → `alembic downgrade base && alembic upgrade head` 重置
 8. **OpeniLink Hub 对接问题** → 先用自研 iLink 轮询兜底
-
