@@ -40,7 +40,7 @@ jobs:
           node-version: "24"
           cache: pnpm
           cache-dependency-path: front/vue3-vant-mobile/pnpm-lock.yaml
-      - run: pnpm install
+      - run: pnpm install --ignore-scripts
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm build:dev
@@ -61,6 +61,6 @@ jobs:
           node-version: "24"
           cache: pnpm
           cache-dependency-path: admin_front/vue3-element-admin/pnpm-lock.yaml
-      - run: pnpm install
+      - run: pnpm install --ignore-scripts
       - run: pnpm typecheck
       - run: pnpm build:dev
