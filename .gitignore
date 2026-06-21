@@ -37,6 +37,9 @@ target/
 # === 本地开发工具（含机器特定路径/密码，不可公开） ===
 .cursor/skills/dev-restart/
 
+# === 待开发（模板暂不跟踪） ===
+admin_front/
+
 # === 嵌套 Git 仓库（防止模板残留） ===
 **/.git
 

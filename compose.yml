@@ -92,14 +92,6 @@ services:
       dockerfile: Dockerfile
     restart: always
 
-  # Admin panel frontend
-  admin:
-    image: '${DOCKER_IMAGE_ADMIN:-admin}:${TAG-latest}'
-    build:
-      context: admin_front/vue3-element-admin
-      dockerfile: Dockerfile
-    restart: always
-
   nginx:
     build:
       context: backend/nginx
@@ -116,8 +108,6 @@ services:
       backend:
         condition: service_healthy
       front:
-        condition: service_started
-      admin:
         condition: service_started
       adminer:
         condition: service_started
