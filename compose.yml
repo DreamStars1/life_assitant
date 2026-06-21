@@ -1,0 +1,127 @@
+x-backend-env: &backend-env
+  DOMAIN: ${DOMAIN}
+  FRONTEND_HOST: ${FRONTEND_HOST?Variable not set}
+  ENVIRONMENT: ${ENVIRONMENT}
+  BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS}
+  SECRET_KEY: ${SECRET_KEY?Variable not set}
+  FIRST_SUPERUSER: ${FIRST_SUPERUSER?Variable not set}
+  FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD?Variable not set}
+  SMTP_HOST: ${SMTP_HOST}
+  SMTP_USER: ${SMTP_USER}
+  SMTP_PASSWORD: ${SMTP_PASSWORD}
+  EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL}
+  MYSQL_SERVER: db
+  MYSQL_PORT: "3306"
+  MYSQL_DATABASE: ${MYSQL_DATABASE}
+  MYSQL_USER: ${MYSQL_USER?Variable not set}
+  MYSQL_PASSWORD: ${MYSQL_PASSWORD?Variable not set}
+  SENTRY_DSN: ${SENTRY_DSN}
+  REDIS_URL: redis://redis:6379/0
+
+services:
+
+  db:
+    image: mysql:8.4
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    volumes:
+      - app-db-data:/var/lib/mysql
+    env_file:
+      - backend/.env
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD?Variable not set}
+      - MYSQL_ROOT_HOST=%
+      - MYSQL_DATABASE=${MYSQL_DATABASE?Variable not set}
+      - MYSQL_USER=${MYSQL_USER?Variable not set}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD?Variable not set}
+
+  redis:
+    image: redis:7
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+    volumes:
+      - app-redis-data:/data
+    networks:
+      - default
+
+  adminer:
+    image: adminer
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - ADMINER_DESIGN=pepa-linha-dark
+
+  backend:
+    image: '${DOCKER_IMAGE_BACKEND:-backend}:${TAG-latest}'
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_healthy
+        restart: true
+    env_file:
+      - backend/.env
+    environment:
+      <<: *backend-env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    build:
+      context: backend
+      dockerfile: Dockerfile
+
+  # User-facing PWA frontend
+  front:
+    image: '${DOCKER_IMAGE_FRONT:-front}:${TAG-latest}'
+    build:
+      context: front/vue3-vant-mobile
+      dockerfile: Dockerfile
+    restart: always
+
+  # Admin panel frontend
+  admin:
+    image: '${DOCKER_IMAGE_ADMIN:-admin}:${TAG-latest}'
+    build:
+      context: admin_front/vue3-element-admin
+      dockerfile: Dockerfile
+    restart: always
+
+  nginx:
+    build:
+      context: backend/nginx
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./certs:/etc/nginx/certs
+    environment:
+      - DOMAIN=${DOMAIN?Variable not set}
+    depends_on:
+      backend:
+        condition: service_healthy
+      front:
+        condition: service_started
+      admin:
+        condition: service_started
+      adminer:
+        condition: service_started
+
+volumes:
+  app-db-data:
+  app-redis-data:

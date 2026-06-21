@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <!--
+        下方 parent 为 ContiNew Starter（Continue New Starter）。
+        ContiNew Starter 基于"约定优于配置"的理念，
+        再次精简常规配置，提供一个更为完整的配置解决方案，帮助开发人员更加快速的集成常用第三方库或工具到 Spring Boot Web 应用程序中。
+        ContiNew Starter 包含了一系列经过企业实践优化的依赖包（如 MyBatis-Plus、SaToken），
+        可轻松集成到应用中，为开发人员减少手动引入依赖及配置的麻烦，为 Spring Boot Web 项目的灵活快速构建提供支持。
+    -->
+    <parent>
+        <groupId>top.continew.starter</groupId>
+        <artifactId>continew-starter</artifactId>
+        <version>2.15.0</version>
+    </parent>
+
+    <groupId>top.lifeassistant</groupId>
+    <artifactId>lifeassistant</artifactId>
+    <version>4.2.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>${project.artifactId}</name>
+    <description>Life Assistant - 智能生活助手后端服务</description>
+
+    <modules>
+        <module>lifeassistant-server</module>
+        <module>lifeassistant-system</module>
+        <module>lifeassistant-common</module>
+    </modules>
+
+    <properties>
+        <!-- 项目版本号 -->
+        <revision>4.2.0-SNAPSHOT</revision>
+    </properties>
+
+    <!-- 全局依赖版本管理 -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>top.lifeassistant</groupId>
+                <artifactId>lifeassistant-server</artifactId>
+                <version>4.2.0-SNAPSHOT</version>
+            </dependency>
+
+            <dependency>
+                <groupId>top.lifeassistant</groupId>
+                <artifactId>lifeassistant-system</artifactId>
+                <version>4.2.0-SNAPSHOT</version>
+            </dependency>
+
+            <dependency>
+                <groupId>top.lifeassistant</groupId>
+                <artifactId>lifeassistant-common</artifactId>
+                <version>4.2.0-SNAPSHOT</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- Hutool（小而全的 Java 工具类库，通过静态方法封装，降低相关 API 的学习成本，提高工作效率，使 Java 拥有函数式语言般的优雅，让 Java 语言也可以"甜甜的"） -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+        </dependency>
+
+        <!-- Lombok（在 Java 开发过程中用注解的方式，简化了 JavaBean 的编写，避免了冗余和样板式代码，让编写的类更加简洁） -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional> <!-- 表示依赖不会被传递 -->
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgument>-parameters</compilerArgument>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>huawei-mirror</id>
+            <name>HuaweiCloud Mirror</name>
+            <url>https://mirrors.huaweicloud.com/repository/maven/</url>
+        </repository>
+        <repository>
+            <id>ali-mirror</id>
+            <name>AliYun Mirror</name>
+            <url>https://maven.aliyun.com/repository/public/</url>
+        </repository>
+    </repositories>
+
+    <!-- 插件仓库配置 -->
+    <pluginRepositories>
+        <pluginRepository>
+            <id>huawei-mirror</id>
+            <name>HuaweiCloud Mirror</name>
+            <url>https://mirrors.huaweicloud.com/repository/maven/</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>ali-mirror</id>
+            <name>AliYun Mirror</name>
+            <url>https://maven.aliyun.com/repository/public/</url>
+        </pluginRepository>
+    </pluginRepositories>
+</project>

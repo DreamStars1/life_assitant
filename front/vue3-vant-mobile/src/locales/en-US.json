@@ -1,0 +1,174 @@
+{
+  "app": {
+    "name": "Life Assistant",
+    "description": "Smart life assistant for couples"
+  },
+
+  "navbar": {
+    "Today": "Today",
+    "Todos": "Todos",
+    "Events": "Calendar",
+    "LifeLog": "Logs",
+    "Profile": "Profile",
+    "ProfileEdit": "Edit Nickname",
+    "Login": "Login",
+    "Register": "Register",
+    "ForgotPassword": "Forgot Password",
+    "Settings": "Settings",
+    "Share": "Partner",
+    "404": "Page Not Found",
+    "Undefined": "Undefined title"
+  },
+
+  "tabbar": {
+    "today": "Today",
+    "todos": "Todos",
+    "events": "Events",
+    "lifelog": "Logs",
+    "profile": "Profile"
+  },
+
+  "today": {
+    "greeting": "Hello",
+    "todos": "Today's Todos",
+    "events": "Today's Events",
+    "noTodos": "No todos for today",
+    "noEvents": "No events for today",
+    "quickAdd": "Quick Add",
+    "addTodo": "Add Todo",
+    "addLifeLog": "Log Life"
+  },
+
+  "todos": {
+    "title": "Todos",
+    "add": "New Todo",
+    "edit": "Edit Todo",
+    "titleLabel": "Title",
+    "description": "Description",
+    "priority": "Priority",
+    "category": "Category",
+    "dueDate": "Due Date",
+    "status": "Status",
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "done": "Done",
+    "cancelled": "Cancelled",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "urgent": "Urgent",
+    "assign": "Assign",
+    "assignTo": "Assign to partner",
+    "confirmDelete": "Delete?",
+    "partnerTodos": "Partner's Todos"
+  },
+
+  "events": {
+    "title": "Events",
+    "add": "New Event",
+    "edit": "Edit Event",
+    "titleLabel": "Title",
+    "description": "Description",
+    "category": "Category",
+    "color": "Color",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "share": "Share with partner",
+    "reminder": "Reminder",
+    "minutesBefore": "min before",
+    "records": "Records",
+    "addRecord": "Add Record",
+    "month": "Month",
+    "week": "Week",
+    "day": "Day"
+  },
+
+  "lifelog": {
+    "title": "Life Logs",
+    "add": "New Log",
+    "content": "Content",
+    "type": "Type",
+    "diet": "Diet",
+    "exercise": "Exercise",
+    "work": "Work",
+    "mood": "Mood",
+    "sleep": "Sleep",
+    "stats": "Stats",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "total": "Total"
+  },
+
+  "share": {
+    "title": "Share",
+    "inviteCode": "Invite Code",
+    "generateInvite": "Generate Invite",
+    "copyInvite": "Copy Invite",
+    "enterCode": "Enter partner's invite code",
+    "bind": "Bind",
+    "partner": "My Partner",
+    "noPartner": "No partner yet"
+  },
+
+  "profile": {
+    "login": "Login",
+    "settings": "Settings",
+    "share": "Share",
+    "pushSettings": "Push Settings",
+    "pushEnabled": "Push Notifications",
+    "quietHours": "Quiet Hours",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "logout": "Logout"
+  },
+
+  "login": {
+    "login": "Sign In",
+    "username": "Email",
+    "password": "Password",
+    "pleaseEnterUsername": "Please enter email",
+    "pleaseEnterPassword": "Please enter password",
+    "signUp": "Sign up",
+    "forgotPassword": "Forgot password?"
+  },
+
+  "register": {
+    "register": "Sign Up",
+    "username": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "pleaseEnterUsername": "Please enter email",
+    "pleaseEnterPassword": "Please enter password",
+    "pleaseEnterConfirmPassword": "Please enter password again",
+    "pleaseEnterFullName": "Please enter full name",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "confirm": "Register",
+    "backToLogin": "Back to login",
+    "registerSuccess": "Registration successful"
+  },
+
+  "forgotPassword": {
+    "email": "Email",
+    "code": "Code",
+    "password": "Password",
+    "confirmPassword": "Password again",
+    "pleaseEnterEmail": "Please enter email",
+    "pleaseEnterCode": "Please enter code",
+    "pleaseEnterPassword": "Please enter password",
+    "pleaseEnterConfirmPassword": "Please enter password again",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "confirm": "Confirm",
+    "backToLogin": "Back to login",
+    "getCode": "Get code",
+    "gettingCode": "Getting code",
+    "sendCodeSuccess": "Sent, the code is",
+    "passwordResetSuccess": "Password reset succeeded"
+  },
+
+  "settings": {
+    "logout": "Sign Out",
+    "currentVersion": "Current Version",
+    "confirmTitle": "Confirm Exit?"
+  }
+}

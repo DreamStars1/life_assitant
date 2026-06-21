@@ -1,0 +1,189 @@
+{
+  "app": {
+    "name": "小助手",
+    "description": "情侣生活智能助手"
+  },
+
+  "navbar": {
+    "Today": "今日",
+    "Todos": "待办",
+    "Events": "日历",
+    "LifeLog": "记录",
+    "Profile": "我的",
+    "ProfileEdit": "编辑昵称",
+    "Login": "登录",
+    "Register": "注册",
+    "ForgotPassword": "忘记密码",
+    "Settings": "设置",
+    "Share": "伴侣",
+    "PartnerDetail": "伴侣详情",
+    "404": "页面未找到",
+    "Undefined": "未定义标题"
+  },
+
+  "tabbar": {
+    "today": "今日",
+    "todos": "待办",
+    "events": "日历",
+    "lifelog": "记录",
+    "profile": "我的"
+  },
+
+  "today": {
+    "greeting": "你好",
+    "todos": "今日待办",
+    "events": "今日日程",
+    "noTodos": "今天没有待办事项",
+    "noEvents": "今天没有日程",
+    "quickAdd": "快捷录入",
+    "addTodo": "添加待办",
+    "addLifeLog": "记录生活"
+  },
+
+  "todos": {
+    "title": "待办事项",
+    "add": "新建待办",
+    "edit": "编辑待办",
+    "titleLabel": "标题",
+    "description": "描述",
+    "priority": "优先级",
+    "category": "分类",
+    "dueDate": "截止时间",
+    "status": "状态",
+    "pending": "待处理",
+    "inProgress": "进行中",
+    "done": "已完成",
+    "cancelled": "已取消",
+    "high": "高",
+    "medium": "中",
+    "low": "低",
+    "urgent": "紧急",
+    "assign": "分配",
+    "assignTo": "分配给伴侣",
+    "confirmDelete": "确认删除？",
+    "partnerTodos": "伴侣的待办"
+  },
+
+  "events": {
+    "title": "日程",
+    "add": "新建日程",
+    "edit": "编辑日程",
+    "titleLabel": "标题",
+    "description": "描述",
+    "category": "分类",
+    "color": "颜色",
+    "startTime": "开始时间",
+    "endTime": "结束时间",
+    "share": "共享给伴侣",
+    "reminder": "提前提醒",
+    "minutesBefore": "分钟前",
+    "records": "记录",
+    "addRecord": "添加记录",
+    "month": "月",
+    "week": "周",
+    "day": "日"
+  },
+
+  "lifelog": {
+    "title": "生活记录",
+    "add": "记录生活",
+    "content": "内容",
+    "type": "类型",
+    "diet": "饮食",
+    "exercise": "运动",
+    "work": "工作",
+    "mood": "心情",
+    "sleep": "睡眠",
+    "stats": "统计",
+    "weekly": "本周",
+    "monthly": "本月",
+    "total": "总计"
+  },
+
+  "share": {
+    "title": "协作共享",
+    "inviteCode": "邀请码",
+    "generateInvite": "生成邀请码",
+    "copyInvite": "复制邀请码",
+    "enterCode": "输入伴侣邀请码",
+    "bind": "绑定",
+    "partner": "我的伴侣",
+    "noPartner": "尚未绑定伴侣",
+    "unbind": "解除伴侣绑定",
+    "unbindConfirm": "确认解除伴侣？",
+    "unbindWarning": "解除后将删除双方所有的共同记录，此操作不可恢复。对方不会收到通知。",
+    "unbindSuccess": "已解除伴侣绑定",
+    "goToBind": "去绑定伴侣"
+  },
+
+  "profile": {
+    "login": "登录",
+    "settings": "设置",
+    "share": "协作共享",
+    "pushSettings": "推送设置",
+    "pushEnabled": "推送通知",
+    "quietHours": "静默时段",
+    "startTime": "起始时间",
+    "endTime": "结束时间",
+    "logout": "退出登录"
+  },
+
+  "login": {
+    "login": "登录",
+    "username": "邮箱",
+    "password": "密码",
+    "pleaseEnterUsername": "请输入邮箱",
+    "pleaseEnterPassword": "请输入密码",
+    "signUp": "还没有账号？点击注册",
+    "forgotPassword": "忘记密码？"
+  },
+
+  "register": {
+    "register": "注册",
+    "username": "邮箱",
+    "password": "密码",
+    "confirmPassword": "确认密码",
+    "fullName": "昵称",
+    "pleaseEnterUsername": "请输入邮箱",
+    "pleaseEnterPassword": "请输入密码",
+    "pleaseEnterConfirmPassword": "请再次输入密码",
+    "pleaseEnterFullName": "请输入昵称",
+    "passwordsDoNotMatch": "两次输入的密码不一致",
+    "confirm": "注册",
+    "backToLogin": "返回登录",
+    "registerSuccess": "注册成功"
+  },
+
+  "forgotPassword": {
+    "email": "邮箱",
+    "code": "验证码",
+    "password": "密码",
+    "confirmPassword": "再次输入密码",
+    "pleaseEnterEmail": "请输入邮箱",
+    "pleaseEnterCode": "请输入验证码",
+    "pleaseEnterPassword": "请输入密码",
+    "pleaseEnterConfirmPassword": "请再次输入密码",
+    "passwordsDoNotMatch": "两次输入的密码不一致",
+    "confirm": "确认",
+    "backToLogin": "返回登录",
+    "getCode": "获取验证码",
+    "gettingCode": "获取中",
+    "sendCodeSuccess": "已发送，验证码为",
+    "passwordResetSuccess": "密码重置成功"
+  },
+
+  "settings": {
+    "logout": "退出登录",
+    "currentVersion": "当前版本",
+    "confirmTitle": "确认退出？"
+  },
+
+  "common": {
+    "saved": "已保存",
+    "deleted": "已删除",
+    "copied": "已复制",
+    "generated": "已生成",
+    "bound": "已绑定",
+    "confirmDelete": "确认删除？"
+  }
+}

@@ -1,0 +1,39 @@
+# === 敏感配置 ===
+.env
+.env.*
+!.env.example
+
+# === 证书/密钥 ===
+certs/
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+
+# === 日志 ===
+*.log
+logs/
+
+# === 依赖 ===
+node_modules/
+
+# === Java 构建产物 ===
+target/
+*.class
+*.jar
+*.war
+!.mvn/wrapper/maven-wrapper.jar
+
+# === IDE / 编辑器 ===
+.idea/
+*.iml
+.metals/
+.bloop/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# === 操作系统 ===
+.DS_Store
+Thumbs.db
