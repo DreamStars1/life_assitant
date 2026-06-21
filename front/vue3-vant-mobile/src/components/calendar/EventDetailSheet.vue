@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   show: boolean
   event?: {
     id: string
@@ -11,7 +11,7 @@ const props = defineProps<{
     category?: string | null
   } | null
 }>()
-const emit = defineEmits<{ close: []; edit: [event: any] }>()
+const emit = defineEmits<{ close: [], edit: [event: any] }>()
 </script>
 
 <template>
@@ -37,7 +37,9 @@ const emit = defineEmits<{ close: []; edit: [event: any] }>()
 </template>
 
 <style scoped>
-.sheet-content { padding: 16px 16px 32px; }
+.sheet-content {
+  padding: 16px 16px 32px;
+}
 .color-dot {
   display: inline-block;
   width: 16px;

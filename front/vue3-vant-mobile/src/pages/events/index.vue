@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { showNotify } from 'vant'
-import { fetchEvents, createEvent, updateEvent } from '@/api/modules/events'
+import { createEvent, fetchEvents, updateEvent } from '@/api/modules/events'
 import { fetchLifeLogs } from '@/api/modules/lifelogs'
 import type { EventItem } from '@/api/modules/events'
 import type { LifeLogItem } from '@/api/modules/lifelogs'
@@ -25,23 +25,34 @@ async function loadData() {
     if (viewMode.value === 'plan') {
       const res = await fetchEvents()
       events.value = Array.isArray(res) ? res : []
-    } else {
+    }
+    else {
       const res = await fetchLifeLogs()
       lifelogs.value = Array.isArray(res) ? res : []
     }
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
 
-function prev() { currentDate.value = new Date(year.value, month.value - 2, 1) }
-function next() { currentDate.value = new Date(year.value, month.value, 1) }
-async function goToday() { currentDate.value = new Date() }
+function prev() {
+  currentDate.value = new Date(year.value, month.value - 2, 1)
+}
+
+function next() {
+  currentDate.value = new Date(year.value, month.value, 1)
+}
+
+async function goToday() {
+  currentDate.value = new Date()
+}
 
 async function onSave() {
   if (editingEvent.value.id) {
     await updateEvent(editingEvent.value.id, editingEvent.value)
-  } else {
+  }
+  else {
     await createEvent(editingEvent.value)
   }
   showAdd.value = false
@@ -61,7 +72,11 @@ function onDayClick(date: string) {
 }
 
 const typeIcons: Record<string, string> = {
-  diet: '👨‍🍳', exercise: '🏃', work: '💼', mood: '😊', sleep: '😴',
+  diet: '👨‍🍳',
+  exercise: '🏃',
+  work: '💼',
+  mood: '😊',
+  sleep: '😴',
 }
 
 watch(viewMode, loadData)
@@ -83,11 +98,15 @@ onMounted(loadData)
         <van-button
           :type="viewMode === 'plan' ? 'primary' : 'default'"
           size="mini" plain @click="viewMode = 'plan'"
-        >{{ t('events.month') }}</van-button>
+        >
+          {{ t('events.month') }}
+        </van-button>
         <van-button
           :type="viewMode === 'actual' ? 'primary' : 'default'"
           size="mini" plain @click="viewMode = 'actual'"
-        >实际</van-button>
+        >
+          实际
+        </van-button>
       </div>
       <van-button icon="plus" type="primary" size="small" @click="openNew">
         {{ t('events.add') }}
@@ -100,7 +119,7 @@ onMounted(loadData)
         :year="year" :month="month"
         :events="viewMode === 'plan' ? events : []"
         :lifelogs="viewMode === 'actual' ? lifelogs : []"
-        :today="`${year}-${String(month).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`"
+        :today="`${year}-${String(month).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`"
         :show-plan="viewMode === 'plan'"
         :type-icons="typeIcons"
         @click-day="onDayClick"
@@ -108,7 +127,8 @@ onMounted(loadData)
     </div>
 
     <!-- Add/Edit Dialog -->
-    <van-dialog v-if="viewMode === 'plan'"
+    <van-dialog
+      v-if="viewMode === 'plan'"
       v-model:show="showAdd"
       :title="editingEvent.id ? '编辑日程' : '新建日程'"
       show-cancel-button @confirm="onSave"
@@ -127,12 +147,37 @@ onMounted(loadData)
 </template>
 
 <style scoped>
-.cal-header { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 12px 16px; font-size: 16px; font-weight: 600; color: var(--van-text-color); }
-.month-title { cursor: pointer; min-width: 120px; text-align: center; }
-.view-bar { display: flex; gap: 8px; padding: 0 16px 8px; align-items: center; }
-.view-toggle { display: flex; gap: 4px; }
-.view-bar .van-button:last-child { margin-left: auto; }
-.cal-body { padding: 0 8px 16px; }
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--van-text-color);
+}
+.month-title {
+  cursor: pointer;
+  min-width: 120px;
+  text-align: center;
+}
+.view-bar {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 8px;
+  align-items: center;
+}
+.view-toggle {
+  display: flex;
+  gap: 4px;
+}
+.view-bar .van-button:last-child {
+  margin-left: auto;
+}
+.cal-body {
+  padding: 0 8px 16px;
+}
 </style>
 
 <route lang="json5">

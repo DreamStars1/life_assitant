@@ -6,7 +6,8 @@ export function usePush() {
   const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || ''
 
   async function register() {
-    if (!isSupported) return
+    if (!isSupported)
+      return
     const registration = await navigator.serviceWorker.ready
     const sub = await registration.pushManager.subscribe({
       userVisibleOnly: true,

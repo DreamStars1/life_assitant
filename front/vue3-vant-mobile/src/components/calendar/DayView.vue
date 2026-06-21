@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   date: Date
-  events?: Array<{ id: string; title: string; planned_start_time: string; planned_end_time?: string | null; color?: string | null }>
+  events?: Array<{ id: string, title: string, planned_start_time: string, planned_end_time?: string | null, color?: string | null }>
 }>()
 defineEmits<{ clickEvent: [event: any] }>()
 </script>
@@ -19,7 +19,10 @@ defineEmits<{ clickEvent: [event: any] }>()
 </template>
 
 <style scoped>
-.day-view { display: flex; flex-direction: column; }
+.day-view {
+  display: flex;
+  flex-direction: column;
+}
 .day-date-header {
   text-align: center;
   padding: 12px;
@@ -27,7 +30,11 @@ defineEmits<{ clickEvent: [event: any] }>()
   font-weight: 600;
   color: var(--van-text-color);
 }
-.hour-row { display: flex; min-height: 52px; border-bottom: 1px solid #F5EDE4; }
+.hour-row {
+  display: flex;
+  min-height: 52px;
+  border-bottom: 1px solid #f5ede4;
+}
 .hour-label {
   width: 56px;
   font-size: 12px;
@@ -36,5 +43,8 @@ defineEmits<{ clickEvent: [event: any] }>()
   text-align: right;
   flex-shrink: 0;
 }
-.hour-content { flex: 1; position: relative; }
+.hour-content {
+  flex: 1;
+  position: relative;
+}
 </style>

@@ -50,7 +50,8 @@ router.beforeEach(async (to: EnhancedRouteLocation) => {
     if (!userStore.userInfo?.id) {
       try {
         await userStore.info()
-      } catch {
+      }
+      catch {
         // token 失效，后续请求会 401 自动跳转
       }
     }

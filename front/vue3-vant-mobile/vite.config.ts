@@ -22,7 +22,7 @@ export default ({ mode }: ConfigEnv): UserConfig => {
           target: 'http://localhost:8000',
           ws: false,
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
+          rewrite: path => path.replace(/^\/api/, ''),
         },
       },
     },

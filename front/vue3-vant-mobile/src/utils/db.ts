@@ -9,7 +9,7 @@ function openDB(): Promise<IDBDatabase> {
     const req = indexedDB.open(DB_NAME, DB_VERSION)
     req.onupgradeneeded = () => {
       const db = req.result
-      STORES.forEach(s => {
+      STORES.forEach((s) => {
         if (!db.objectStoreNames.contains(s)) {
           db.createObjectStore(s, { keyPath: 'id' })
         }
@@ -24,7 +24,9 @@ export async function cachePut(store: string, data: any) {
   const db = await openDB()
   const tx = db.transaction(store, 'readwrite')
   tx.objectStore(store).put(data)
-  await new Promise(r => { tx.oncomplete = r })
+  await new Promise((r) => {
+    tx.oncomplete = r
+  })
   db.close()
 }
 
@@ -44,6 +46,8 @@ export async function cacheDelete(store: string, id: string) {
   const db = await openDB()
   const tx = db.transaction(store, 'readwrite')
   tx.objectStore(store).delete(id)
-  await new Promise(r => { tx.oncomplete = r })
+  await new Promise((r) => {
+    tx.oncomplete = r
+  })
   db.close()
 }

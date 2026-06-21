@@ -17,7 +17,8 @@ async function generateInvite() {
     const res = await request.post('/identity/invite')
     inviteToken.value = res.data?.invite_token || ''
     showNotify({ type: 'success', message: '邀请码已生成' })
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -26,17 +27,20 @@ async function copyInvite() {
   try {
     await navigator.clipboard.writeText(inviteToken.value)
     showToast('已复制')
-  } catch {}
+  }
+  catch {}
 }
 
 async function bindPartner() {
-  if (!bindCode.value) return
+  if (!bindCode.value)
+    return
   loading.value = true
   try {
     await request.post(`/identity/bind-partner?inviteToken=${encodeURIComponent(bindCode.value)}`)
     showNotify({ type: 'success', message: '伴侣已绑定！' })
     await userStore.info()
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -77,8 +81,10 @@ function onDateConfirm(d: Date) {
 
 async function loadRecords() {
   const params: any = {}
-  if (filterStart.value) params.start = filterStart.value
-  if (filterEnd.value) params.end = filterEnd.value
+  if (filterStart.value)
+    params.start = filterStart.value
+  if (filterEnd.value)
+    params.end = filterEnd.value
   const res = await request.get('/shared-records', { params })
   records.value = res.data || []
 }
@@ -105,18 +111,20 @@ function cancelForm() {
 }
 
 async function saveRecord() {
-  if (!form.title) return
-    if (editingId.value) {
+  if (!form.title)
+    return
+  if (editingId.value) {
     await request.patch(`/shared-records/${editingId.value}`, {
       title: form.title,
       content: form.content || undefined,
       occurredAt: form.occurredAt ? `${form.occurredAt}T00:00:00` : undefined,
     })
     showToast('已更新')
-  } else {
+  }
+  else {
     // #region agent log
-    const _occurredAt = form.occurredAt ? `${form.occurredAt}T00:00:00` : undefined;
-    fetch('http://127.0.0.1:7523/ingest/592e6959-ef28-4c9d-97fa-bbd779223ace',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'35e40c'},body:JSON.stringify({sessionId:'35e40c',location:'share/index.vue:117',message:'POST shared-records occurredAt',data:{raw:form.occurredAt,sentValue:_occurredAt},timestamp:Date.now(),runId:'pre-fix',hypothesisId:'H2'})}).catch(()=>{});
+    const _occurredAt = form.occurredAt ? `${form.occurredAt}T00:00:00` : undefined
+    fetch('http://127.0.0.1:7523/ingest/592e6959-ef28-4c9d-97fa-bbd779223ace', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '35e40c' }, body: JSON.stringify({ sessionId: '35e40c', location: 'share/index.vue:117', message: 'POST shared-records occurredAt', data: { raw: form.occurredAt, sentValue: _occurredAt }, timestamp: Date.now(), runId: 'pre-fix', hypothesisId: 'H2' }) }).catch(() => {})
     // #endregion
     await request.post('/shared-records', {
       title: form.title,
@@ -140,7 +148,8 @@ async function deleteRecord(id: string) {
 }
 
 function formatDate(d: string) {
-  if (!d) return ''
+  if (!d)
+    return ''
   return new Date(d).toLocaleDateString('zh-CN')
 }
 
@@ -149,11 +158,13 @@ const hasRecords = computed(() => records.value.length > 0)
 
 onMounted(async () => {
   await userStore.info()
-  if (partnerId.value) loadRecords()
+  if (partnerId.value)
+    loadRecords()
 })
 
 watch(partnerId, (val) => {
-  if (val) loadRecords()
+  if (val)
+    loadRecords()
 })
 </script>
 
@@ -166,7 +177,9 @@ watch(partnerId, (val) => {
       <van-cell-group :inset="true" title="生成邀请码">
         <van-field v-model="inviteToken" placeholder="点击下方按钮生成" readonly>
           <template #button>
-            <van-button size="small" type="primary" @click="generateInvite">生成</van-button>
+            <van-button size="small" type="primary" @click="generateInvite">
+              生成
+            </van-button>
           </template>
         </van-field>
         <van-cell v-if="inviteToken" title="复制邀请码" is-link @click="copyInvite" />
@@ -175,7 +188,9 @@ watch(partnerId, (val) => {
       <van-cell-group :inset="true" title="输入伴侣邀请码">
         <van-field v-model="bindCode" placeholder="粘贴伴侣的邀请码">
           <template #button>
-            <van-button size="small" type="success" @click="bindPartner">绑定</van-button>
+            <van-button size="small" type="success" @click="bindPartner">
+              绑定
+            </van-button>
           </template>
         </van-field>
       </van-cell-group>
@@ -184,11 +199,13 @@ watch(partnerId, (val) => {
     <!-- ★一起做过的事（绑定后显示） -->
     <template v-if="partnerId">
       <!-- 时间筛选 -->
-      <div class="flex items-center gap-2 px-4 pt-3 pb-1">
-        <van-field v-model="filterStart" is-link readonly placeholder="开始日期" class="!flex-1 !p-0" @click="showFilterStart = true" />
+      <div class="px-4 pb-1 pt-3 flex gap-2 items-center">
+        <van-field v-model="filterStart" is-link readonly placeholder="开始日期" class="!p-0 !flex-1" @click="showFilterStart = true" />
         <span class="text-gray-400">—</span>
-        <van-field v-model="filterEnd" is-link readonly placeholder="结束日期" class="!flex-1 !p-0" @click="showFilterEnd = true" />
-        <van-button v-if="filterStart || filterEnd" size="small" plain @click="clearFilter">清除</van-button>
+        <van-field v-model="filterEnd" is-link readonly placeholder="结束日期" class="!p-0 !flex-1" @click="showFilterEnd = true" />
+        <van-button v-if="filterStart || filterEnd" size="small" plain @click="clearFilter">
+          清除
+        </van-button>
       </div>
       <van-calendar v-model:show="showFilterStart" @confirm="onFilterStartConfirm" />
       <van-calendar v-model:show="showFilterEnd" @confirm="onFilterEndConfirm" />
@@ -203,18 +220,22 @@ watch(partnerId, (val) => {
         </van-swipe-cell>
       </van-cell-group>
 
-      <div class="!mt-3 px-4">
+      <div class="px-4 !mt-3">
         <van-button v-if="!showForm" type="primary" round block @click="openCreate">
           添加一起做过的事
         </van-button>
-        <div v-else class="bg-white rounded-lg p-3">
+        <div v-else class="p-3 rounded-lg bg-white">
           <van-field v-model="form.title" :placeholder="editingId ? '修改标题' : '标题（如：一起看了电影）'" class="!mb-2" />
           <van-field v-model="form.content" placeholder="详细描述（可选）" class="!mb-2" />
           <van-field v-model="form.occurredAt" is-link readonly placeholder="日期（可选）" @click="showCalendar = true" />
-          <van-calendar v-model:show="showCalendar" @confirm="onDateConfirm" :min-date="new Date('2020-01-01')" />
+          <van-calendar v-model:show="showCalendar" :min-date="new Date('2020-01-01')" @confirm="onDateConfirm" />
           <div class="flex gap-2">
-            <van-button type="primary" size="small" @click="saveRecord">{{ editingId ? '更新' : '保存' }}</van-button>
-            <van-button size="small" @click="cancelForm">取消</van-button>
+            <van-button type="primary" size="small" @click="saveRecord">
+              {{ editingId ? '更新' : '保存' }}
+            </van-button>
+            <van-button size="small" @click="cancelForm">
+              取消
+            </van-button>
           </div>
         </div>
       </div>

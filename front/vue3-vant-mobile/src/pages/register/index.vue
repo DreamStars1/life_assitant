@@ -45,7 +45,8 @@ async function register() {
     })
     showNotify({ type: 'success', message: t('register.registerSuccess') })
     router.push({ name: 'Login' })
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }

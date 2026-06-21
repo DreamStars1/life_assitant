@@ -9,7 +9,8 @@ const userStore = useUserStore()
 const fullName = ref(userStore.userInfo.fullName || '')
 
 async function save() {
-  if (!fullName.value.trim()) return
+  if (!fullName.value.trim())
+    return
   await request.patch('/users/me', { fullName: fullName.value })
   await userStore.info()
   showToast('昵称已更新')
@@ -30,7 +31,9 @@ async function save() {
         />
       </van-cell-group>
       <div class="mt-6 px-4">
-        <van-button type="primary" round block native-type="submit">保存</van-button>
+        <van-button type="primary" round block native-type="submit">
+          保存
+        </van-button>
       </div>
     </van-form>
   </div>

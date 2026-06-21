@@ -15,7 +15,7 @@ export interface LifeLogItem {
   created_at: string
 }
 
-export function fetchLifeLogs(params?: { log_type?: string; start?: string; end?: string }) {
+export function fetchLifeLogs(params?: { log_type?: string, start?: string, end?: string }) {
   return request.get<ApiResponse<LifeLogItem[]>>('/life-logs', { params })
 }
 

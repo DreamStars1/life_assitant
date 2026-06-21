@@ -17,7 +17,7 @@ export interface TodoItem {
   created_at: string
 }
 
-export function fetchTodos(params?: { is_completed?: boolean; priority?: string; category?: string }) {
+export function fetchTodos(params?: { is_completed?: boolean, priority?: string, category?: string }) {
   return request.get<ApiResponse<TodoItem[]>>('/todos', { params })
 }
 

@@ -12,11 +12,13 @@ const partnerId = computed(() => userInfo.value?.partnerId || (userInfo.value as
 const partnerName = ref('')
 
 async function loadPartnerInfo() {
-  if (!partnerId.value) return
+  if (!partnerId.value)
+    return
   try {
     const res = await request.get(`/users/${partnerId.value}`)
     partnerName.value = res.data?.fullName || res.data?.full_name || '已绑定伴侣'
-  } catch {
+  }
+  catch {
     partnerName.value = '已绑定伴侣'
   }
 }
@@ -29,7 +31,8 @@ async function handleUnbind() {
       confirmButtonText: '确认解除',
       confirmButtonColor: 'red',
     })
-  } catch {
+  }
+  catch {
     return // 取消
   }
 
@@ -39,9 +42,11 @@ async function handleUnbind() {
     showNotify({ type: 'success', message: '已解除伴侣绑定' })
     await userStore.info()
     router.push({ name: 'Profile' })
-  } catch {
+  }
+  catch {
     showNotify({ type: 'danger', message: '解除失败' })
-  } finally {
+  }
+  finally {
     unbinding.value = false
   }
 }
@@ -55,7 +60,7 @@ onMounted(async () => {
 <template>
   <div class="p-4">
     <!-- 未绑定 -->
-    <div v-if="!partnerId" class="flex flex-col items-center gap-4 pt-10">
+    <div v-if="!partnerId" class="pt-10 flex flex-col gap-4 items-center">
       <van-empty description="尚未绑定伴侣" />
       <van-button type="primary" round @click="router.push('/share')">
         去绑定伴侣
@@ -64,10 +69,14 @@ onMounted(async () => {
 
     <!-- 已绑定 -->
     <template v-else>
-      <div class="flex flex-col items-center gap-3 pt-8 pb-6">
+      <div class="pb-6 pt-8 flex flex-col gap-3 items-center">
         <van-icon name="friends-o" size="64" color="var(--van-primary-color)" />
-        <div class="text-lg font-semibold">{{ partnerName }}</div>
-        <div class="text-sm text-gray-400">已绑定伴侣</div>
+        <div class="text-lg font-semibold">
+          {{ partnerName }}
+        </div>
+        <div class="text-sm text-gray-400">
+          已绑定伴侣
+        </div>
       </div>
 
       <van-button

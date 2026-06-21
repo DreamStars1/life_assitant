@@ -10,7 +10,7 @@ export interface PushSubscription {
   is_active: boolean
 }
 
-export function subscribePush(data: { endpoint: string; p256dh: string; auth: string }) {
+export function subscribePush(data: { endpoint: string, p256dh: string, auth: string }) {
   return request.post<ApiResponse<PushSubscription>>('/push/subscribe', data)
 }
 
@@ -26,6 +26,6 @@ export function updatePushPreferences(data: {
   return request.put<ApiResponse<void>>('/push/preferences', data)
 }
 
-export function testPush(data?: { title?: string; body?: string }) {
+export function testPush(data?: { title?: string, body?: string }) {
   return request.post<ApiResponse<void>>('/push/test', data || { title: 'Test', body: 'Hello!' })
 }

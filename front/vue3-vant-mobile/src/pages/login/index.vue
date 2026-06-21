@@ -33,7 +33,8 @@ async function login() {
       name: (redirect as any) || 'Today',
       query: { ...othersQuery },
     })
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }

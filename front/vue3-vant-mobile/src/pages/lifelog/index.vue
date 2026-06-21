@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { showNotify } from 'vant'
-import { fetchLifeLogs, createLifeLog } from '@/api/modules/lifelogs'
+import { createLifeLog, fetchLifeLogs } from '@/api/modules/lifelogs'
 import type { LifeLogItem } from '@/api/modules/lifelogs'
 
 const { t } = useI18n()
@@ -19,7 +19,8 @@ async function loadLogs() {
   try {
     const res = await fetchLifeLogs({ log_type: activeType.value })
     logs.value = Array.isArray(res) ? res : []
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -34,9 +35,13 @@ async function onSave() {
 }
 
 function formatTime(iso?: string | null) {
-  if (!iso) return ''
+  if (!iso)
+    return ''
   return new Date(iso).toLocaleString('zh-CN', {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   })
 }
 
@@ -56,7 +61,7 @@ onMounted(loadLogs)
   <div>
     <!-- Type tabs -->
     <van-tabs v-model:active="activeType" @change="loadLogs">
-      <van-tab v-for="t in logTypes" :key="t" :title="typeLabels[t] || t" :name="t" />
+      <van-tab v-for="type in logTypes" :key="type" :title="typeLabels[type] || type" :name="type" />
       <van-tab :title="t('lifelog.total')" :name="undefined" />
     </van-tabs>
 
@@ -70,7 +75,9 @@ onMounted(loadLogs)
       <van-cell-group :border="false">
         <van-cell v-for="log in logs" :key="log.id">
           <template #title>
-            <van-tag :size="'mini' as any">{{ log.log_type }}</van-tag>
+            <van-tag :size="'mini' as any">
+              {{ log.log_type }}
+            </van-tag>
             {{ log.content }}
           </template>
           <template #label>
@@ -85,7 +92,9 @@ onMounted(loadLogs)
         <van-field name="log_type" label="类型">
           <template #input>
             <van-radio-group v-model="newLog.log_type" direction="horizontal">
-              <van-radio v-for="t in logTypes" :key="t" :name="t">{{ typeLabels[t] || t }}</van-radio>
+              <van-radio v-for="type in logTypes" :key="type" :name="type">
+                {{ typeLabels[type] || type }}
+              </van-radio>
             </van-radio-group>
           </template>
         </van-field>

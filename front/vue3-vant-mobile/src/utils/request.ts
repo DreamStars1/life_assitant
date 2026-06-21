@@ -1,6 +1,6 @@
 import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import axios from 'axios'
-import { showNotify, showDialog } from 'vant'
+import { showDialog, showNotify } from 'vant'
 import type { FieldError } from '@/types/api'
 
 const TOKEN_KEY = 'access_token'
@@ -33,7 +33,8 @@ function errorHandler(error: RequestError): Promise<any> {
         showDialog({ title: '登录失效', message: msg }).then(() => {
           window.location.href = `${import.meta.env.VITE_APP_PUBLIC_PATH || '/'}login`
         })
-      } else {
+      }
+      else {
         showNotify({ type: 'danger', message: msg })
         if (window.location.hash !== '#/login' && window.location.pathname !== '/login')
           window.location.href = `${import.meta.env.VITE_APP_PUBLIC_PATH || '/'}login`
@@ -44,7 +45,8 @@ function errorHandler(error: RequestError): Promise<any> {
       if (errors && errors.length > 0) {
         const msg = errors.map(e => `${e.field}: ${e.message}`).join('\n')
         showNotify({ type: 'danger', message: msg })
-      } else {
+      }
+      else {
         const msg = (data as any)?.message || '参数校验失败'
         showNotify({ type: 'danger', message: msg })
       }

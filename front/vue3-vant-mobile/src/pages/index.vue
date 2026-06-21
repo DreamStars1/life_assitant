@@ -12,7 +12,8 @@ const userInfo = computed(() => userStore.userInfo)
 const displayName = computed(() => {
   const fn = userInfo.value.fullName
   const email = userInfo.value.email
-  if (fn && fn !== email) return fn
+  if (fn && fn !== email)
+    return fn
   return null
 })
 const router = useRouter()
@@ -26,7 +27,7 @@ const quickLogText = ref('')
 
 const today = new Date()
 const dateLabel = computed(() =>
-  today.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })
+  today.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
 )
 
 function getTodayRange() {
@@ -45,7 +46,8 @@ async function loadToday() {
     ])
     todayTodos.value = Array.isArray(todosRes) ? todosRes : []
     todayEvents.value = Array.isArray(eventsRes) ? eventsRes : []
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -56,7 +58,8 @@ async function toggleTodoDone(todo: TodoItem) {
 }
 
 async function submitQuickLog() {
-  if (!quickLogText.value.trim()) return
+  if (!quickLogText.value.trim())
+    return
   await createLifeLog({ content: quickLogText.value, log_type: 'diet' })
   quickLogText.value = ''
   showQuickLog.value = false
@@ -69,10 +72,13 @@ function goTo(path: string) {
 }
 
 function statusColor(status: string) {
-  return status === 'completed' ? '#7EC8A0'
-    : status === 'missed' ? '#D97A6E'
-    : status === 'cancelled' ? '#B8A99A'
-    : '#E8905E'
+  return status === 'completed'
+    ? '#7EC8A0'
+    : status === 'missed'
+      ? '#D97A6E'
+      : status === 'cancelled'
+        ? '#B8A99A'
+        : '#E8905E'
 }
 
 function formatHour(iso: string) {
@@ -92,11 +98,15 @@ onMounted(loadToday)
           <van-button
             :type="timelineMode === 'mine' ? 'primary' : 'default'"
             size="mini" plain @click="timelineMode = 'mine'"
-          >我的</van-button>
+          >
+            我的
+          </van-button>
           <van-button
             :type="timelineMode === 'ours' ? 'primary' : 'default'"
             size="mini" plain @click="timelineMode = 'ours'"
-          >我们的</van-button>
+          >
+            我们的
+          </van-button>
         </div>
       </div>
       <div class="greeting">
@@ -126,7 +136,7 @@ onMounted(loadToday)
     </div>
 
     <!-- Today Todos -->
-    <van-cell-group :title="'待办 (' + todayTodos.length + ')'" :border="false" class="section">
+    <van-cell-group :title="`待办 (${todayTodos.length})`" :border="false" class="section">
       <template v-if="todayTodos.length === 0">
         <van-cell title="今天没有待办事项" />
       </template>
@@ -142,8 +152,12 @@ onMounted(loadToday)
 
     <!-- Quick Add + Nav -->
     <div class="quick-actions">
-      <van-button icon="edit" type="primary" size="small" @click="showQuickLog = true">记一笔</van-button>
-      <van-button icon="plus" type="default" size="small" @click="goTo('/todos')">加待办</van-button>
+      <van-button icon="edit" type="primary" size="small" @click="showQuickLog = true">
+        记一笔
+      </van-button>
+      <van-button icon="plus" type="default" size="small" @click="goTo('/todos')">
+        加待办
+      </van-button>
     </div>
 
     <!-- Quick Log Dialog -->
@@ -159,26 +173,87 @@ onMounted(loadToday)
 </template>
 
 <style scoped>
-.timeline-page { padding-bottom: 16px; }
-.timeline-header { padding: 12px 16px 8px; }
-.date-row { display: flex; justify-content: space-between; align-items: center; }
-.date-label { font-size: 16px; font-weight: 600; color: var(--van-text-color); }
-.mode-switch { display: flex; gap: 4px; }
-.greeting { font-size: 13px; color: var(--van-text-color-2); margin-top: 4px; }
-.timeline-axis { padding: 0 16px; }
-.timeline-hour { display: flex; min-height: 44px; border-bottom: 1px solid #F0E6D8; position: relative; }
-.hour-tag { width: 36px; font-size: 11px; color: var(--van-text-color-3); padding-top: 2px; flex-shrink: 0; }
-.hour-track { flex: 1; position: relative; }
-.event-block {
-  position: absolute; top: 2px; height: 28px; border-radius: 6px;
-  display: flex; align-items: center; padding: 0 8px; gap: 6px; z-index: 1;
-  opacity: 0.9; cursor: pointer;
+.timeline-page {
+  padding-bottom: 16px;
 }
-.event-title { font-size: 12px; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; }
-.event-time { font-size: 10px; color: rgba(255,255,255,0.8); }
-.section { margin-top: 8px; }
-.line-through { text-decoration: line-through; opacity: 0.5; }
-.quick-actions { display: flex; gap: 8px; padding: 12px 16px; }
+.timeline-header {
+  padding: 12px 16px 8px;
+}
+.date-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.date-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--van-text-color);
+}
+.mode-switch {
+  display: flex;
+  gap: 4px;
+}
+.greeting {
+  font-size: 13px;
+  color: var(--van-text-color-2);
+  margin-top: 4px;
+}
+.timeline-axis {
+  padding: 0 16px;
+}
+.timeline-hour {
+  display: flex;
+  min-height: 44px;
+  border-bottom: 1px solid #f0e6d8;
+  position: relative;
+}
+.hour-tag {
+  width: 36px;
+  font-size: 11px;
+  color: var(--van-text-color-3);
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+.hour-track {
+  flex: 1;
+  position: relative;
+}
+.event-block {
+  position: absolute;
+  top: 2px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 6px;
+  z-index: 1;
+  opacity: 0.9;
+  cursor: pointer;
+}
+.event-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.event-time {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+}
+.section {
+  margin-top: 8px;
+}
+.line-through {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+.quick-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+}
 </style>
 
 <route lang="json5">

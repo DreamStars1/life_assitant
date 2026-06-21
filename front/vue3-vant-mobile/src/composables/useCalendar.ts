@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 
 export type CalendarView = 'month' | 'week' | 'day'
 
@@ -13,9 +13,11 @@ export function useCalendar() {
   function prev() {
     if (view.value === 'month') {
       currentDate.value = new Date(year.value, month.value - 2, 1)
-    } else if (view.value === 'week') {
+    }
+    else if (view.value === 'week') {
       currentDate.value = new Date(currentDate.value.getTime() - 7 * 86400000)
-    } else {
+    }
+    else {
       currentDate.value = new Date(currentDate.value.getTime() - 86400000)
     }
   }
@@ -23,9 +25,11 @@ export function useCalendar() {
   function next() {
     if (view.value === 'month') {
       currentDate.value = new Date(year.value, month.value, 1)
-    } else if (view.value === 'week') {
+    }
+    else if (view.value === 'week') {
       currentDate.value = new Date(currentDate.value.getTime() + 7 * 86400000)
-    } else {
+    }
+    else {
       currentDate.value = new Date(currentDate.value.getTime() + 86400000)
     }
   }

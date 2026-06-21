@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { clearToken, setToken } from '@/utils/auth'
-import { getUserInfo, login as userLogin } from "@/api/user"
-import request from "@/utils/request"
+import { getUserInfo, login as userLogin } from '@/api/user'
+import request from '@/utils/request'
 
 export interface UserState {
   id?: string
@@ -32,6 +32,18 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  const info = async () => {
+    try {
+      const res = await getUserInfo()
+      if (res.data)
+        setInfo(res.data as unknown as Record<string, unknown>)
+    }
+    catch (error) {
+      clearToken()
+      throw error
+    }
+  }
+
   const login = async (loginForm: { email: string, password: string }) => {
     try {
       const res = await userLogin(loginForm)
@@ -40,17 +52,8 @@ export const useUserStore = defineStore('user', () => {
       if (token && typeof token === 'string')
         setToken(token)
       await info()
-    } catch (error) {
-      clearToken()
-      throw error
     }
-  }
-
-  const info = async () => {
-    try {
-      const res = await getUserInfo()
-      if (res.data) setInfo(res.data as unknown as Record<string, unknown>)
-    } catch (error) {
+    catch (error) {
       clearToken()
       throw error
     }

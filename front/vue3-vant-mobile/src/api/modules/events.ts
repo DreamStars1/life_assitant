@@ -29,7 +29,7 @@ export interface TimelineEntry {
   created_at: string
 }
 
-export function fetchEvents(params?: { start?: string; end?: string; status?: string }) {
+export function fetchEvents(params?: { start?: string, end?: string, status?: string }) {
   return request.get<ApiResponse<EventItem[]>>('/events', { params })
 }
 
@@ -49,7 +49,7 @@ export function deleteEvent(id: string) {
   return request.delete<ApiResponse<void>>(`/events/${id}`)
 }
 
-export function fetchTimeline(params?: { start?: string; end?: string; source_type?: string }) {
+export function fetchTimeline(params?: { start?: string, end?: string, source_type?: string }) {
   return request.get<ApiResponse<TimelineEntry[]>>('/timeline', { params })
 }
 
@@ -57,6 +57,6 @@ export function createTimelineEntry(data: Partial<TimelineEntry>) {
   return request.post<ApiResponse<TimelineEntry>>('/timeline', data)
 }
 
-export function fetchPartnerEvents(params?: { start?: string; end?: string }) {
+export function fetchPartnerEvents(params?: { start?: string, end?: string }) {
   return request.get<ApiResponse<EventItem[]>>('/partner/events', { params })
 }
