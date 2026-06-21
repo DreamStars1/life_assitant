@@ -1,0 +1,25 @@
+# Maven 构建产物
+target/
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Git
+.git/
+.gitignore
+
+# 文档
+*.md
+docs/
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 环境变量（通过 compose 注入，不打包进镜像）
+.env
+.env.*

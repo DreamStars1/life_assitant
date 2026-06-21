@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# === Docker ===
+compose.override.yml
+
 # === 证书/密钥 ===
 certs/
 *.pem

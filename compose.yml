@@ -1,28 +1,31 @@
 x-backend-env: &backend-env
+  PROFILES_ACTIVE: prod
+  DB_HOST: db
+  DB_PORT: "3306"
+  DB_NAME: ${MYSQL_DATABASE}
+  DB_USER: ${MYSQL_USER}
+  DB_PWD: ${MYSQL_PASSWORD}
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_PWD: ""
+  REDIS_DB: "0"
   DOMAIN: ${DOMAIN}
-  FRONTEND_HOST: ${FRONTEND_HOST?Variable not set}
-  ENVIRONMENT: ${ENVIRONMENT}
-  BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS}
+  FRONTEND_HOST: https://app.${DOMAIN}
+  BACKEND_CORS_ORIGINS: https://app.${DOMAIN},https://api.${DOMAIN}
   SECRET_KEY: ${SECRET_KEY?Variable not set}
   FIRST_SUPERUSER: ${FIRST_SUPERUSER?Variable not set}
   FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD?Variable not set}
-  SMTP_HOST: ${SMTP_HOST}
-  SMTP_USER: ${SMTP_USER}
-  SMTP_PASSWORD: ${SMTP_PASSWORD}
-  EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL}
-  MYSQL_SERVER: db
-  MYSQL_PORT: "3306"
-  MYSQL_DATABASE: ${MYSQL_DATABASE}
-  MYSQL_USER: ${MYSQL_USER?Variable not set}
-  MYSQL_PASSWORD: ${MYSQL_PASSWORD?Variable not set}
-  SENTRY_DSN: ${SENTRY_DSN}
-  REDIS_URL: redis://redis:6379/0
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_USER: ${SMTP_USER:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL:-}
+  SENTRY_DSN: ${SENTRY_DSN:-}
 
 services:
 
   db:
     image: mysql:8.4
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -31,18 +34,18 @@ services:
       timeout: 10s
     volumes:
       - app-db-data:/var/lib/mysql
-    env_file:
-      - backend/.env
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD?Variable not set}
-      - MYSQL_ROOT_HOST=%
-      - MYSQL_DATABASE=${MYSQL_DATABASE?Variable not set}
-      - MYSQL_USER=${MYSQL_USER?Variable not set}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD?Variable not set}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD?Variable not set}
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: ${MYSQL_DATABASE?Variable not set}
+      MYSQL_USER: ${MYSQL_USER?Variable not set}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD?Variable not set}
+    networks:
+      - default
 
   redis:
     image: redis:7
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -55,15 +58,17 @@ services:
 
   adminer:
     image: adminer
-    restart: always
+    restart: unless-stopped
     depends_on:
       - db
     environment:
-      - ADMINER_DESIGN=pepa-linha-dark
+      ADMINER_DESIGN: pepa-linha-dark
+    networks:
+      - default
 
   backend:
-    image: '${DOCKER_IMAGE_BACKEND:-backend}:${TAG-latest}'
-    restart: always
+    image: '${DOCKER_IMAGE_BACKEND:-backend}:${TAG:-latest}'
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
@@ -71,39 +76,42 @@ services:
       redis:
         condition: service_healthy
         restart: true
-    env_file:
-      - backend/.env
     environment:
       <<: *backend-env
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/actuator/health"]
-      interval: 10s
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/actuator/health"]
+      interval: 15s
       timeout: 5s
       retries: 5
+      start_period: 60s
     build:
       context: backend
       dockerfile: Dockerfile
+    networks:
+      - default
 
-  # User-facing PWA frontend
   front:
-    image: '${DOCKER_IMAGE_FRONT:-front}:${TAG-latest}'
+    image: '${DOCKER_IMAGE_FRONT:-front}:${TAG:-latest}'
     build:
       context: front/vue3-vant-mobile
       dockerfile: Dockerfile
-    restart: always
+    restart: unless-stopped
+    networks:
+      - default
 
   nginx:
     build:
       context: backend/nginx
       dockerfile: Dockerfile
-    restart: always
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./certs:/etc/nginx/certs
+      - certs:/etc/nginx/certs:ro
+      - acme-webroot:/var/www/acme:ro
     environment:
-      - DOMAIN=${DOMAIN?Variable not set}
+      DOMAIN: ${DOMAIN?Variable not set}
     depends_on:
       backend:
         condition: service_healthy
@@ -111,7 +119,30 @@ services:
         condition: service_started
       adminer:
         condition: service_started
+    networks:
+      - default
+
+  acme.sh:
+    image: neilpang/acme.sh:3.1.0
+    container_name: acme.sh
+    volumes:
+      - acme-data:/acme.sh
+      - acme-webroot:/var/www/acme
+      - certs:/certs
+    environment:
+      AUTO_UPGRADE: "1"
+    command: daemon
+    restart: unless-stopped
+    networks:
+      - default
 
 volumes:
   app-db-data:
   app-redis-data:
+  acme-data:
+  acme-webroot:
+  certs:
+
+networks:
+  default:
+    driver: bridge

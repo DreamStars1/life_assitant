@@ -1,0 +1,43 @@
+# 开发环境：仅启动基础设施（MySQL + Redis + Adminer），应用本地跑
+services:
+  db:
+    image: mysql:8.4
+    restart: "no"
+    ports:
+      - "33062:3306"
+    volumes:
+      - app-db-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: app
+      MYSQL_USER: app
+      MYSQL_PASSWORD: changethis
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+  redis:
+    image: redis:7
+    restart: "no"
+    ports:
+      - "6379:6379"
+    volumes:
+      - app-redis-data:/data
+
+  adminer:
+    image: adminer
+    restart: "no"
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DESIGN: pepa-linha-dark
+    depends_on:
+      - db
+
+volumes:
+  app-db-data:
+  app-redis-data:
