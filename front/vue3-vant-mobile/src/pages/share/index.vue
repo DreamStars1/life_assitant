@@ -24,11 +24,23 @@ async function generateInvite() {
 }
 
 async function copyInvite() {
+  // ponytail: navigator.clipboard 需要 HTTPS，HTTP 下用 textarea + execCommand 兜底
+  const ta = document.createElement('textarea')
+  ta.value = inviteToken.value
+  ta.style.position = 'fixed'
+  ta.style.left = '-9999px'
+  document.body.appendChild(ta)
+  ta.select()
   try {
-    await navigator.clipboard.writeText(inviteToken.value)
-    showToast('已复制')
+    document.execCommand('copy')
+    showToast('已复制邀请码，发给你的伴侣吧')
   }
-  catch {}
+  catch {
+    showNotify({ type: 'danger', message: '复制失败，请长按选中后手动复制' })
+  }
+  finally {
+    document.body.removeChild(ta)
+  }
 }
 
 async function bindPartner() {
@@ -45,12 +57,35 @@ async function bindPartner() {
   }
 }
 
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function apiDateToLocalStr(iso: string | null | undefined): string {
+  if (!iso)
+    return ''
+  return iso.slice(0, 10)
+}
+
 // ---- ★一起做过的事 ----
 const records = ref<any[]>([])
 const showForm = ref(false)
 const editingId = ref<string | null>(null)
 const form = reactive({ title: '', content: '', occurredAt: '' })
 const showCalendar = ref(false)
+const searchKeyword = ref('')
+const filteredRecords = computed(() => {
+  const kw = searchKeyword.value.trim().toLowerCase()
+  if (!kw)
+    return records.value
+  return records.value.filter(r =>
+    (r.title && r.title.toLowerCase().includes(kw))
+    || (r.content && r.content.toLowerCase().includes(kw)),
+  )
+})
 
 // ---- 时间筛选 ----
 const filterStart = ref('')
@@ -59,12 +94,12 @@ const showFilterStart = ref(false)
 const showFilterEnd = ref(false)
 
 function onFilterStartConfirm(d: Date) {
-  filterStart.value = d.toISOString().slice(0, 10)
+  filterStart.value = toLocalDateStr(d)
   showFilterStart.value = false
   loadRecords()
 }
 function onFilterEndConfirm(d: Date) {
-  filterEnd.value = d.toISOString().slice(0, 10)
+  filterEnd.value = toLocalDateStr(d)
   showFilterEnd.value = false
   loadRecords()
 }
@@ -75,7 +110,7 @@ function clearFilter() {
 }
 
 function onDateConfirm(d: Date) {
-  form.occurredAt = d.toISOString().slice(0, 10)
+  form.occurredAt = toLocalDateStr(d)
   showCalendar.value = false
 }
 
@@ -93,7 +128,7 @@ function openCreate() {
   editingId.value = null
   form.title = ''
   form.content = ''
-  form.occurredAt = new Date().toISOString().slice(0, 10)
+  form.occurredAt = toLocalDateStr(new Date())
   showForm.value = true
 }
 
@@ -101,7 +136,7 @@ function openEdit(r: any) {
   editingId.value = r.id
   form.title = r.title
   form.content = r.content || ''
-  form.occurredAt = ''
+  form.occurredAt = apiDateToLocalStr(r.occurredAt)
   showForm.value = true
 }
 
@@ -122,14 +157,10 @@ async function saveRecord() {
     showToast('已更新')
   }
   else {
-    // #region agent log
-    const _occurredAt = form.occurredAt ? `${form.occurredAt}T00:00:00` : undefined
-    fetch('http://127.0.0.1:7523/ingest/592e6959-ef28-4c9d-97fa-bbd779223ace', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '35e40c' }, body: JSON.stringify({ sessionId: '35e40c', location: 'share/index.vue:117', message: 'POST shared-records occurredAt', data: { raw: form.occurredAt, sentValue: _occurredAt }, timestamp: Date.now(), runId: 'pre-fix', hypothesisId: 'H2' }) }).catch(() => {})
-    // #endregion
     await request.post('/shared-records', {
       title: form.title,
       content: form.content || undefined,
-      occurredAt: _occurredAt,
+      occurredAt: form.occurredAt ? `${form.occurredAt}T00:00:00` : undefined,
     })
     showToast('记录已添加')
   }
@@ -148,13 +179,16 @@ async function deleteRecord(id: string) {
 }
 
 function formatDate(d: string) {
-  if (!d)
+  const dateStr = apiDateToLocalStr(d)
+  if (!dateStr)
     return ''
-  return new Date(d).toLocaleDateString('zh-CN')
+  const [y, m, day] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, day).toLocaleDateString('zh-CN')
 }
 
 const partnerId = computed(() => userInfo.value?.partnerId || (userInfo.value as any)?.partner_id)
 const hasRecords = computed(() => records.value.length > 0)
+const hasFilteredRecords = computed(() => filteredRecords.value.length > 0)
 
 onMounted(async () => {
   await userStore.info()
@@ -175,16 +209,10 @@ watch(partnerId, (val) => {
       <van-empty description="绑定伴侣后，一起记录做过的事" />
 
       <van-cell-group :inset="true" title="生成邀请码">
-        <van-field v-model="inviteToken" placeholder="点击下方按钮生成" readonly>
-          <template #button>
-            <van-button size="small" type="primary" @click="generateInvite">
-              生成
-            </van-button>
-          </template>
-        </van-field>
-        <van-cell v-if="inviteToken" title="复制邀请码" is-link @click="copyInvite" />
+        <van-field v-model="inviteToken" placeholder="点击下方按钮生成" readonly :rows="2" autosize type="textarea" />
+        <van-cell v-if="inviteToken" title="复制邀请码" icon="share-o" is-link @click="copyInvite" />
+        <van-cell title="生成邀请码" icon="add-circle-o" is-link @click="generateInvite" />
       </van-cell-group>
-
       <van-cell-group :inset="true" title="输入伴侣邀请码">
         <van-field v-model="bindCode" placeholder="粘贴伴侣的邀请码">
           <template #button>
@@ -198,21 +226,31 @@ watch(partnerId, (val) => {
 
     <!-- ★一起做过的事（绑定后显示） -->
     <template v-if="partnerId">
-      <!-- 时间筛选 -->
-      <div class="px-4 pb-1 pt-3 flex gap-2 items-center">
-        <van-field v-model="filterStart" is-link readonly placeholder="开始日期" class="!p-0 !flex-1" @click="showFilterStart = true" />
-        <span class="text-gray-400">—</span>
-        <van-field v-model="filterEnd" is-link readonly placeholder="结束日期" class="!p-0 !flex-1" @click="showFilterEnd = true" />
-        <van-button v-if="filterStart || filterEnd" size="small" plain @click="clearFilter">
-          清除
-        </van-button>
+      <!-- 搜索 + 时间筛选 -->
+      <div class="px-4 pb-1 pt-3 space-y-2">
+        <van-field
+          v-model="searchKeyword"
+          placeholder="搜索标题或内容"
+          clearable
+          left-icon="search"
+          class="!p-0"
+        />
+        <div class="flex gap-2 items-center">
+          <van-field v-model="filterStart" is-link readonly placeholder="开始日期" class="!p-0 !flex-1" @click="showFilterStart = true" />
+          <span class="text-gray-400">—</span>
+          <van-field v-model="filterEnd" is-link readonly placeholder="结束日期" class="!p-0 !flex-1" @click="showFilterEnd = true" />
+          <van-button v-if="filterStart || filterEnd" size="small" plain @click="clearFilter">
+            清除
+          </van-button>
+        </div>
       </div>
-      <van-calendar v-model:show="showFilterStart" @confirm="onFilterStartConfirm" />
-      <van-calendar v-model:show="showFilterEnd" @confirm="onFilterEndConfirm" />
+      <van-calendar v-model:show="showFilterStart" :min-date="new Date('2020-01-01')" @confirm="onFilterStartConfirm" />
+      <van-calendar v-model:show="showFilterEnd" :min-date="new Date('2020-01-01')" @confirm="onFilterEndConfirm" />
 
       <van-cell-group :inset="true" title="一起做过的事">
         <van-empty v-if="!hasRecords" description="还没有记录，添加第一条吧" />
-        <van-swipe-cell v-for="r in records" :key="r.id">
+        <van-empty v-else-if="!hasFilteredRecords" description="没有匹配的记录" />
+        <van-swipe-cell v-for="r in filteredRecords" :key="r.id">
           <van-cell :title="r.title" :label="r.content || ''" :value="formatDate(r.occurredAt)" is-link @click="openEdit(r)" />
           <template #right>
             <van-button square type="danger" text="删除" @click="deleteRecord(r.id)" />

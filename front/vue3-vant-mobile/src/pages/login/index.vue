@@ -9,6 +9,7 @@ const { t } = useI18n()
 const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
+const showPassword = ref(false)
 
 const postData = reactive({
   email: '',
@@ -59,11 +60,19 @@ async function login() {
       <div class="mt-4 rounded-md overflow-hidden">
         <van-field
           v-model="postData.password"
-          type="password"
+          :type="showPassword ? 'text' : 'password'"
           :rules="rules.password"
           name="password"
           :placeholder="$t('login.password')"
-        />
+        >
+          <template #button>
+            <van-icon
+              :name="showPassword ? 'eye-o' : 'closed-eye'"
+              class="cursor-pointer"
+              @click="showPassword = !showPassword"
+            />
+          </template>
+        </van-field>
       </div>
 
       <div class="mt-4">
