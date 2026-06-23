@@ -46,6 +46,9 @@ admin_front/
 # === 嵌套 Git 仓库（防止模板残留） ===
 **/.git
 
+# === Visual Companion 临时文件 ===
+.superpowers/
+
 # === 操作系统 ===
 .DS_Store
 Thumbs.db
