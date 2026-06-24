@@ -1,4 +1,4 @@
-package top.lifeassistant.sharedrecord.model.entity;
+package top.lifeassistant.todo.model.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -8,30 +8,26 @@ import top.lifeassistant.common.base.model.entity.BaseDO;
 import top.lifeassistant.common.base.model.entity.OwnedEntity;
 
 import java.io.Serial;
-import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("shared_record")
-public class SharedRecordDO extends BaseDO implements OwnedEntity {
+@TableName("todo_ack_template")
+public class TodoAckTemplateDO extends BaseDO implements OwnedEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    /** 记录者 */
-    private String createdBy;
+    /** 所属用户 */
+    private String userId;
 
-    /** 标题 */
-    private String title;
-
-    /** 详细描述 */
+    /** 文案内容 */
     private String content;
 
-    /** 事件发生时间 */
-    private LocalDateTime occurredAt;
+    /** 排序顺序 */
+    private Integer sortOrder;
 
     @Override
     public String getOwnerId() {
-        return createdBy;
+        return userId;
     }
 }
