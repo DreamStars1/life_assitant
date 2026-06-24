@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * 确认文案模板 API
  *
- * @author LifeAssistant Team
+ * @author DreamStars1
  * @since 2026/6/24
  */
 @Tag(name = "确认文案模板 API")

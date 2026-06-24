@@ -7,7 +7,7 @@ import top.lifeassistant.todo.model.entity.TodoAckTemplateDO;
 /**
  * 确认文案模板 Mapper
  *
- * @author LifeAssistant Team
+ * @author DreamStars1
  * @since 2026/6/24
  */
 @Mapper

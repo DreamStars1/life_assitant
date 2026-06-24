@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * 共享记录业务
  *
- * @author LifeAssistant Team
+ * @author DreamStars1
  * @since 2026/6/23
  */
 @Service
