@@ -3,14 +3,14 @@ package top.lifeassistant.sharedrecord.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import top.continew.starter.core.exception.BadRequestException;
+import top.lifeassistant.common.base.component.OwnerValidator;
 import top.lifeassistant.sharedrecord.mapper.SharedRecordMapper;
 import top.lifeassistant.sharedrecord.model.entity.SharedRecordDO;
 import top.lifeassistant.sharedrecord.model.req.SharedRecordCreateReq;
 import top.lifeassistant.sharedrecord.model.req.SharedRecordUpdateReq;
 import top.lifeassistant.sharedrecord.model.resp.SharedRecordResp;
 import top.lifeassistant.system.model.entity.user.UserDO;
-import top.continew.starter.core.exception.BadRequestException;
-import top.continew.starter.core.exception.BusinessException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,6 +20,7 @@ import java.util.List;
 public class SharedRecordService {
 
     private final SharedRecordMapper mapper;
+    private final OwnerValidator ownerValidator;
 
     private void requirePartner(UserDO user) {
         if (user.getPartnerId() == null) {
@@ -52,21 +53,15 @@ public class SharedRecordService {
 
     public SharedRecordResp getById(UserDO user, String id) {
         requirePartner(user);
-        SharedRecordDO record = mapper.selectById(id);
-        if (record == null) throw new BusinessException("Record not found");
-        if (!record.getCreatedBy().equals(user.getId()) && !record.getCreatedBy().equals(user.getPartnerId())) {
-            throw new BusinessException("Record not found");
-        }
+        SharedRecordDO record = ownerValidator.findAndCheck(
+            () -> mapper.selectById(id), "记录不存在",
+            r -> user.getId().equals(r.getCreatedBy()) || user.getId().equals(user.getPartnerId()));
         return SharedRecordResp.from(record);
     }
 
     public SharedRecordResp update(UserDO user, String id, SharedRecordUpdateReq req) {
         requirePartner(user);
-        SharedRecordDO record = mapper.selectById(id);
-        if (record == null) throw new BusinessException("Record not found");
-        if (!record.getCreatedBy().equals(user.getId())) {
-            throw new BadRequestException("只能修改自己的记录");
-        }
+        SharedRecordDO record = ownerValidator.requireOwner(() -> mapper.selectById(id), user.getId());
         if (req.getTitle() != null) record.setTitle(req.getTitle());
         if (req.getContent() != null) record.setContent(req.getContent());
         if (req.getOccurredAt() != null) record.setOccurredAt(req.getOccurredAt());
@@ -77,11 +72,7 @@ public class SharedRecordService {
 
     public void delete(UserDO user, String id) {
         requirePartner(user);
-        SharedRecordDO record = mapper.selectById(id);
-        if (record == null) throw new BusinessException("Record not found");
-        if (!record.getCreatedBy().equals(user.getId())) {
-            throw new BadRequestException("只能删除自己的记录");
-        }
+        ownerValidator.requireOwner(() -> mapper.selectById(id), user.getId());
         mapper.deleteById(id);
     }
 
