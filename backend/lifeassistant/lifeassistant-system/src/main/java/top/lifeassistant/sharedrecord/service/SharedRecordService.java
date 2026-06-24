@@ -15,6 +15,12 @@ import top.lifeassistant.system.model.entity.user.UserDO;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * 共享记录业务
+ *
+ * @author LifeAssistant Team
+ * @since 2026/6/23
+ */
 @Service
 @RequiredArgsConstructor
 public class SharedRecordService {

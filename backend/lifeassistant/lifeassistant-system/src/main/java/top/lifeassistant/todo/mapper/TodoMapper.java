@@ -8,6 +8,12 @@ import top.lifeassistant.todo.model.entity.TodoDO;
 
 import java.util.List;
 
+/**
+ * 待办 Mapper
+ *
+ * @author LifeAssistant Team
+ * @since 2026/6/24
+ */
 @Mapper
 public interface TodoMapper extends BaseMapper<TodoDO> {
 

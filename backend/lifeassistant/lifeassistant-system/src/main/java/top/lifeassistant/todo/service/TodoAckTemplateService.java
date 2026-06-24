@@ -16,6 +16,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
+/**
+ * 确认文案模板业务
+ *
+ * @author LifeAssistant Team
+ * @since 2026/6/24
+ */
 @Service
 @RequiredArgsConstructor
 public class TodoAckTemplateService {
