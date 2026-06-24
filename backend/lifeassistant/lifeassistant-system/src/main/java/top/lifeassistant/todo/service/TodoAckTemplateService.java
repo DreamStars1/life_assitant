@@ -3,6 +3,7 @@ package top.lifeassistant.todo.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import top.continew.starter.core.exception.BadRequestException;
 import top.lifeassistant.common.base.component.OwnerValidator;
 import top.lifeassistant.system.model.entity.user.UserDO;
@@ -93,6 +94,7 @@ public class TodoAckTemplateService {
         mapper.deleteById(id);
     }
 
+    @Transactional
     public void reorder(UserDO user, List<String> ids) {
         for (int i = 0; i < ids.size(); i++) {
             final int order = i;

@@ -55,7 +55,7 @@ public class SharedRecordService {
         requirePartner(user);
         SharedRecordDO record = ownerValidator.findAndCheck(
             () -> mapper.selectById(id), "记录不存在",
-            r -> user.getId().equals(r.getCreatedBy()) || user.getId().equals(user.getPartnerId()));
+            r -> user.getId().equals(r.getCreatedBy()) || user.getPartnerId().equals(r.getCreatedBy()));
         return SharedRecordResp.from(record);
     }
 
