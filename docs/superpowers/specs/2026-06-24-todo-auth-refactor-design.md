@@ -94,6 +94,17 @@ SharedRecordDO r = ownerValidator.findAndCheck(
 );
 ```
 
+### 异常语义统一
+
+ContiNew 提供的两个异常类有明确语义区分，但项目里用混了：
+
+| 异常 | 语义 | 合理场景 |
+|---|---|---|
+| `BusinessException` | 业务规则阻止执行 | 资源不存在、无访问权限、业务限制（如模板上限） |
+| `BadRequestException` | 请求在当前状态下不合法 | 状态冲突（重复确认）、前置条件不满足（未绑定伴侣）、参数非法 |
+
+当前项目中被误用为 `BadRequestException` 的权限拒绝（"只能修改自己的待办""只能删除自己的待办""只能修改自己的记录""只有被指派者才能确认"）——**本不是参数问题，是权限/业务问题，应改为 `BusinessException`**。本重构中，OwnerValidator 统一抛 `BusinessException`，Service 中残留的 `BadRequestException` 按上表规则逐一修正。
+
 ### 顺便修复
 
 | 问题 | 修复 |
