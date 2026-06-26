@@ -41,7 +41,6 @@ spring.data:
     enabled: true
     mode: SINGLE
 
-spring.ai.mcp.server.protocol: STREAMABLE
 jetcache:
   statIntervalMinutes: 0
   local:
