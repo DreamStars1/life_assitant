@@ -115,6 +115,7 @@ sa-token.extension:
     - /api/v1/users/signup
     - /api/v1/password-recovery/**
     - /api/v1/reset-password
+    - /mcp/**
 
 --- ### Just Auth 配置（已禁用）
 continew-starter.justauth:
