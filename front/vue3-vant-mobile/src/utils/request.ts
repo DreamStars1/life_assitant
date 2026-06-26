@@ -51,6 +51,10 @@ function errorHandler(error: RequestError): Promise<any> {
         showNotify({ type: 'danger', message: msg })
       }
     }
+    else {
+      const msg = (data as any)?.message || (data as any)?.detail || (data as any)?.errorMessage || `请求失败 (${status})`
+      showNotify({ type: 'danger', message: msg })
+    }
   }
   return Promise.reject(error)
 }

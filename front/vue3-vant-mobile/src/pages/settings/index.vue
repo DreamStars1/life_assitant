@@ -33,10 +33,6 @@ const editContent = ref('')
 const editingId = ref<string | null>(null)
 const activeTemplateId = ref(localStorage.getItem(ACTIVE_TEMPLATE_KEY) || '')
 
-function getActiveTemplate(): AckTemplate | undefined {
-  return templates.value.find(t => t.id === activeTemplateId.value)
-}
-
 function setActiveTemplate(id: string) {
   activeTemplateId.value = id
   localStorage.setItem(ACTIVE_TEMPLATE_KEY, id)

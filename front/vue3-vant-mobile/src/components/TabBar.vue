@@ -23,13 +23,7 @@ const show = computed(() => {
     <van-tabbar-item replace to="/todos">
       {{ $t('tabbar.todos') }}
       <template #icon>
-        <van-icon name="checked" />
-      </template>
-    </van-tabbar-item>
-    <van-tabbar-item replace to="/events">
-      {{ $t('tabbar.events') }}
-      <template #icon>
-        <van-icon name="clock-o" />
+        <van-icon name="todo-list-o" />
       </template>
     </van-tabbar-item>
     <van-tabbar-item replace to="/share">

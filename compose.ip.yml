@@ -1,0 +1,25 @@
+# IP-only 部署覆盖配置（无域名、无 HTTPS）
+# 使用: docker compose -f compose.yml -f compose.ip.yml up -d
+
+services:
+  adminer:
+    profiles: ["disabled"]
+
+  nginx:
+    profiles: ["disabled"]
+    environment:
+      DOMAIN: "x"
+
+  acme.sh:
+    profiles: ["disabled"]
+
+  front:
+    ports:
+      - "80:80"
+
+  backend:
+    environment:
+      DOMAIN: ${SERVER_IP}
+      FRONTEND_HOST: http://${SERVER_IP}
+      BACKEND_CORS_ORIGINS: http://${SERVER_IP}
+      LOGGING_FILE_PATH: /logs

@@ -1,0 +1,82 @@
+---
+description: PowerShell 环境下的命令执行规范
+alwaysApply: true
+---
+
+# PowerShell 环境命令执行规范
+
+本项目的开发环境为 **PowerShell**（非 bash）。以下规则适用于所有终端操作。
+
+## Git 提交命令
+
+PowerShell **不支持** bash heredoc 语法。不要使用：
+
+```bash
+# ❌ 会失败 —— PowerShell 不认识 <<'EOF'
+git commit -m "$(cat <<'EOF'
+message here
+EOF
+)"
+```
+
+**必须使用：**
+
+```powershell
+# ✅ 直接使用 -m 参数
+git commit -m "feat: add some feature"
+```
+
+多行消息用单行 `-m` 搞定。如果确实需要多行，PowerShell 中可以用反引号换行或拼接字符串。
+
+## 路径引用
+
+**始终使用双引号**包裹路径，不要用单引号：
+
+```powershell
+# ✅ 正确
+git add "backend/lifeassistant/pom.xml"
+ls "D:\my project\file.txt"
+
+# ❌ 可能失败
+git add 'backend/lifeassistant/pom.xml'
+```
+
+## 文件列表命令
+
+`Get-ChildItem` 的某些参数在环境中可能行为异常（如 `-Directory` 输出为空）。优先使用：
+
+```powershell
+# ✅ 列目录 —— 用 ls，不用 Get-ChildItem
+ls path\to\dir\
+
+# ✅ 列文件 —— 明确指定模式
+ls path\to\dir\*.java
+
+# 如果 Get-ChildItem 结果异常，退回到 ls
+```
+
+## 路径分隔符
+
+PowerShell 中路径使用反斜杠 `\`，但 git 命令使用正斜杠 `/`：
+
+```powershell
+# git 命令 -> 正斜杠
+git add "backend/lifeassistant/file.java"
+
+# 文件系统操作 -> 反斜杠或正斜杠均可
+ls backend\lifeassistant\
+ls backend/lifeassistant/
+```
+
+## 命令链
+
+PowerShell 支持 `&&`（条件执行，前一个成功才执行下一个）和 `;`（顺序执行，不管成功失败）。但 `&&` 在较老的 PowerShell 版本（5.1 及以下）不支持。为了兼容性，复杂链式操作可以改成多步执行或用 `try/catch`。
+
+```powershell
+# ✅ 简单链式（PowerShell 7+）
+cd dir && git status
+
+# ✅ 更可靠的方式 —— 分步执行
+git add .
+git commit -m "msg"
+```

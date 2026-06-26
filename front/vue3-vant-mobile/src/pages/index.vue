@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { useUserStore } from '@/stores'
-import { fetchTodos, updateTodo } from '@/api/modules/todos'
-import { fetchEvents } from '@/api/modules/events'
-import { createLifeLog } from '@/api/modules/lifelogs'
-import type { TodoItem } from '@/api/modules/todos'
-import type { EventItem } from '@/api/modules/events'
+import { onMounted } from 'vue'
 import { showNotify } from 'vant'
+import { fetchTemplates } from '@/api/modules/ack-templates'
+import { acknowledgeTodo } from '@/api/modules/todos'
+import { useUserStore } from '@/stores'
+import { useTodoStore } from '@/stores/modules/todo'
+import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
+const todoStore = useTodoStore()
+const router = useRouter()
+
 const userInfo = computed(() => userStore.userInfo)
 const displayName = computed(() => {
   const fn = userInfo.value.fullName
@@ -16,159 +19,143 @@ const displayName = computed(() => {
     return fn
   return null
 })
-const router = useRouter()
-
-const todayTodos = ref<TodoItem[]>([])
-const todayEvents = ref<EventItem[]>([])
-const timelineMode = ref<'mine' | 'ours'>('mine')
-const loading = ref(false)
-const showQuickLog = ref(false)
-const quickLogText = ref('')
 
 const today = new Date()
 const dateLabel = computed(() =>
   today.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
 )
 
-function getTodayRange() {
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-  const end = new Date(start.getTime() + 86400000)
-  return { start: start.toISOString(), end: end.toISOString() }
+function priorityColor(p: string): string {
+  const map: Record<string, string> = { low: '#999', medium: '#1989fa', high: '#ff976a', urgent: '#ee0a24' }
+  return map[p] || '#999'
 }
 
-async function loadToday() {
-  loading.value = true
+function dateDiff(iso: string | null | undefined): number | null {
+  if (!iso)
+    return null
+  const d = new Date(`${iso.slice(0, 10)}T00:00:00`)
+  const today = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
+  return Math.round((d.getTime() - today.getTime()) / 86400000)
+}
+
+function labelDate(iso: string | null | undefined): string {
+  const diff = dateDiff(iso)
+  if (diff == null)
+    return ''
+  if (diff < 0)
+    return `已逾期 ${Math.abs(diff)} 天`
+  if (diff === 0)
+    return '今天'
+  if (diff === 1)
+    return '明天'
+  if (diff === 2)
+    return '后天'
+  const d = new Date(`${iso!.slice(0, 10)}T00:00:00`)
+  return `${d.getMonth() + 1}/${d.getDate()}`
+}
+
+function labelClass(iso: string | null | undefined): string {
+  const diff = dateDiff(iso)
+  if (diff == null)
+    return 'label-none'
+  if (diff < 0)
+    return 'label-overdue'
+  if (diff === 0)
+    return 'label-today'
+  return 'label-future'
+}
+
+function dotClass(iso: string | null | undefined): string {
+  const diff = dateDiff(iso)
+  if (diff == null)
+    return 'dot-none'
+  if (diff < 0)
+    return 'dot-overdue'
+  if (diff === 0)
+    return 'dot-today'
+  return 'dot-future'
+}
+
+onMounted(() => {
+  loadUpcoming()
+})
+
+watch(() => userInfo.value.id, (id) => {
+  if (id)
+    loadUpcoming()
+})
+
+const ACTIVE_TEMPLATE_KEY = 'life_assistant_active_ack_template'
+
+async function onAcknowledge(todo: any) {
   try {
-    const { start, end } = getTodayRange()
-    const [todosRes, eventsRes] = await Promise.all([
-      fetchTodos({ is_completed: false }),
-      fetchEvents({ start, end }),
-    ])
-    todayTodos.value = Array.isArray(todosRes) ? todosRes : []
-    todayEvents.value = Array.isArray(eventsRes) ? eventsRes : []
+    const res = await fetchTemplates()
+    const templates = res.data ?? []
+    const activeId = localStorage.getItem(ACTIVE_TEMPLATE_KEY)
+    const active = activeId ? templates.find(t => t.id === activeId) : undefined
+    const message = active?.content ?? templates[0]?.content ?? '收到'
+    await acknowledgeTodo(todo.id, message)
+    showNotify({ type: 'success', message: `已确认：${message}` })
+    loadUpcoming()
   }
-  finally {
-    loading.value = false
-  }
+  catch { showNotify({ type: 'danger', message: '确认失败' }) }
 }
 
-async function toggleTodoDone(todo: TodoItem) {
-  await updateTodo(todo.id, { is_completed: !todo.is_completed })
-  await loadToday()
+function loadUpcoming() {
+  if (userInfo.value.id)
+    todoStore.loadUpcoming()
 }
-
-async function submitQuickLog() {
-  if (!quickLogText.value.trim())
-    return
-  await createLifeLog({ content: quickLogText.value, log_type: 'diet' })
-  quickLogText.value = ''
-  showQuickLog.value = false
-  showNotify({ type: 'success', message: '已记录' })
-  await loadToday()
-}
-
-function goTo(path: string) {
-  router.push(path)
-}
-
-function statusColor(status: string) {
-  return status === 'completed'
-    ? '#7EC8A0'
-    : status === 'missed'
-      ? '#D97A6E'
-      : status === 'cancelled'
-        ? '#B8A99A'
-        : '#E8905E'
-}
-
-function formatHour(iso: string) {
-  return new Date(iso).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-}
-
-onMounted(loadToday)
 </script>
 
 <template>
   <div class="timeline-page">
-    <!-- Header -->
     <div class="timeline-header">
       <div class="date-row">
         <span class="date-label">{{ dateLabel }}</span>
-        <div class="mode-switch">
-          <van-button
-            :type="timelineMode === 'mine' ? 'primary' : 'default'"
-            size="mini" plain @click="timelineMode = 'mine'"
-          >
-            我的
-          </van-button>
-          <van-button
-            :type="timelineMode === 'ours' ? 'primary' : 'default'"
-            size="mini" plain @click="timelineMode = 'ours'"
-          >
-            我们的
-          </van-button>
-        </div>
       </div>
       <div class="greeting">
         {{ displayName || userInfo.email }}
       </div>
     </div>
 
-    <!-- Timeline Axis -->
-    <div class="timeline-axis">
-      <div v-for="hour in 12" :key="hour" class="timeline-hour">
-        <span class="hour-tag">{{ hour + 6 }}:00</span>
-        <div class="hour-track">
-          <!-- Event blocks (blue) -->
-          <div
-            v-for="ev in todayEvents.filter(e => {
-              const h = new Date(e.start_time).getHours()
-              return h >= hour + 6 && h < hour + 7
-            })" :key="ev.id"
-            class="event-block"
-            :style="{ background: statusColor(ev.status), left: '40px', right: '16px' }"
-          >
-            <span class="event-title">{{ ev.title }}</span>
-            <span class="event-time">{{ formatHour(ev.start_time) }}</span>
+    <div v-if="todoStore.upcoming.length > 0" class="tl">
+      <div class="tl-title">
+        <span>待办</span>
+        <span class="tl-more" @click="router.push('/todos')">查看全部 →</span>
+      </div>
+      <div class="tl-list">
+        <div v-for="todo in todoStore.upcoming.slice(0, 5)" :key="todo.id" class="tl-item">
+          <div class="tl-line">
+            <div class="tl-dot" :class="[dotClass(todo.dueDate)]" />
+            <div class="tl-bar" />
+          </div>
+          <div class="tl-card">
+            <div class="tl-card-top">
+              <div v-if="todo.dueDate" class="tl-label-wrap">
+                <span class="tl-label" :class="[labelClass(todo.dueDate)]">{{ labelDate(todo.dueDate) }}</span>
+              </div>
+              <span class="tl-prio" :style="{ background: priorityColor(todo.priority) }" />
+            </div>
+            <div class="tl-card-body">
+              <div class="tl-check" @click="todoStore.toggleComplete(todo.id)">
+                <div class="tl-ck" :class="[{ checked: todo.isCompleted }]">
+                  <van-icon v-if="todo.isCompleted" name="success" />
+                </div>
+              </div>
+              <span class="tl-text" :class="[{ done: todo.isCompleted }]">{{ todo.title }}</span>
+            </div>
+            <div class="tl-card-meta">
+              <span v-if="todo.assignedTo" class="tl-meta-item">{{ todo.assignedTo === userInfo.id ? `← 来自 ${userStore.partnerName}` : `→ 交给 ${userStore.partnerName}` }}</span>
+              <span v-if="todo.ackStatus === 'unconfirmed' && todo.assignedTo === userInfo.id" class="tl-meta-item warn clickable" @click.stop="onAcknowledge(todo)">确认收到</span>
+              <span v-else-if="todo.ackStatus === 'unconfirmed'" class="tl-meta-item warn">待确认</span>
+              <span v-if="todo.ackStatus === 'confirmed'" class="tl-meta-item ok">✓ {{ todo.ackMessage }}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Today Todos -->
-    <van-cell-group :title="`待办 (${todayTodos.length})`" :border="false" class="section">
-      <template v-if="todayTodos.length === 0">
-        <van-cell title="今天没有待办事项" />
-      </template>
-      <van-cell v-for="todo in todayTodos" :key="todo.id">
-        <template #title>
-          <span :class="{ 'line-through': todo.is_completed }">{{ todo.title }}</span>
-        </template>
-        <template #right-icon>
-          <van-checkbox :model-value="todo.is_completed" @click="toggleTodoDone(todo)" />
-        </template>
-      </van-cell>
-    </van-cell-group>
-
-    <!-- Quick Add + Nav -->
-    <div class="quick-actions">
-      <van-button icon="edit" type="primary" size="small" @click="showQuickLog = true">
-        记一笔
-      </van-button>
-      <van-button icon="plus" type="default" size="small" @click="goTo('/todos')">
-        加待办
-      </van-button>
-    </div>
-
-    <!-- Quick Log Dialog -->
-    <van-dialog v-model:show="showQuickLog" title="记一笔" show-cancel-button @confirm="submitQuickLog">
-      <van-field
-        v-model="quickLogText"
-        type="textarea"
-        :autosize="{ minHeight: 60 }"
-        placeholder="吃了什么？做了什么？心情如何？"
-      />
-    </van-dialog>
+    <van-empty v-else description="暂无内容" />
   </div>
 </template>
 
@@ -189,70 +176,173 @@ onMounted(loadToday)
   font-weight: 600;
   color: var(--van-text-color);
 }
-.mode-switch {
-  display: flex;
-  gap: 4px;
-}
 .greeting {
   font-size: 13px;
   color: var(--van-text-color-2);
   margin-top: 4px;
 }
-.timeline-axis {
-  padding: 0 16px;
+
+/* timeline */
+.tl {
+  margin: 8px 16px 0;
 }
-.timeline-hour {
+.tl-title {
   display: flex;
-  min-height: 44px;
-  border-bottom: 1px solid #f0e6d8;
-  position: relative;
-}
-.hour-tag {
-  width: 36px;
-  font-size: 11px;
-  color: var(--van-text-color-3);
-  padding-top: 2px;
-  flex-shrink: 0;
-}
-.hour-track {
-  flex: 1;
-  position: relative;
-}
-.event-block {
-  position: absolute;
-  top: 2px;
-  height: 28px;
-  border-radius: 6px;
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 0 8px;
-  gap: 6px;
-  z-index: 1;
-  opacity: 0.9;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding: 0 4px;
+}
+.tl-more {
+  font-size: 12px;
+  color: var(--van-blue);
+  font-weight: 400;
   cursor: pointer;
 }
-.event-title {
-  font-size: 12px;
-  font-weight: 500;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
+.tl-list {
+  position: relative;
 }
-.event-time {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.8);
-}
-.section {
-  margin-top: 8px;
-}
-.line-through {
-  text-decoration: line-through;
-  opacity: 0.5;
-}
-.quick-actions {
+.tl-item {
   display: flex;
+  gap: 10px;
+  min-height: 64px;
+}
+
+/* 竖直时间线 */
+.tl-line {
+  width: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 6px;
+}
+.tl-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  z-index: 1;
+}
+.dot-none {
+  background: var(--van-gray-4);
+}
+.dot-overdue {
+  background: #ee0a24;
+}
+.dot-today {
+  background: #1989fa;
+}
+.dot-future {
+  background: var(--van-gray-5);
+}
+.tl-bar {
+  width: 2px;
+  flex: 1;
+  background: var(--van-gray-2);
+  margin-top: 4px;
+}
+
+/* 卡片 */
+.tl-card {
+  flex: 1;
+  background: white;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+.tl-card-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.tl-label {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.label-none {
+  color: var(--van-gray-5);
+  background: var(--van-gray-1);
+}
+.label-overdue {
+  color: white;
+  background: #ee0a24;
+}
+.label-today {
+  color: white;
+  background: #1989fa;
+}
+.label-future {
+  color: var(--van-gray-6);
+  background: var(--van-gray-1);
+}
+.tl-prio {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.tl-card-body {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 12px 16px;
+}
+.tl-check {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.tl-ck {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--van-gray-4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: white;
+}
+.tl-ck.checked {
+  background: var(--van-green);
+  border-color: var(--van-green);
+}
+.tl-text {
+  font-size: 14px;
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tl-text.done {
+  text-decoration: line-through;
+  color: var(--van-gray-5);
+}
+
+.tl-card-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+.tl-meta-item {
+  color: var(--van-gray-5);
+}
+.tl-meta-item.warn {
+  color: var(--van-orange);
+}
+.tl-meta-item.warn.clickable {
+  cursor: pointer;
+  font-weight: 500;
+}
+.tl-meta-item.ok {
+  color: var(--van-green);
 }
 </style>
 

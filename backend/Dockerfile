@@ -28,7 +28,7 @@ RUN addgroup -g 1001 appgroup && \
 WORKDIR /app
 COPY --from=build /build/app.jar ./app.jar
 
-RUN mkdir -p /app/logs && chown -R appuser:appgroup /app
+RUN mkdir -p /logs && chown -R appuser:appgroup /app /logs
 
 USER appuser
 

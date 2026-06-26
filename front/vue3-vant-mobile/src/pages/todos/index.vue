@@ -1,145 +1,206 @@
 <script setup lang="ts">
-import { showConfirmDialog, showNotify } from 'vant'
-import { createTodo, deleteTodo, fetchTodos, updateTodo } from '@/api/modules/todos'
-import type { TodoItem } from '@/api/modules/todos'
+import { showConfirmDialog, showNotify, showToast } from 'vant'
+import { useTodoStore } from '@/stores/modules/todo'
+import { useUserStore } from '@/stores'
+import { fetchTemplates } from '@/api/modules/ack-templates'
+import { acknowledgeTodo, updateTodo } from '@/api/modules/todos'
+import TodoForm from '@/components/TodoForm.vue'
 
-const { t } = useI18n()
+const todoStore = useTodoStore()
+const userStore = useUserStore()
 
-const todos = ref<TodoItem[]>([])
-const loading = ref(false)
-const showAdd = ref(false)
-const editingTodo = ref<Partial<TodoItem>>({})
-const filterCompleted = ref<boolean | undefined>(undefined)
+const activeFilter = ref(0)
+const showFilterCalendar = ref(false)
+const dateRange = ref<[string, string]>(['', ''])
+const showForm = ref(false)
+const showEdit = ref(false)
+const editId = ref('')
+const expandedId = ref<string | null>(null)
+const editInitial = ref<{ title: string, description?: string, priority: string, dueDate?: string } | undefined>(undefined)
 
-async function loadTodos() {
-  loading.value = true
+const filters = ['全部', '进行中', '已完成']
+
+watch(activeFilter, (v) => {
+  const params: { isCompleted?: boolean, startDueDate?: string, endDueDate?: string } = {}
+  if (v === 1)
+    params.isCompleted = false
+  else if (v === 2)
+    params.isCompleted = true
+  if (dateRange.value[0])
+    params.startDueDate = dateRange.value[0]
+  if (dateRange.value[1])
+    params.endDueDate = dateRange.value[1]
+  todoStore.setFilter(params)
+})
+
+function onSelectDateRange() { showFilterCalendar.value = true }
+
+function onDateConfirm(dates: [Date, Date]) {
+  dateRange.value = [
+    `${dates[0]!.getFullYear()}-${String(dates[0]!.getMonth() + 1).padStart(2, '0')}-${String(dates[0]!.getDate()).padStart(2, '0')}`,
+    `${dates[1]!.getFullYear()}-${String(dates[1]!.getMonth() + 1).padStart(2, '0')}-${String(dates[1]!.getDate()).padStart(2, '0')}`,
+  ]
+  showFilterCalendar.value = false
+  activeFilter.value = activeFilter.value
+}
+
+async function onToggle(todo: { id: string }) { await todoStore.toggleComplete(todo.id) }
+
+async function onDelete(todo: { id: string, title: string }) {
   try {
-    const res = await fetchTodos({ is_completed: filterCompleted.value })
-    todos.value = Array.isArray(res) ? res : []
+    await showConfirmDialog({ title: '删除待办', message: `确定删除「${todo.title}」吗？` })
+    await todoStore.remove(todo.id)
+    showToast('已删除')
   }
-  finally {
-    loading.value = false
-  }
+  catch { /* cancelled */ }
 }
 
-async function onSave() {
-  if (editingTodo.value.id) {
-    await updateTodo(editingTodo.value.id, editingTodo.value)
-  }
-  else {
-    await createTodo(editingTodo.value)
-  }
-  showAdd.value = false
-  editingTodo.value = {}
-  showNotify({ type: 'success', message: '已保存' })
-  await loadTodos()
+function openCreate() {
+  showForm.value = true
 }
 
-async function toggleComplete(todo: TodoItem) {
-  await updateTodo(todo.id, { is_completed: !todo.is_completed })
-  await loadTodos()
+function onCreate(data: { title: string, description?: string, priority: string, dueDate?: string, assignedTo?: string }) {
+  todoStore.create(data)
+  showToast('已创建')
+  showForm.value = false
 }
 
-async function onDelete(id: string) {
+function openEdit(todo: any) {
+  editId.value = todo.id
+  editInitial.value = { title: todo.title, description: todo.description || '', priority: todo.priority, dueDate: todo.dueDate || '' }
+  showEdit.value = true
+}
+
+async function onEdit(data: { title: string, description?: string, priority: string, dueDate?: string, assignedTo?: string }) {
+  await updateTodo(editId.value, data)
+  showToast('已更新')
+  showEdit.value = false
+  await todoStore.loadTodos()
+}
+
+const ACTIVE_TEMPLATE_KEY = 'life_assistant_active_ack_template'
+
+async function onAcknowledge(todo: any) {
   try {
-    await showConfirmDialog({ title: t('todos.confirmDelete') })
-    await deleteTodo(id)
-    await loadTodos()
+    const res = await fetchTemplates()
+    const templates = res.data ?? []
+    const activeId = localStorage.getItem(ACTIVE_TEMPLATE_KEY)
+    const active = activeId ? templates.find(t => t.id === activeId) : undefined
+    const message = active?.content ?? templates[0]?.content ?? '收到'
+    await acknowledgeTodo(todo.id, message)
+    showNotify({ type: 'success', message: `已确认：${message}` })
+    await todoStore.loadTodos()
   }
-  catch {}
+  catch { showNotify({ type: 'danger', message: '确认失败' }) }
 }
 
-function openNew() {
-  editingTodo.value = { is_completed: false, priority: 'medium' }
-  showAdd.value = true
+function formatDate(iso: string | null | undefined): string { return iso ? iso.slice(0, 10) : '' }
+
+function priorityColor(p: string): string {
+  const map: Record<string, string> = { low: '#999', medium: '#1989fa', high: '#ff976a', urgent: '#ee0a24' }
+  return map[p] || '#999'
 }
 
-const todayTodos = computed(() => todos.value.filter(t => !t.is_completed && t.due_date && new Date(t.due_date) <= new Date()))
-const upcomingTodos = computed(() => todos.value.filter(t => !t.is_completed && (!t.due_date || new Date(t.due_date) > new Date())))
-const doneTodos = computed(() => todos.value.filter(t => t.is_completed))
+const partnerId = computed(() => userStore.userInfo.partnerId)
 
-onMounted(loadTodos)
+function toggleExpand(id: string) { expandedId.value = expandedId.value === id ? null : id }
+
+todoStore.loadTodos()
 </script>
 
 <template>
   <div class="todos-page">
-    <van-sticky>
-      <div class="header-bar">
-        <span class="title">待办</span>
-        <van-button icon="plus" type="primary" size="small" @click="openNew">
-          新建
-        </van-button>
+    <div class="filter-bar">
+      <van-tabs v-model:active="activeFilter" shrink>
+        <van-tab v-for="(f, i) in filters" :key="i" :title="f" />
+      </van-tabs>
+      <div class="date-filter" @click="onSelectDateRange">
+        <van-icon name="calendar-o" />
+        <span v-if="!dateRange[0]">日期</span>
+        <span v-else>{{ dateRange[0] }} ~ {{ dateRange[1] }}</span>
       </div>
-    </van-sticky>
+    </div>
 
-    <van-pull-refresh v-model="loading" @refresh="loadTodos">
-      <!-- Today -->
-      <van-cell-group title="今天" :border="false">
-        <van-cell v-for="todo in todayTodos" :key="todo.id">
-          <template #title>
-            <span>{{ todo.title }}</span>
-            <van-tag v-if="todo.priority === 'urgent'" type="danger" :size="'mini' as any" class="tag">
-              紧急
-            </van-tag>
-          </template>
-          <template #right-icon>
-            <van-checkbox :model-value="todo.is_completed" @click="toggleComplete(todo)" />
-          </template>
-        </van-cell>
-        <van-cell v-if="todayTodos.length === 0" title="暂无待办" />
-      </van-cell-group>
+    <van-pull-refresh v-model="todoStore.loading" @refresh="todoStore.loadTodos">
+      <van-list :finished="true" finished-text="没有更多了">
+        <div v-if="todoStore.todos.length === 0" class="empty-state">
+          <van-icon name="todo-list-o" size="48" color="var(--van-gray-4)" />
+          <p>暂无待办</p>
+        </div>
+        <div
+          v-for="todo in todoStore.todos"
+          :key="todo.id"
+          class="todo-item" :class="[
+            { 'todo-to-me': todo.assignedTo === userStore.userInfo.id, 'todo-to-partner': todo.assignedTo && todo.userId === userStore.userInfo.id && todo.assignedTo !== userStore.userInfo.id },
+          ]"
+        >
+          <van-swipe-cell>
+            <div class="todo-main">
+              <div class="todo-row" @click="toggleExpand(todo.id)">
+                <div class="todo-checkbox-wrap" @click.stop="onToggle(todo)">
+                  <div class="todo-checkbox" :class="[{ checked: todo.isCompleted }]">
+                    <van-icon v-if="todo.isCompleted" name="success" />
+                  </div>
+                </div>
+                <span class="priority-dot" :style="{ background: priorityColor(todo.priority) }" />
+                <div class="todo-body">
+                  <div class="todo-title-row">
+                    <span class="todo-title" :class="[{ completed: todo.isCompleted }]">{{ todo.title }}</span>
+                    <span v-if="todo.ackStatus === 'unconfirmed'" class="ack-badge ack-pending">待确认</span>
+                    <span v-if="todo.ackStatus === 'confirmed'" class="ack-badge ack-done">✓ {{ todo.ackMessage }}</span>
+                  </div>
+                  <div class="todo-meta-row">
+                    <span v-if="todo.dueDate" class="meta-item"><van-icon name="clock-o" /> {{ formatDate(todo.dueDate) }}</span>
+                    <span v-if="todo.assignedTo && todo.assignedTo === userStore.userInfo.id" class="meta-item">来自 {{ userStore.partnerName }}</span>
+                    <span v-if="todo.assignedTo && todo.userId === userStore.userInfo.id && todo.assignedTo !== userStore.userInfo.id" class="meta-item">交给 {{ userStore.partnerName }}</span>
+                  </div>
+                </div>
+                <van-icon name="arrow" class="expand-arrow" :class="[{ expanded: expandedId === todo.id }]" />
+              </div>
 
-      <!-- Upcoming -->
-      <van-cell-group title="即将" :border="false">
-        <van-cell v-for="todo in upcomingTodos" :key="todo.id">
-          <template #title>
-            <span>{{ todo.title }}</span>
-            <span v-if="todo.due_date" class="due">{{ new Date(todo.due_date).toLocaleDateString('zh-CN') }}</span>
-          </template>
-          <template #right-icon>
-            <van-checkbox :model-value="todo.is_completed" @click="toggleComplete(todo)" />
-          </template>
-        </van-cell>
-        <van-cell v-if="upcomingTodos.length === 0" title="暂无待办" />
-      </van-cell-group>
-
-      <!-- Done -->
-      <van-cell-group title="已完成" :border="false">
-        <van-cell v-for="todo in doneTodos" :key="todo.id">
-          <template #title>
-            <span class="done-text">{{ todo.title }}</span>
-          </template>
-          <template #right-icon>
-            <van-icon name="delete" @click="onDelete(todo.id)" />
-          </template>
-        </van-cell>
-      </van-cell-group>
+              <div v-if="expandedId === todo.id" class="todo-detail">
+                <p v-if="todo.description" class="detail-desc">
+                  {{ todo.description }}
+                </p>
+                <div class="detail-meta">
+                  <span v-if="todo.assignedTo && todo.userId === userStore.userInfo.id && todo.assignedTo !== userStore.userInfo.id">交给 {{ userStore.partnerName }}</span>
+                  <span v-if="todo.assignedTo && todo.assignedTo === userStore.userInfo.id">来自 {{ userStore.partnerName }}</span>
+                  <span v-if="todo.ackStatus === 'confirmed' && todo.ackMessage">回复：{{ todo.ackMessage }}</span>
+                </div>
+                <div class="detail-actions">
+                  <van-button size="small" plain type="primary" @click="openEdit(todo)">
+                    编辑
+                  </van-button>
+                  <van-button v-if="todo.ackStatus === 'unconfirmed' && todo.assignedTo === userStore.userInfo.id" size="small" type="primary" @click="onAcknowledge(todo)">
+                    确认收到
+                  </van-button>
+                  <van-button size="small" plain type="danger" @click="onDelete(todo)">
+                    删除
+                  </van-button>
+                </div>
+              </div>
+            </div>
+            <template #right>
+              <van-button square type="danger" text="删除" @click="onDelete(todo)" />
+            </template>
+          </van-swipe-cell>
+        </div>
+      </van-list>
     </van-pull-refresh>
 
-    <!-- Add Dialog -->
-    <van-dialog v-model:show="showAdd" title="新建待办" show-cancel-button @confirm="onSave">
-      <van-form>
-        <van-field v-model="editingTodo.title" label="标题" required />
-        <van-field name="priority" label="优先级">
-          <template #input>
-            <van-radio-group v-model="editingTodo.priority" direction="horizontal">
-              <van-radio name="low">
-                低
-              </van-radio>
-              <van-radio name="medium">
-                中
-              </van-radio>
-              <van-radio name="high">
-                高
-              </van-radio>
-              <van-radio name="urgent">
-                紧急
-              </van-radio>
-            </van-radio-group>
-          </template>
-        </van-field>
-      </van-form>
-    </van-dialog>
+    <div class="fab" @click="openCreate">
+      <van-button round type="primary" icon="plus" />
+    </div>
+
+    <van-calendar v-model:show="showFilterCalendar" type="range" @confirm="onDateConfirm" />
+
+    <van-action-sheet v-model:show="showForm" title="添加待办" close-on-popup-safe>
+      <TodoForm :key="`create-${showForm}`" :show-assign="partnerId" @save="onCreate" />
+    </van-action-sheet>
+
+    <van-action-sheet v-model:show="showEdit" title="编辑待办" close-on-popup-safe>
+      <TodoForm v-if="editInitial" :key="`edit-${editId}`" :initial="editInitial" @save="onEdit" />
+    </van-action-sheet>
   </div>
 </template>
 
@@ -147,28 +208,167 @@ onMounted(loadTodos)
 .todos-page {
   min-height: 100vh;
 }
-.header-bar {
+.filter-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 8px 16px;
-  background: var(--van-background-2);
+  padding: 0 12px;
+  background: white;
 }
-.title {
-  font-size: 16px;
-  font-weight: 600;
+.filter-bar .van-tabs {
+  flex: 1;
 }
-.tag {
-  margin-left: 6px;
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--van-gray-6);
+  padding: 8px 12px;
+  white-space: nowrap;
+  cursor: pointer;
 }
-.done-text {
+.todo-item {
+  background: white;
+  margin: 1px 0;
+}
+.todo-to-me {
+  border-left: 4px solid #1989fa;
+}
+.todo-to-partner {
+  border-left: 4px solid #ff976a;
+}
+.todo-main {
+  padding: 0 16px;
+}
+.todo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  cursor: pointer;
+  min-height: 44px;
+}
+.todo-checkbox-wrap {
+  flex-shrink: 0;
+}
+.todo-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--van-gray-4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.todo-checkbox.checked {
+  background: var(--van-green);
+  border-color: var(--van-green);
+  color: white;
+}
+.priority-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+  align-self: flex-start;
+}
+.todo-body {
+  flex: 1;
+  min-width: 0;
+}
+.todo-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.todo-title {
+  font-size: 15px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.todo-title.completed {
   text-decoration: line-through;
-  opacity: 0.5;
+  color: var(--van-gray-5);
 }
-.due {
-  margin-left: 8px;
+.ack-badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.ack-pending {
+  background: #fff3e0;
+  color: #e65100;
+}
+.ack-done {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.todo-meta-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 3px;
   font-size: 12px;
   color: var(--van-gray-5);
+  flex-wrap: wrap;
+}
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.meta-item .van-icon {
+  font-size: 11px;
+}
+.expand-arrow {
+  font-size: 14px;
+  color: var(--van-gray-5);
+  transition: transform 0.2s;
+}
+.expand-arrow.expanded {
+  transform: rotate(90deg);
+}
+.todo-detail {
+  padding: 0 0 12px 38px;
+  border-bottom: 1px solid var(--van-gray-2);
+}
+.detail-desc {
+  font-size: 13px;
+  color: var(--van-gray-6);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+.detail-meta {
+  font-size: 12px;
+  color: var(--van-gray-5);
+  margin-bottom: 10px;
+}
+.detail-actions {
+  display: flex;
+  gap: 10px;
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+  gap: 12px;
+  color: var(--van-gray-5);
+  font-size: 14px;
+}
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: 70px;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 50%;
 }
 </style>
 

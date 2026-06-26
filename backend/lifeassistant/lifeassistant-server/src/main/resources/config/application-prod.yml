@@ -1,6 +1,6 @@
 --- ### 应用配置
 application:
-  url: https://app.lifeassistant.local
+  url: ${FRONTEND_HOST}
   production: true
 
 --- ### 服务器配置
@@ -100,6 +100,7 @@ continew-starter.captcha:
 --- ### Sa-Token 扩展配置
 sa-token.extension:
   security.excludes:
+    - /actuator/health
     - /error
     - /*.html
     - /*/*.html
@@ -107,6 +108,7 @@ sa-token.extension:
     - /*/*.js
     - /websocket/**
     - /file/**
+    - /api/v1/auth/**
     - /api/v1/login/**
     - /api/v1/users/signup
     - /api/v1/password-recovery/**
