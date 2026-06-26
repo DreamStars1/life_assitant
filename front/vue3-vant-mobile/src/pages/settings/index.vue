@@ -5,6 +5,8 @@ import { useUserStore } from '@/stores'
 import { version } from '~root/package.json'
 import { createTemplate, deleteTemplate, fetchTemplates, updateTemplate } from '@/api/modules/ack-templates'
 import type { AckTemplate } from '@/api/modules/ack-templates'
+import { createApiToken, deleteApiToken, fetchApiTokens } from '@/api/modules/api-tokens'
+import type { ApiToken } from '@/api/modules/api-tokens'
 
 const { t } = useI18n()
 const userStore = useUserStore()
@@ -106,12 +108,72 @@ async function onDelete(t: AckTemplate) {
   }
   catch { /* cancelled */ }
 }
+
+// API 令牌管理
+const showApiTokens = ref(false)
+const apiTokens = ref<ApiToken[]>([])
+const apiTokensLoading = ref(false)
+const showAddTokenDialog = ref(false)
+const newTokenName = ref('')
+
+async function loadApiTokens() {
+  apiTokensLoading.value = true
+  try {
+    const res = await fetchApiTokens()
+    apiTokens.value = res.data ?? []
+  } finally {
+    apiTokensLoading.value = false
+  }
+}
+
+function openApiTokenManager() {
+  loadApiTokens()
+  showApiTokens.value = true
+}
+
+async function onCreateApiToken() {
+  if (!newTokenName.value.trim()) return
+  try {
+    const res = await createApiToken({ name: newTokenName.value.trim() })
+    const token = res.data!
+    showAddTokenDialog.value = false
+    newTokenName.value = ''
+    // 用 showDialog 展示完整 token（仅一次）
+    const { showDialog } = await import('vant')
+    showDialog({
+      title: 'API 令牌创建成功',
+      message: `请立即复制此令牌，关闭后将无法再次查看完整令牌：\n\n${token.fullToken}`,
+      confirmButtonText: '已复制，关闭',
+    }).then(() => {
+      loadApiTokens()
+    })
+  } catch {
+    showNotify({ type: 'danger', message: '创建失败' })
+  }
+}
+
+async function onRevokeApiToken(t: ApiToken) {
+  try {
+    await showConfirmDialog({ title: '撤销令牌', message: `确定撤销「${t.name}」吗？撤销后该令牌将立即失效。` })
+    await deleteApiToken(t.id)
+    showToast('已撤销')
+    await loadApiTokens()
+  } catch { /* cancelled */ }
+}
+
+function formatDate(dateStr: string) {
+  return dateStr ? dateStr.substring(0, 10) : ''
+}
 </script>
 
 <template>
   <div>
     <van-cell-group :inset="true" class="!mt-4">
       <van-cell title="确认回复模板" is-link clickable @click="openTemplateManager" />
+    </van-cell-group>
+
+    <van-cell-group :inset="true" class="!mt-4">
+      <van-cell title="API 令牌" is-link clickable @click="openApiTokenManager" />
     </van-cell-group>
 
     <van-cell-group :inset="true" class="!mt-4">
@@ -168,6 +230,40 @@ async function onDelete(t: AckTemplate) {
     <!-- 编辑弹窗 -->
     <van-dialog v-model:show="showEditDialog" title="编辑模板" show-cancel-button @confirm="onSaveEdit">
       <van-field v-model="editContent" placeholder="请输入确认文案" maxlength="100" autofocus clearable />
+    </van-dialog>
+    <!-- API 令牌管理弹窗 -->
+    <van-popup v-model:show="showApiTokens" position="bottom" round title="API 令牌" style="max-height: 70vh;">
+      <div class="template-popup">
+        <div class="template-popup-header">
+          <span class="template-popup-title">API 令牌</span>
+          <van-button size="small" round icon="plus" type="primary" @click="showAddTokenDialog = true">
+            新建
+          </van-button>
+        </div>
+        <div v-if="apiTokensLoading" class="template-popup-loading">
+          <van-loading />
+        </div>
+        <div v-else-if="apiTokens.length === 0" class="template-popup-empty">
+          暂无 API 令牌，点击右上角新建
+        </div>
+        <div v-else class="template-popup-list">
+          <div v-for="t in apiTokens" :key="t.id" class="template-popup-item">
+            <div style="flex: 1">
+              <div style="font-size: 14px; font-weight: 500;">{{ t.name }}</div>
+              <div style="font-size: 12px; color: var(--van-gray-5); margin-top: 2px;">
+                {{ t.tokenPrefix }}
+                <span v-if="t.lastUsedAt"> · 最后使用: {{ formatDate(t.lastUsedAt) }}</span>
+              </div>
+            </div>
+            <van-icon name="delete" @click="onRevokeApiToken(t)" />
+          </div>
+        </div>
+      </div>
+    </van-popup>
+
+    <!-- 新建 Token 弹窗 -->
+    <van-dialog v-model:show="showAddTokenDialog" title="新建 API 令牌" show-cancel-button @confirm="onCreateApiToken">
+      <van-field v-model="newTokenName" placeholder="请输入令牌名称（如: Claude 桌面端）" maxlength="50" autofocus clearable />
     </van-dialog>
   </div>
 </template>
