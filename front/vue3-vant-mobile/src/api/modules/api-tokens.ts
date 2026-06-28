@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import type { ApiResponse } from '@/types/api'
 
 export interface ApiToken {
   id: string
@@ -18,12 +19,12 @@ export interface ApiTokenCreateReq {
 
 /** 创建 API Token */
 export function createApiToken(data: ApiTokenCreateReq) {
-  return request.post<ApiToken>('/api-tokens', data)
+  return request.post<ApiResponse<ApiToken>>('/api-tokens', data)
 }
 
 /** 获取 API Token 列表 */
 export function fetchApiTokens() {
-  return request.get<ApiToken[]>('/api-tokens')
+  return request.get<ApiResponse<ApiToken[]>>('/api-tokens')
 }
 
 /** 撤销 API Token */

@@ -115,6 +115,66 @@ const apiTokens = ref<ApiToken[]>([])
 const apiTokensLoading = ref(false)
 const showAddTokenDialog = ref(false)
 const newTokenName = ref('')
+const apiTokenTabActive = ref(0)
+
+const configTemplates = [
+  {
+    title: 'Cursor (.cursor/mcp.json)',
+    code: `{
+  "mcpServers": {
+    "life-assistant": {
+      "type": "sse",
+      "url": "https://mcp.life-assitant.top/sse",
+      "headers": {
+        "Authorization": "Bearer la_xxx"
+      }
+    }
+  }
+}`,
+  },
+  {
+    title: 'Claude Desktop (via mcp-remote)',
+    code: `{
+  "mcpServers": {
+    "life-assistant": {
+      "command": "npx",
+      "args": [
+        "mcp-remote@latest",
+        "--sse", "https://mcp.life-assitant.top",
+        "--header", "Authorization: Bearer la_xxx"
+      ]
+    }
+  }
+}`,
+  },
+  {
+    title: 'Claude Code CLI',
+    code: `claude mcp add life-assistant --transport sse https://mcp.life-assitant.top/sse --header "Authorization: Bearer la_xxx"`,
+  },
+  {
+    title: 'Workbuddy (CodeBuddy)',
+    code: `{
+  "mcpServers": {
+    "life-assistant": {
+      "type": "sse",
+      "url": "https://mcp.life-assitant.top/sse",
+      "headers": {
+        "Authorization": "Bearer la_xxx"
+      }
+    }
+  }
+}`,
+  },
+]
+
+async function copyTemplate(code: string, title: string) {
+  try {
+    await navigator.clipboard.writeText(code)
+    showToast(`已复制: ${title}`)
+  } catch {
+    showNotify({ type: 'danger', message: '复制失败，请手动复制' })
+  }
+}
 
 async function loadApiTokens() {
   apiTokensLoading.value = true
@@ -232,33 +292,61 @@ function formatDate(dateStr: string) {
       <van-field v-model="editContent" placeholder="请输入确认文案" maxlength="100" autofocus clearable />
     </van-dialog>
     <!-- API 令牌管理弹窗 -->
-    <van-popup v-model:show="showApiTokens" position="bottom" round title="API 令牌" style="max-height: 70vh;">
-      <div class="template-popup">
-        <div class="template-popup-header">
-          <span class="template-popup-title">API 令牌</span>
-          <van-button size="small" round icon="plus" type="primary" @click="showAddTokenDialog = true">
-            新建
-          </van-button>
-        </div>
-        <div v-if="apiTokensLoading" class="template-popup-loading">
-          <van-loading />
-        </div>
-        <div v-else-if="apiTokens.length === 0" class="template-popup-empty">
-          暂无 API 令牌，点击右上角新建
-        </div>
-        <div v-else class="template-popup-list">
-          <div v-for="t in apiTokens" :key="t.id" class="template-popup-item">
-            <div style="flex: 1">
-              <div style="font-size: 14px; font-weight: 500;">{{ t.name }}</div>
-              <div style="font-size: 12px; color: var(--van-gray-5); margin-top: 2px;">
-                {{ t.tokenPrefix }}
-                <span v-if="t.lastUsedAt"> · 最后使用: {{ formatDate(t.lastUsedAt) }}</span>
+    <van-popup v-model:show="showApiTokens" position="bottom" round title="API 令牌" style="max-height: 75vh;">
+      <van-tabs v-model:active="apiTokenTabActive">
+        <van-tab title="令牌管理">
+          <div class="template-popup">
+            <div class="template-popup-header">
+              <span class="template-popup-title">API 令牌</span>
+              <van-button size="small" round icon="plus" type="primary" @click="showAddTokenDialog = true">
+                新建
+              </van-button>
+            </div>
+            <div v-if="apiTokensLoading" class="template-popup-loading">
+              <van-loading />
+            </div>
+            <div v-else-if="apiTokens.length === 0" class="template-popup-empty">
+              暂无 API 令牌，点击右上角新建
+            </div>
+            <div v-else class="template-popup-list">
+              <div v-for="t in apiTokens" :key="t.id" class="template-popup-item">
+                <div style="flex: 1">
+                  <div style="font-size: 14px; font-weight: 500;">{{ t.name }}</div>
+                  <div style="font-size: 12px; color: var(--van-gray-5); margin-top: 2px;">
+                    {{ t.tokenPrefix }}
+                    <span v-if="t.lastUsedAt"> · 最后使用: {{ formatDate(t.lastUsedAt) }}</span>
+                  </div>
+                </div>
+                <van-icon name="delete" @click="onRevokeApiToken(t)" />
               </div>
             </div>
-            <van-icon name="delete" @click="onRevokeApiToken(t)" />
           </div>
-        </div>
-      </div>
+        </van-tab>
+        <van-tab title="使用指引">
+          <div class="guide-popup">
+            <p class="guide-desc">
+              API 令牌用于通过 MCP 协议在外部 AI 客户端中调用待办和共享记录功能。
+            </p>
+            <p class="guide-desc" style="margin-bottom: 16px;">
+              MCP 服务地址：<code class="guide-code">https://mcp.life-assitant.top</code>
+            </p>
+
+            <div v-for="(tmpl, idx) in configTemplates" :key="idx" class="guide-block">
+              <div class="guide-block-header">
+                <span class="guide-block-title">{{ tmpl.title }}</span>
+                <van-button size="mini" plain type="primary" @click="copyTemplate(tmpl.code, tmpl.title)">
+                  复制
+                </van-button>
+              </div>
+              <pre class="guide-block-code">{{ tmpl.code }}</pre>
+            </div>
+
+            <p class="guide-note">
+              注意：模板中的 <code class="guide-code">la_xxx</code> 为占位符，请替换为你在「令牌管理」中创建的完整 API 令牌。
+            </p>
+          </div>
+        </van-tab>
+      </van-tabs>
     </van-popup>
 
     <!-- 新建 Token 弹窗 -->
@@ -331,6 +419,57 @@ function formatDate(dateStr: string) {
   color: var(--van-gray-5);
   font-size: 12px;
   padding: 8px 0;
+}
+.guide-popup {
+  padding: 16px;
+}
+.guide-desc {
+  font-size: 13px;
+  color: var(--van-gray-6);
+  line-height: 1.6;
+  margin: 0 0 8px 0;
+}
+.guide-code {
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.guide-block {
+  margin-bottom: 14px;
+  border: 1px solid var(--van-gray-3);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.guide-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--van-gray-1);
+  border-bottom: 1px solid var(--van-gray-3);
+}
+.guide-block-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+.guide-block-code {
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 12px;
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre;
+  background: #fafafa;
+}
+.guide-note {
+  font-size: 12px;
+  color: var(--van-orange);
+  line-height: 1.5;
+  margin: 16px 0 0 0;
+  padding: 8px 12px;
+  background: #fff8e1;
+  border-radius: 6px;
 }
 </style>
 
