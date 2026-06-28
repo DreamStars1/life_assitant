@@ -27,7 +27,7 @@ public class MyBatisPlusMetaObjectHandler implements MetaObjectHandler {
             strictInsertFill(metaObject, "createBy", String.class, loginId);
             strictInsertFill(metaObject, "updateBy", String.class, loginId);
         } catch (Exception e) {
-            // ponytail: 注册等无登录上下文的场景，不填充 createBy/updateBy
+            // ponytail: 注册等无登录上下文的场景，不填充
         }
     }
 
