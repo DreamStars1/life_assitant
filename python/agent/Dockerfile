@@ -9,7 +9,7 @@ RUN pip install build && python -m build
 FROM python:3.12-alpine
 
 RUN addgroup -g 1001 appgroup && \
-    adduser -u 1001 -G appgroup -s /bin/sh -D appuser
+    adduser -u 1001 -G appgroup -s /sbin/nologin -D appuser
 
 WORKDIR /app
 COPY --from=build /build/dist/*.whl ./
