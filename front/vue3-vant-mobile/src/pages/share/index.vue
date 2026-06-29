@@ -97,15 +97,19 @@ async function loadRecords(reset = false) {
     hasMore.value = true
   }
   if (!hasMore.value) return
-  const params: Record<string, unknown> = { page: currentPage.value, size: pageSize.value }
-  if (searchKeyword.value.trim()) params.keyword = searchKeyword.value.trim()
-  if (filterStart.value) params.start = filterStart.value
-  if (filterEnd.value) params.end = filterEnd.value
-  const res = await fetchSharedRecords(params)
-  const data = res.data ?? { records: [] as SharedRecordItem[], pages: 0 }
-  records.value.push(...data.records)
-  hasMore.value = currentPage.value < data.pages
-  currentPage.value++
+  try {
+    const params: Record<string, unknown> = { page: currentPage.value, size: pageSize.value }
+    if (searchKeyword.value.trim()) params.keyword = searchKeyword.value.trim()
+    if (filterStart.value) params.start = filterStart.value
+    if (filterEnd.value) params.end = filterEnd.value
+    const res = await fetchSharedRecords(params)
+    const data = res.data ?? { records: [] as SharedRecordItem[], pages: 0 }
+    records.value.push(...data.records)
+    hasMore.value = currentPage.value < data.pages
+    currentPage.value++
+  } catch {
+    showToast('加载失败')
+  }
 }
 
 function onLoadMore() {
@@ -165,7 +169,7 @@ function cancelEdit() {
 }
 
 async function saveEdit(r: SharedRecordItem) {
-  if (!editForm.title.trim()) return
+  if (!editForm.title.trim()) { showToast('请输入标题'); return }
   await updateSharedRecord(r.id, {
     title: editForm.title,
     content: editForm.content || undefined,
@@ -190,7 +194,7 @@ function cancelCreate() {
 }
 
 async function saveCreate() {
-  if (!createForm.title.trim()) return
+  if (!createForm.title.trim()) { showToast('请输入标题'); return }
   await createSharedRecord({
     title: createForm.title,
     content: createForm.content || undefined,
@@ -313,7 +317,7 @@ watch(partnerId, (val) => {
         </van-cell-group>
 
         <!-- 页面大小切换 -->
-        <div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:12px;font-size:12px;color:var(--van-gray-5);cursor:pointer" @click="showPageSize = true">
+        <div class="page-size-trigger" @click="showPageSize = true">
           每页 {{ pageSize }} 条 <van-icon name="arrow-down" />
         </div>
       </van-list>
@@ -348,6 +352,16 @@ watch(partnerId, (val) => {
 <style scoped>
 .edit-card {
   background: #f7f8fa;
+}
+.page-size-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px;
+  font-size: 12px;
+  color: var(--van-gray-5);
+  cursor: pointer;
 }
 </style>
 
