@@ -17,14 +17,11 @@ const showEdit = ref(false)
 const editId = ref('')
 const expandedId = ref<string | null>(null)
 const editInitial = ref<{ title: string, description?: string, priority: string, dueDate?: string } | undefined>(undefined)
-
-const listLoading = ref(true)
 const showPageSize = ref(false)
 
 const filters = ['全部', '进行中', '已完成']
 
 watch(activeFilter, async (v) => {
-  listLoading.value = true
   const params: { isCompleted?: boolean, startDueDate?: string, endDueDate?: string } = {}
   if (v === 1)
     params.isCompleted = false
@@ -35,7 +32,6 @@ watch(activeFilter, async (v) => {
   if (dateRange.value[1])
     params.endDueDate = dateRange.value[1]
   await todoStore.setFilter(params)
-  listLoading.value = false
 })
 
 function onSelectDateRange() { showFilterCalendar.value = true }
@@ -77,23 +73,19 @@ function openEdit(todo: any) {
 }
 
 async function onEdit(data: { title: string, description?: string, priority: string, dueDate?: string, assignedTo?: string }) {
-  listLoading.value = true
   try {
     await updateTodo(editId.value, data)
     showToast('已更新')
     showEdit.value = false
-    await todoStore.loadTodos(true)
+    await todoStore.loadTodos()
   } catch {
     showToast('更新失败')
-  } finally {
-    listLoading.value = false
   }
 }
 
 const ACTIVE_TEMPLATE_KEY = 'life_assistant_active_ack_template'
 
 async function onAcknowledge(todo: any) {
-  listLoading.value = true
   try {
     const res = await fetchTemplates()
     const templates = res.data ?? []
@@ -102,10 +94,9 @@ async function onAcknowledge(todo: any) {
     const message = active?.content ?? templates[0]?.content ?? '收到'
     await acknowledgeTodo(todo.id, message)
     showNotify({ type: 'success', message: `已确认：${message}` })
-    await todoStore.loadTodos(true)
+    await todoStore.loadTodos()
   }
   catch { showNotify({ type: 'danger', message: '确认失败' }) }
-  finally { listLoading.value = false }
 }
 
 function formatDate(iso: string | null | undefined): string { return iso ? iso.slice(0, 10) : '' }
@@ -119,28 +110,20 @@ const partnerId = computed(() => userStore.userInfo.partnerId)
 
 function toggleExpand(id: string) { expandedId.value = expandedId.value === id ? null : id }
 
-async function onRefresh() {
-  listLoading.value = true
-  await todoStore.loadTodos(true)
-  listLoading.value = false
-}
-
-async function onLoadMore() {
-  listLoading.value = true
-  await todoStore.loadTodos(false)
-  listLoading.value = false
-}
-
 function onPageSizeChange(size: number) {
   showPageSize.value = false
   todoStore.changePageSize(size)
 }
 
-async function loadInitial() {
-  await todoStore.loadTodos(true)
-  listLoading.value = false
+function onPrevPage() {
+  if (todoStore.currentPage > 1) todoStore.goToPage(todoStore.currentPage - 1)
 }
-loadInitial()
+
+function onNextPage() {
+  if (todoStore.currentPage < todoStore.totalPages) todoStore.goToPage(todoStore.currentPage + 1)
+}
+
+todoStore.loadTodos()
 </script>
 
 <template>
@@ -156,81 +139,69 @@ loadInitial()
       </div>
     </div>
 
-    <van-pull-refresh v-model="todoStore.loading" @refresh="onRefresh">
-      <van-list
-        v-model:loading="listLoading"
-        :finished="!todoStore.hasMore"
-        @load="onLoadMore"
-      >
-        <div v-if="todoStore.todos.length === 0" class="empty-state">
-          <van-icon name="todo-list-o" size="48" color="var(--van-gray-4)" />
-          <p>暂无待办</p>
-        </div>
-        <div
-          v-for="todo in todoStore.todos"
-          :key="todo.id"
-          class="todo-item" :class="[
-            { 'todo-to-me': todo.assignedTo === userStore.userInfo.id, 'todo-to-partner': todo.assignedTo && todo.userId === userStore.userInfo.id && todo.assignedTo !== userStore.userInfo.id },
-          ]"
-        >
-          <van-swipe-cell>
-            <div class="todo-main">
-              <div class="todo-row" @click="toggleExpand(todo.id)">
-                <div class="todo-checkbox-wrap" @click.stop="onToggle(todo)">
-                  <div class="todo-checkbox" :class="[{ checked: todo.isCompleted }]">
-                    <van-icon v-if="todo.isCompleted" name="success" />
-                  </div>
-                </div>
-                <span class="priority-dot" :style="{ background: priorityColor(todo.priority) }" />
-                <div class="todo-body">
-                  <div class="todo-title-row">
-                    <span class="todo-title" :class="[{ completed: todo.isCompleted }]">{{ todo.title }}</span>
-                    <span v-if="todo.ackStatus === 'unconfirmed'" class="ack-badge ack-pending">待确认</span>
-                    <span v-if="todo.ackStatus === 'confirmed'" class="ack-badge ack-done">✓ {{ todo.ackMessage }}</span>
-                  </div>
-                  <div class="todo-meta-row">
-                    <span v-if="todo.dueDate" class="meta-item"><van-icon name="clock-o" /> {{ formatDate(todo.dueDate) }}</span>
-                    <span v-if="todo.assignedTo && todo.assignedTo === userStore.userInfo.id" class="meta-item">来自 {{ userStore.partnerName }}</span>
-                    <span v-if="todo.assignedTo && todo.userId === userStore.userInfo.id && todo.assignedTo !== userStore.userInfo.id" class="meta-item">交给 {{ userStore.partnerName }}</span>
-                  </div>
-                </div>
-                <van-icon name="arrow" class="expand-arrow" :class="[{ expanded: expandedId === todo.id }]" />
-              </div>
-
-              <div v-if="expandedId === todo.id" class="todo-detail">
-                <p v-if="todo.description" class="detail-desc">
-                  {{ todo.description }}
-                </p>
-                <div class="detail-meta">
-                  <span v-if="todo.assignedTo && todo.userId === userStore.userInfo.id && todo.assignedTo !== userStore.userInfo.id">交给 {{ userStore.partnerName }}</span>
-                  <span v-if="todo.assignedTo && todo.assignedTo === userStore.userInfo.id">来自 {{ userStore.partnerName }}</span>
-                  <span v-if="todo.ackStatus === 'confirmed' && todo.ackMessage">回复：{{ todo.ackMessage }}</span>
-                </div>
-                <div class="detail-actions">
-                  <van-button size="small" plain type="primary" @click="openEdit(todo)">
-                    编辑
-                  </van-button>
-                  <van-button v-if="todo.ackStatus === 'unconfirmed' && todo.assignedTo === userStore.userInfo.id" size="small" type="primary" @click="onAcknowledge(todo)">
-                    确认收到
-                  </van-button>
-                  <van-button size="small" plain type="danger" @click="onDelete(todo)">
-                    删除
-                  </van-button>
-                </div>
+    <div v-if="todoStore.todos.length === 0" class="empty-state">
+      <van-icon name="todo-list-o" size="48" color="var(--van-gray-4)" />
+      <p>暂无待办</p>
+    </div>
+    <div
+      v-for="todo in todoStore.todos"
+      :key="todo.id"
+      class="todo-item" :class="[
+        { 'todo-to-me': todo.assignedTo === userStore.userInfo.id, 'todo-to-partner': todo.assignedTo && todo.userId === userStore.userInfo.id && todo.assignedTo !== userStore.userInfo.id },
+      ]"
+    >
+      <van-swipe-cell>
+        <div class="todo-main">
+          <div class="todo-row" @click="toggleExpand(todo.id)">
+            <div class="todo-checkbox-wrap" @click.stop="onToggle(todo)">
+              <div class="todo-checkbox" :class="[{ checked: todo.isCompleted }]">
+                <van-icon v-if="todo.isCompleted" name="success" />
               </div>
             </div>
-            <template #right>
-              <van-button square type="danger" text="删除" @click="onDelete(todo)" />
-            </template>
-          </van-swipe-cell>
+            <span class="priority-dot" :style="{ background: priorityColor(todo.priority) }" />
+            <div class="todo-body">
+              <div class="todo-title-row">
+                <span class="todo-title" :class="[{ completed: todo.isCompleted }]">{{ todo.title }}</span>
+                <span v-if="todo.ackStatus === 'unconfirmed'" class="ack-badge ack-pending">待确认</span>
+                <span v-if="todo.ackStatus === 'confirmed'" class="ack-badge ack-done">✓ {{ todo.ackMessage }}</span>
+              </div>
+              <div class="todo-meta-row">
+                <span v-if="todo.dueDate" class="meta-item"><van-icon name="clock-o" /> {{ formatDate(todo.dueDate) }}</span>
+                <span v-if="todo.assignedTo && todo.assignedTo === userStore.userInfo.id" class="meta-item">来自 {{ userStore.partnerName }}</span>
+                <span v-if="todo.assignedTo && todo.userId === userStore.userInfo.id && todo.assignedTo !== userStore.userInfo.id" class="meta-item">交给 {{ userStore.partnerName }}</span>
+              </div>
+            </div>
+            <van-icon name="arrow" class="expand-arrow" :class="[{ expanded: expandedId === todo.id }]" />
+          </div>
+
+          <div v-if="expandedId === todo.id" class="todo-detail">
+            <p v-if="todo.description" class="detail-desc">{{ todo.description }}</p>
+            <div class="detail-meta">
+              <span v-if="todo.assignedTo && todo.userId === userStore.userInfo.id && todo.assignedTo !== userStore.userInfo.id">交给 {{ userStore.partnerName }}</span>
+              <span v-if="todo.assignedTo && todo.assignedTo === userStore.userInfo.id">来自 {{ userStore.partnerName }}</span>
+              <span v-if="todo.ackStatus === 'confirmed' && todo.ackMessage">回复：{{ todo.ackMessage }}</span>
+            </div>
+            <div class="detail-actions">
+              <van-button size="small" plain type="primary" @click="openEdit(todo)">编辑</van-button>
+              <van-button v-if="todo.ackStatus === 'unconfirmed' && todo.assignedTo === userStore.userInfo.id" size="small" type="primary" @click="onAcknowledge(todo)">确认收到</van-button>
+              <van-button size="small" plain type="danger" @click="onDelete(todo)">删除</van-button>
+            </div>
+          </div>
         </div>
+        <template #right>
+          <van-button square type="danger" text="删除" @click="onDelete(todo)" />
+        </template>
+      </van-swipe-cell>
+    </div>
 
-      </van-list>
-
-      <div class="list-footer">
+    <div v-if="todoStore.totalPages > 0" class="pagination">
+      <div class="pagination-inner">
+        <van-button :disabled="todoStore.currentPage <= 1" size="small" plain @click="onPrevPage">上一页</van-button>
+        <span class="page-info">第 {{ todoStore.currentPage }}/{{ todoStore.totalPages }} 页</span>
+        <van-button :disabled="todoStore.currentPage >= todoStore.totalPages" size="small" plain @click="onNextPage">下一页</van-button>
         <span class="page-size-trigger" @click="showPageSize = true">每页 {{ todoStore.pageSize }} 条 <van-icon name="arrow-down" /></span>
       </div>
-    </van-pull-refresh>
+    </div>
 
     <div class="fab" @click="openCreate">
       <van-button round type="primary" icon="plus" />
@@ -410,6 +381,29 @@ loadInitial()
   color: var(--van-gray-5);
   font-size: 14px;
 }
+.pagination {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+.pagination-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.page-info {
+  font-size: 13px;
+  color: var(--van-gray-6);
+  white-space: nowrap;
+}
+.page-size-trigger {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--van-blue);
+  cursor: pointer;
+}
 .fab {
   position: fixed;
   right: 20px;
@@ -417,20 +411,6 @@ loadInitial()
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 50%;
-}
-.page-size-trigger {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--van-blue);
-  cursor: pointer;
-}
-.list-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
 }
 </style>
 

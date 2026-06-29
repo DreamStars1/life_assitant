@@ -71,9 +71,8 @@ function toLocalDateStr(d: Date): string {
 // ---- 分页状态 ----
 const records = ref<SharedRecordItem[]>([])
 const currentPage = ref(1)
-const hasMore = ref(true)
+const totalPages = ref(0)
 const pageSize = ref(5)
-const listLoading = ref(false)
 const showPageSize = ref(false)
 const searchKeyword = ref('')
 
@@ -93,17 +92,7 @@ const showCreateForm = ref(false)
 const createForm = reactive({ title: '', content: '', occurredAt: '' })
 const showCreateCalendar = ref(false)
 
-async function loadRecords(reset = false) {
-  if (reset) {
-    listLoading.value = true
-    currentPage.value = 1
-    records.value = []
-    hasMore.value = true
-  }
-  if (!hasMore.value) {
-    if (reset) listLoading.value = false
-    return
-  }
+async function loadRecords() {
   try {
     const params: Record<string, unknown> = { page: currentPage.value, size: pageSize.value }
     if (searchKeyword.value.trim()) params.keyword = searchKeyword.value.trim()
@@ -111,47 +100,44 @@ async function loadRecords(reset = false) {
     if (filterEnd.value) params.end = filterEnd.value
     const res = await fetchSharedRecords(params)
     const data = res.data ?? { records: [] as SharedRecordItem[], pages: 0 }
-    records.value.push(...data.records)
-    hasMore.value = currentPage.value < data.pages
-    currentPage.value++
+    records.value = data.records
+    totalPages.value = data.pages
   } catch {
     showToast('加载失败')
-  } finally {
-    if (reset) listLoading.value = false
   }
 }
 
-function onLoadMore() {
-  listLoading.value = true
-  loadRecords(false).finally(() => { listLoading.value = false })
+async function goToPage(page: number) {
+  currentPage.value = page
+  await loadRecords()
 }
 
 async function changePageSize(size: number) {
   showPageSize.value = false
   pageSize.value = size
-  await loadRecords(true)
+  await goToPage(1)
 }
 
 async function onSearch() {
-  await loadRecords(true)
+  await goToPage(1)
 }
 
 async function onFilterStartConfirm(d: Date) {
   filterStart.value = toLocalDateStr(d)
   showFilterStart.value = false
-  await loadRecords(true)
+  await goToPage(1)
 }
 
 async function onFilterEndConfirm(d: Date) {
   filterEnd.value = toLocalDateStr(d)
   showFilterEnd.value = false
-  await loadRecords(true)
+  await goToPage(1)
 }
 
 async function clearFilter() {
   filterStart.value = ''
   filterEnd.value = ''
-  await loadRecords(true)
+  await goToPage(1)
 }
 
 function onCalendarConfirm(d: Date) {
@@ -186,7 +172,7 @@ async function saveEdit(r: SharedRecordItem) {
       occurredAt: editForm.occurredAt ? `${editForm.occurredAt}T00:00:00` : undefined,
     })
     showToast('已更新')
-    await loadRecords(true)
+    await goToPage(1)
   } catch {
     showToast('更新失败')
   } finally {
@@ -217,7 +203,7 @@ async function saveCreate() {
     })
     showToast('记录已添加')
     showCreateForm.value = false
-    await loadRecords(true)
+    await goToPage(1)
   } catch {
     showToast('添加失败')
   }
@@ -228,7 +214,7 @@ async function deleteRecord(id: string) {
   try {
     await deleteSharedRecord(id)
     showToast('已删除')
-    await loadRecords(true)
+    await goToPage(1)
   } catch {
     showToast('删除失败')
   }
@@ -247,19 +233,11 @@ const hasRecords = computed(() => records.value.length > 0)
 
 onMounted(async () => {
   await userStore.info()
-  if (partnerId.value) {
-    listLoading.value = true
-    await loadRecords(true)
-    listLoading.value = false
-  }
+  if (partnerId.value) goToPage(1)
 })
 
 watch(partnerId, async (val) => {
-  if (val) {
-    listLoading.value = true
-    await loadRecords(true)
-    listLoading.value = false
-  }
+  if (val) goToPage(1)
 })
 </script>
 
@@ -310,47 +288,46 @@ watch(partnerId, async (val) => {
       <van-calendar v-model:show="showFilterStart" :min-date="new Date('2020-01-01')" @confirm="onFilterStartConfirm" />
       <van-calendar v-model:show="showFilterEnd" :min-date="new Date('2020-01-01')" @confirm="onFilterEndConfirm" />
 
-      <!-- 分页列表 -->
-      <van-list
-        v-model:loading="listLoading"
-        :finished="!hasMore"
-        @load="onLoadMore"
-      >
-        <van-cell-group :inset="true" title="一起做过的事">
-          <van-empty v-if="!hasRecords" description="还没有记录，添加第一条吧" />
-          <van-swipe-cell v-for="r in records" :key="r.id">
-            <!-- 查看模式 -->
-            <template v-if="editingRecordId !== r.id">
-              <van-cell
-                :title="r.title"
-                :label="r.content || ''"
-                :value="formatDate(r.occurredAt)"
-                is-link
-                @click="openEdit(r)"
-              />
-            </template>
-            <!-- 编辑模式：卡片原地展开 -->
-            <template v-else>
-              <div class="edit-card p-3">
-                <van-field v-model="editForm.title" placeholder="标题" class="!mb-2" />
-                <van-field v-model="editForm.content" placeholder="详细描述（可选）" class="!mb-2" />
-                <van-field v-model="editForm.occurredAt" is-link readonly placeholder="日期（可选）" @click="showCalendar = true" />
-                <div class="flex gap-2">
-                  <van-button size="small" type="primary" @click="saveEdit(r)">保存</van-button>
-                  <van-button size="small" @click="cancelEdit">取消</van-button>
-                </div>
+      <!-- 记录列表 -->
+      <van-cell-group :inset="true" title="一起做过的事">
+        <van-empty v-if="!hasRecords" description="还没有记录，添加第一条吧" />
+        <van-swipe-cell v-for="r in records" :key="r.id">
+          <!-- 查看模式 -->
+          <template v-if="editingRecordId !== r.id">
+            <van-cell
+              :title="r.title"
+              :label="r.content || ''"
+              :value="formatDate(r.occurredAt)"
+              is-link
+              @click="openEdit(r)"
+            />
+          </template>
+          <!-- 编辑模式：卡片原地展开 -->
+          <template v-else>
+            <div class="edit-card p-3">
+              <van-field v-model="editForm.title" placeholder="标题" class="!mb-2" />
+              <van-field v-model="editForm.content" placeholder="详细描述（可选）" class="!mb-2" />
+              <van-field v-model="editForm.occurredAt" is-link readonly placeholder="日期（可选）" @click="showCalendar = true" />
+              <div class="flex gap-2">
+                <van-button size="small" type="primary" @click="saveEdit(r)">保存</van-button>
+                <van-button size="small" @click="cancelEdit">取消</van-button>
               </div>
-            </template>
-            <template #right>
-              <van-button square type="danger" text="删除" @click="deleteRecord(r.id)" />
-            </template>
-          </van-swipe-cell>
-        </van-cell-group>
-      </van-list>
+            </div>
+          </template>
+          <template #right>
+            <van-button square type="danger" text="删除" @click="deleteRecord(r.id)" />
+          </template>
+        </van-swipe-cell>
+      </van-cell-group>
 
-        <div class="list-footer">
+      <div v-if="totalPages > 0" class="pagination">
+        <div class="pagination-inner">
+          <van-button :disabled="currentPage <= 1" size="small" plain @click="goToPage(currentPage - 1)">上一页</van-button>
+          <span class="page-info">第 {{ currentPage }}/{{ totalPages }} 页</span>
+          <van-button :disabled="currentPage >= totalPages" size="small" plain @click="goToPage(currentPage + 1)">下一页</van-button>
           <span class="page-size-trigger" @click="showPageSize = true">每页 {{ pageSize }} 条 <van-icon name="arrow-down" /></span>
         </div>
+      </div>
 
         <van-calendar v-model:show="showCalendar" :min-date="new Date('2020-01-01')" @confirm="onCalendarConfirm" />
 
@@ -380,19 +357,28 @@ watch(partnerId, async (val) => {
 </template>
 
 <style scoped>
+.pagination {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+.pagination-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.page-info {
+  font-size: 13px;
+  color: var(--van-gray-6);
+  white-space: nowrap;
+}
 .page-size-trigger {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   font-size: 12px;
   color: var(--van-blue);
   cursor: pointer;
-}
-.list-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
 }
 </style>
 
