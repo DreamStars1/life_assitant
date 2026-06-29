@@ -123,8 +123,7 @@ const configTemplates = [
     code: `{
   "mcpServers": {
     "life-assistant": {
-      "type": "sse",
-      "url": "https://mcp.life-assitant.top/sse",
+      "url": "https://mcp.life-assitant.top",
       "headers": {
         "Authorization": "Bearer la_xxx"
       }
@@ -140,7 +139,7 @@ const configTemplates = [
       "command": "npx",
       "args": [
         "mcp-remote@latest",
-        "--sse", "https://mcp.life-assitant.top",
+        "https://mcp.life-assitant.top",
         "--header", "Authorization: Bearer la_xxx"
       ]
     }
@@ -149,15 +148,14 @@ const configTemplates = [
   },
   {
     title: 'Claude Code CLI',
-    code: `claude mcp add life-assistant --transport sse https://mcp.life-assitant.top/sse --header "Authorization: Bearer la_xxx"`,
+    code: `claude mcp add life-assistant --transport http https://mcp.life-assitant.top --header "Authorization: Bearer la_xxx"`,
   },
   {
     title: 'Workbuddy (CodeBuddy)',
     code: `{
   "mcpServers": {
     "life-assistant": {
-      "type": "sse",
-      "url": "https://mcp.life-assitant.top/sse",
+      "url": "https://mcp.life-assitant.top",
       "headers": {
         "Authorization": "Bearer la_xxx"
       }

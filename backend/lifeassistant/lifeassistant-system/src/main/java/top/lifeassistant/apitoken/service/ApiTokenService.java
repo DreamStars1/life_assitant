@@ -45,6 +45,7 @@ public class ApiTokenService {
         return mapper.selectList(
             new LambdaQueryWrapper<ApiTokenDO>()
                 .eq(ApiTokenDO::getUserId, user.getId())
+                .eq(ApiTokenDO::getIsActive, true)
                 .orderByDesc(ApiTokenDO::getCreatedAt))
             .stream()
             .map(ApiTokenResp::from)
