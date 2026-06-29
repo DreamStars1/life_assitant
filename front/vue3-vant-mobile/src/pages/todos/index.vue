@@ -78,7 +78,7 @@ async function onEdit(data: { title: string, description?: string, priority: str
   await updateTodo(editId.value, data)
   showToast('已更新')
   showEdit.value = false
-  await todoStore.loadTodos()
+  await todoStore.loadTodos(true)
 }
 
 const ACTIVE_TEMPLATE_KEY = 'life_assistant_active_ack_template'
@@ -92,7 +92,7 @@ async function onAcknowledge(todo: any) {
     const message = active?.content ?? templates[0]?.content ?? '收到'
     await acknowledgeTodo(todo.id, message)
     showNotify({ type: 'success', message: `已确认：${message}` })
-    await todoStore.loadTodos()
+    await todoStore.loadTodos(true)
   }
   catch { showNotify({ type: 'danger', message: '确认失败' }) }
 }
