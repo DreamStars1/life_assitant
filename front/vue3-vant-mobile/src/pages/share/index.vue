@@ -346,16 +346,13 @@ watch(partnerId, async (val) => {
             </template>
           </van-swipe-cell>
         </van-cell-group>
-
-        <template #finished>
-          <div class="list-footer">
-            <span>没有更多了</span>
-            <span class="page-size-trigger" @click="showPageSize = true">每页 {{ pageSize }} 条 <van-icon name="arrow-down" /></span>
-          </div>
-        </template>
       </van-list>
 
-      <van-calendar v-model:show="showCalendar" :min-date="new Date('2020-01-01')" @confirm="onCalendarConfirm" />
+        <div class="list-footer">
+          <span class="page-size-trigger" @click="showPageSize = true">每页 {{ pageSize }} 条 <van-icon name="arrow-down" /></span>
+        </div>
+
+        <van-calendar v-model:show="showCalendar" :min-date="new Date('2020-01-01')" @confirm="onCalendarConfirm" />
 
       <!-- 新建表单 -->
       <div class="px-4 mt-3">
@@ -386,25 +383,16 @@ watch(partnerId, async (val) => {
 .page-size-trigger {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 4px;
-  padding: 12px;
   font-size: 12px;
-  color: var(--van-gray-5);
+  color: var(--van-blue);
   cursor: pointer;
 }
 .list-footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   padding: 12px;
-  font-size: 12px;
-  color: var(--van-gray-5);
-}
-.list-footer .page-size-trigger {
-  padding: 0;
-  color: var(--van-blue);
 }
 </style>
 
