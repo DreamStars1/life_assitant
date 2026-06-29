@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { ApiResponse } from '@/types/api'
+import type { ApiResponse, PageResult } from '@/types/api'
 
 export interface TodoItem {
   id: string
@@ -20,8 +20,15 @@ export interface TodoItem {
   updateTime?: string | null
 }
 
-export function fetchTodos(params?: { isCompleted?: boolean, priority?: string, startDueDate?: string, endDueDate?: string }) {
-  return request.get<ApiResponse<TodoItem[]>>('/todos', { params })
+export function fetchTodos(params?: {
+  page?: number
+  size?: number
+  isCompleted?: boolean
+  priority?: string
+  startDueDate?: string
+  endDueDate?: string
+}) {
+  return request.get<ApiResponse<PageResult<TodoItem>>>('/todos', { params })
 }
 
 export function fetchTodo(id: string) {

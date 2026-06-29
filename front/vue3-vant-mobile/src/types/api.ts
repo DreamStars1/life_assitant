@@ -3,6 +3,14 @@ export interface FieldError {
   message: string
 }
 
+export interface PageResult<T> {
+  records: T[]
+  total: number
+  page: number
+  size: number
+  pages: number
+}
+
 export interface ApiResponse<T = unknown> {
   code: number
   message: string
