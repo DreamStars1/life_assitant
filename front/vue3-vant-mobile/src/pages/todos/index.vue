@@ -210,7 +210,7 @@ todoStore.loadTodos(true)
         </div>
 
         <!-- Page size trigger at bottom of list -->
-        <div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:12px;font-size:12px;color:var(--van-gray-5);cursor:pointer" @click="showPageSize = true">
+        <div class="page-size-trigger" @click="showPageSize = true">
           每页 {{ todoStore.pageSize }} 条 <van-icon name="arrow-down" />
         </div>
       </van-list>
@@ -401,6 +401,16 @@ todoStore.loadTodos(true)
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 50%;
+}
+.page-size-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px;
+  font-size: 12px;
+  color: var(--van-gray-5);
+  cursor: pointer;
 }
 </style>
 
