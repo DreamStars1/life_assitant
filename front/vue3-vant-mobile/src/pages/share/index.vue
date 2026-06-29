@@ -70,7 +70,7 @@ const records = ref<SharedRecordItem[]>([])
 const currentPage = ref(1)
 const hasMore = ref(true)
 const pageSize = ref(5)
-const listLoading = ref(false)
+const listLoading = ref(true)
 const showPageSize = ref(false)
 const searchKeyword = ref('')
 
@@ -223,11 +223,18 @@ const hasRecords = computed(() => records.value.length > 0)
 
 onMounted(async () => {
   await userStore.info()
-  if (partnerId.value) loadRecords(true)
+  if (partnerId.value) {
+    await loadRecords(true)
+    listLoading.value = false
+  }
 })
 
-watch(partnerId, (val) => {
-  if (val) loadRecords(true)
+watch(partnerId, async (val) => {
+  if (val) {
+    listLoading.value = true
+    await loadRecords(true)
+    listLoading.value = false
+  }
 })
 </script>
 
@@ -350,9 +357,6 @@ watch(partnerId, (val) => {
 </template>
 
 <style scoped>
-.edit-card {
-  background: #f7f8fa;
-}
 .page-size-trigger {
   display: flex;
   align-items: center;

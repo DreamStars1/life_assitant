@@ -18,7 +18,7 @@ const editId = ref('')
 const expandedId = ref<string | null>(null)
 const editInitial = ref<{ title: string, description?: string, priority: string, dueDate?: string } | undefined>(undefined)
 
-const listLoading = ref(false)
+const listLoading = ref(true)
 const showPageSize = ref(false)
 
 const filters = ['全部', '进行中', '已完成']
@@ -123,7 +123,11 @@ function onPageSizeChange(size: number) {
   todoStore.changePageSize(size)
 }
 
-todoStore.loadTodos(true)
+async function loadInitial() {
+  await todoStore.loadTodos(true)
+  listLoading.value = false
+}
+loadInitial()
 </script>
 
 <template>
