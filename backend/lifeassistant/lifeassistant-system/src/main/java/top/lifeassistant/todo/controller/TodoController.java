@@ -6,14 +6,15 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import top.lifeassistant.common.annotation.CurrentUser;
+import top.lifeassistant.common.base.model.query.PageResult;
 import top.lifeassistant.common.base.model.resp.ApiResponse;
 import top.lifeassistant.system.model.entity.user.UserDO;
+import top.lifeassistant.todo.model.query.TodoPageQuery;
 import top.lifeassistant.todo.model.req.TodoCreateReq;
 import top.lifeassistant.todo.model.req.TodoUpdateReq;
 import top.lifeassistant.todo.model.resp.TodoResp;
 import top.lifeassistant.todo.service.TodoService;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -32,12 +33,8 @@ public class TodoController {
 
     @Operation(summary = "待办列表")
     @GetMapping("/todos")
-    public ApiResponse<List<TodoResp>> list(@CurrentUser UserDO user,
-                                             @RequestParam(required = false) Boolean isCompleted,
-                                             @RequestParam(required = false) String priority,
-                                             @RequestParam(required = false) LocalDateTime startDueDate,
-                                             @RequestParam(required = false) LocalDateTime endDueDate) {
-        return ApiResponse.ok(service.list(user, isCompleted, priority, startDueDate, endDueDate));
+    public ApiResponse<PageResult<TodoResp>> list(@CurrentUser UserDO user, @Valid TodoPageQuery query) {
+        return ApiResponse.ok(service.list(user, query));
     }
 
     @Operation(summary = "首页最近待办")

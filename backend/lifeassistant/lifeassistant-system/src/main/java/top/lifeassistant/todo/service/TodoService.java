@@ -1,13 +1,16 @@
 package top.lifeassistant.todo.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import top.continew.starter.core.exception.BadRequestException;
 import top.lifeassistant.common.base.component.OwnerValidator;
+import top.lifeassistant.common.base.model.query.PageResult;
 import top.lifeassistant.system.model.entity.user.UserDO;
 import top.lifeassistant.todo.mapper.TodoMapper;
 import top.lifeassistant.todo.model.entity.TodoDO;
+import top.lifeassistant.todo.model.query.TodoPageQuery;
 import top.lifeassistant.todo.model.req.TodoCreateReq;
 import top.lifeassistant.todo.model.req.TodoUpdateReq;
 import top.lifeassistant.todo.model.resp.TodoResp;
@@ -54,17 +57,20 @@ public class TodoService {
         return TodoResp.from(todo);
     }
 
-    public List<TodoResp> list(UserDO user, Boolean isCompleted, String priority,
-                                LocalDateTime startDueDate, LocalDateTime endDueDate) {
+    public PageResult<TodoResp> list(UserDO user, TodoPageQuery query) {
+        Page<TodoDO> page = query.toPage();
         LambdaQueryWrapper<TodoDO> qw = new LambdaQueryWrapper<>();
         qw.and(w -> w.eq(TodoDO::getUserId, user.getId())
                      .or().eq(TodoDO::getAssignedTo, user.getId()));
-        if (isCompleted != null) qw.eq(TodoDO::getIsCompleted, isCompleted);
-        if (priority != null) qw.eq(TodoDO::getPriority, priority);
-        if (startDueDate != null) qw.ge(TodoDO::getDueDate, startDueDate);
-        if (endDueDate != null) qw.le(TodoDO::getDueDate, endDueDate);
+        if (query.getIsCompleted() != null) qw.eq(TodoDO::getIsCompleted, query.getIsCompleted());
+        if (query.getPriority() != null) qw.eq(TodoDO::getPriority, query.getPriority());
+        if (query.getStartDueDate() != null) qw.ge(TodoDO::getDueDate, query.getStartDueDate());
+        if (query.getEndDueDate() != null) qw.le(TodoDO::getDueDate, query.getEndDueDate());
         qw.orderByDesc(TodoDO::getCreatedAt);
-        return mapper.selectList(qw).stream().map(TodoResp::from).toList();
+        Page<TodoDO> result = mapper.selectPage(page, qw);
+        Page<TodoResp> respPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
+        respPage.setRecords(result.getRecords().stream().map(TodoResp::from).toList());
+        return PageResult.of(respPage);
     }
 
     public TodoResp getById(UserDO user, String id) {

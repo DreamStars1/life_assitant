@@ -7,14 +7,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import top.lifeassistant.common.annotation.CurrentUser;
 import top.lifeassistant.common.base.model.resp.ApiResponse;
+import top.lifeassistant.common.base.model.query.PageResult;
+import top.lifeassistant.sharedrecord.model.query.SharedRecordPageQuery;
 import top.lifeassistant.sharedrecord.model.req.SharedRecordCreateReq;
 import top.lifeassistant.sharedrecord.model.req.SharedRecordUpdateReq;
 import top.lifeassistant.sharedrecord.model.resp.SharedRecordResp;
 import top.lifeassistant.sharedrecord.service.SharedRecordService;
 import top.lifeassistant.system.model.entity.user.UserDO;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Tag(name = "共享记录 API")
 @RestController
@@ -31,10 +30,8 @@ public class SharedRecordController {
 
     @Operation(summary = "记录列表")
     @GetMapping("/shared-records")
-    public ApiResponse<List<SharedRecordResp>> list(@CurrentUser UserDO user,
-                                                     @RequestParam(required = false) LocalDateTime start,
-                                                     @RequestParam(required = false) LocalDateTime end) {
-        return ApiResponse.ok(service.list(user, start, end));
+    public ApiResponse<PageResult<SharedRecordResp>> list(@CurrentUser UserDO user, @Valid SharedRecordPageQuery query) {
+        return ApiResponse.ok(service.list(user, query));
     }
 
     @Operation(summary = "记录详情")

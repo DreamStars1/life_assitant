@@ -1,12 +1,15 @@
 package top.lifeassistant.sharedrecord.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import top.continew.starter.core.exception.BadRequestException;
 import top.lifeassistant.common.base.component.OwnerValidator;
+import top.lifeassistant.common.base.model.query.PageResult;
 import top.lifeassistant.sharedrecord.mapper.SharedRecordMapper;
 import top.lifeassistant.sharedrecord.model.entity.SharedRecordDO;
+import top.lifeassistant.sharedrecord.model.query.SharedRecordPageQuery;
 import top.lifeassistant.sharedrecord.model.req.SharedRecordCreateReq;
 import top.lifeassistant.sharedrecord.model.req.SharedRecordUpdateReq;
 import top.lifeassistant.sharedrecord.model.resp.SharedRecordResp;
@@ -47,14 +50,23 @@ public class SharedRecordService {
         return SharedRecordResp.from(record);
     }
 
-    public List<SharedRecordResp> list(UserDO user, LocalDateTime start, LocalDateTime end) {
+    public PageResult<SharedRecordResp> list(UserDO user, SharedRecordPageQuery query) {
         requirePartner(user);
+        Page<SharedRecordDO> page = query.toPage();
         LambdaQueryWrapper<SharedRecordDO> qw = new LambdaQueryWrapper<>();
         qw.in(SharedRecordDO::getCreatedBy, List.of(user.getId(), user.getPartnerId()));
-        if (start != null) qw.ge(SharedRecordDO::getOccurredAt, start);
-        if (end != null) qw.le(SharedRecordDO::getOccurredAt, end);
+        if (query.getKeyword() != null) {
+            String kw = query.getKeyword();
+            qw.and(w -> w.like(SharedRecordDO::getTitle, kw)
+                          .or().like(SharedRecordDO::getContent, kw));
+        }
+        if (query.getStart() != null) qw.ge(SharedRecordDO::getOccurredAt, query.getStart());
+        if (query.getEnd() != null) qw.le(SharedRecordDO::getOccurredAt, query.getEnd());
         qw.orderByDesc(SharedRecordDO::getOccurredAt);
-        return mapper.selectList(qw).stream().map(SharedRecordResp::from).toList();
+        Page<SharedRecordDO> result = mapper.selectPage(page, qw);
+        Page<SharedRecordResp> respPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
+        respPage.setRecords(result.getRecords().stream().map(SharedRecordResp::from).toList());
+        return PageResult.of(respPage);
     }
 
     public SharedRecordResp getById(UserDO user, String id) {
