@@ -314,7 +314,6 @@ watch(partnerId, async (val) => {
       <van-list
         v-model:loading="listLoading"
         :finished="!hasMore"
-        finished-text="没有更多了"
         @load="onLoadMore"
       >
         <van-cell-group :inset="true" title="一起做过的事">
@@ -348,10 +347,12 @@ watch(partnerId, async (val) => {
           </van-swipe-cell>
         </van-cell-group>
 
-        <!-- 页面大小切换 -->
-        <div class="page-size-trigger" @click="showPageSize = true">
-          每页 {{ pageSize }} 条 <van-icon name="arrow-down" />
-        </div>
+        <template #finished>
+          <div class="list-footer">
+            <span>没有更多了</span>
+            <span class="page-size-trigger" @click="showPageSize = true">每页 {{ pageSize }} 条 <van-icon name="arrow-down" /></span>
+          </div>
+        </template>
       </van-list>
 
       <van-calendar v-model:show="showCalendar" :min-date="new Date('2020-01-01')" @confirm="onCalendarConfirm" />
@@ -391,6 +392,19 @@ watch(partnerId, async (val) => {
   font-size: 12px;
   color: var(--van-gray-5);
   cursor: pointer;
+}
+.list-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  font-size: 12px;
+  color: var(--van-gray-5);
+}
+.list-footer .page-size-trigger {
+  padding: 0;
+  color: var(--van-blue);
 }
 </style>
 
