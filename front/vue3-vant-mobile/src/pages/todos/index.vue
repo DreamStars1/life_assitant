@@ -23,7 +23,8 @@ const showPageSize = ref(false)
 
 const filters = ['全部', '进行中', '已完成']
 
-watch(activeFilter, (v) => {
+watch(activeFilter, async (v) => {
+  listLoading.value = true
   const params: { isCompleted?: boolean, startDueDate?: string, endDueDate?: string } = {}
   if (v === 1)
     params.isCompleted = false
@@ -33,7 +34,8 @@ watch(activeFilter, (v) => {
     params.startDueDate = dateRange.value[0]
   if (dateRange.value[1])
     params.endDueDate = dateRange.value[1]
-  todoStore.setFilter(params)
+  await todoStore.setFilter(params)
+  listLoading.value = false
 })
 
 function onSelectDateRange() { showFilterCalendar.value = true }
@@ -75,15 +77,23 @@ function openEdit(todo: any) {
 }
 
 async function onEdit(data: { title: string, description?: string, priority: string, dueDate?: string, assignedTo?: string }) {
-  await updateTodo(editId.value, data)
-  showToast('已更新')
-  showEdit.value = false
-  await todoStore.loadTodos(true)
+  listLoading.value = true
+  try {
+    await updateTodo(editId.value, data)
+    showToast('已更新')
+    showEdit.value = false
+    await todoStore.loadTodos(true)
+  } catch {
+    showToast('更新失败')
+  } finally {
+    listLoading.value = false
+  }
 }
 
 const ACTIVE_TEMPLATE_KEY = 'life_assistant_active_ack_template'
 
 async function onAcknowledge(todo: any) {
+  listLoading.value = true
   try {
     const res = await fetchTemplates()
     const templates = res.data ?? []
@@ -95,6 +105,7 @@ async function onAcknowledge(todo: any) {
     await todoStore.loadTodos(true)
   }
   catch { showNotify({ type: 'danger', message: '确认失败' }) }
+  finally { listLoading.value = false }
 }
 
 function formatDate(iso: string | null | undefined): string { return iso ? iso.slice(0, 10) : '' }
@@ -109,7 +120,9 @@ const partnerId = computed(() => userStore.userInfo.partnerId)
 function toggleExpand(id: string) { expandedId.value = expandedId.value === id ? null : id }
 
 async function onRefresh() {
+  listLoading.value = true
   await todoStore.loadTodos(true)
+  listLoading.value = false
 }
 
 async function onLoadMore() {

@@ -26,21 +26,24 @@ async function generateInvite() {
 }
 
 async function copyInvite() {
-  const ta = document.createElement('textarea')
-  ta.value = inviteToken.value
-  ta.style.position = 'fixed'
-  ta.style.left = '-9999px'
-  document.body.appendChild(ta)
-  ta.select()
   try {
-    document.execCommand('copy')
+    await navigator.clipboard.writeText(inviteToken.value)
     showToast('已复制邀请码，发给你的伴侣吧')
-  }
-  catch {
-    showNotify({ type: 'danger', message: '复制失败，请长按选中后手动复制' })
-  }
-  finally {
-    document.body.removeChild(ta)
+  } catch {
+    const ta = document.createElement('textarea')
+    ta.value = inviteToken.value
+    ta.style.position = 'fixed'
+    ta.style.left = '-9999px'
+    document.body.appendChild(ta)
+    ta.select()
+    try {
+      document.execCommand('copy')
+      showToast('已复制邀请码，发给你的伴侣吧')
+    } catch {
+      showNotify({ type: 'danger', message: '复制失败，请长按选中后手动复制' })
+    } finally {
+      document.body.removeChild(ta)
+    }
   }
 }
 
@@ -49,7 +52,7 @@ async function bindPartner() {
     return
   loading.value = true
   try {
-    await request.post(`/identity/bind-partner?inviteToken=${encodeURIComponent(bindCode.value)}`)
+    await request.post('/identity/bind-partner', { inviteToken: bindCode.value })
     showNotify({ type: 'success', message: '伴侣已绑定！' })
     await userStore.info()
   }
@@ -70,7 +73,7 @@ const records = ref<SharedRecordItem[]>([])
 const currentPage = ref(1)
 const hasMore = ref(true)
 const pageSize = ref(5)
-const listLoading = ref(true)
+const listLoading = ref(false)
 const showPageSize = ref(false)
 const searchKeyword = ref('')
 
@@ -92,11 +95,15 @@ const showCreateCalendar = ref(false)
 
 async function loadRecords(reset = false) {
   if (reset) {
+    listLoading.value = true
     currentPage.value = 1
     records.value = []
     hasMore.value = true
   }
-  if (!hasMore.value) return
+  if (!hasMore.value) {
+    if (reset) listLoading.value = false
+    return
+  }
   try {
     const params: Record<string, unknown> = { page: currentPage.value, size: pageSize.value }
     if (searchKeyword.value.trim()) params.keyword = searchKeyword.value.trim()
@@ -109,6 +116,8 @@ async function loadRecords(reset = false) {
     currentPage.value++
   } catch {
     showToast('加载失败')
+  } finally {
+    if (reset) listLoading.value = false
   }
 }
 
@@ -117,32 +126,32 @@ function onLoadMore() {
   loadRecords(false).finally(() => { listLoading.value = false })
 }
 
-function changePageSize(size: number) {
+async function changePageSize(size: number) {
   showPageSize.value = false
   pageSize.value = size
-  loadRecords(true)
+  await loadRecords(true)
 }
 
-function onSearch() {
-  loadRecords(true)
+async function onSearch() {
+  await loadRecords(true)
 }
 
-function onFilterStartConfirm(d: Date) {
+async function onFilterStartConfirm(d: Date) {
   filterStart.value = toLocalDateStr(d)
   showFilterStart.value = false
-  loadRecords(true)
+  await loadRecords(true)
 }
 
-function onFilterEndConfirm(d: Date) {
+async function onFilterEndConfirm(d: Date) {
   filterEnd.value = toLocalDateStr(d)
   showFilterEnd.value = false
-  loadRecords(true)
+  await loadRecords(true)
 }
 
-function clearFilter() {
+async function clearFilter() {
   filterStart.value = ''
   filterEnd.value = ''
-  loadRecords(true)
+  await loadRecords(true)
 }
 
 function onCalendarConfirm(d: Date) {
@@ -170,14 +179,19 @@ function cancelEdit() {
 
 async function saveEdit(r: SharedRecordItem) {
   if (!editForm.title.trim()) { showToast('请输入标题'); return }
-  await updateSharedRecord(r.id, {
-    title: editForm.title,
-    content: editForm.content || undefined,
-    occurredAt: editForm.occurredAt ? `${editForm.occurredAt}T00:00:00` : undefined,
-  })
-  showToast('已更新')
-  editingRecordId.value = null
-  await loadRecords(true)
+  try {
+    await updateSharedRecord(r.id, {
+      title: editForm.title,
+      content: editForm.content || undefined,
+      occurredAt: editForm.occurredAt ? `${editForm.occurredAt}T00:00:00` : undefined,
+    })
+    showToast('已更新')
+    await loadRecords(true)
+  } catch {
+    showToast('更新失败')
+  } finally {
+    editingRecordId.value = null
+  }
 }
 
 // ---- 新增 ----
@@ -195,26 +209,36 @@ function cancelCreate() {
 
 async function saveCreate() {
   if (!createForm.title.trim()) { showToast('请输入标题'); return }
-  await createSharedRecord({
-    title: createForm.title,
-    content: createForm.content || undefined,
-    occurredAt: createForm.occurredAt ? `${createForm.occurredAt}T00:00:00` : undefined,
-  })
-  showToast('记录已添加')
-  showCreateForm.value = false
-  await loadRecords(true)
+  try {
+    await createSharedRecord({
+      title: createForm.title,
+      content: createForm.content || undefined,
+      occurredAt: createForm.occurredAt ? `${createForm.occurredAt}T00:00:00` : undefined,
+    })
+    showToast('记录已添加')
+    showCreateForm.value = false
+    await loadRecords(true)
+  } catch {
+    showToast('添加失败')
+  }
 }
 
 // ---- 删除 ----
 async function deleteRecord(id: string) {
-  await deleteSharedRecord(id)
-  showToast('已删除')
-  await loadRecords(true)
+  try {
+    await deleteSharedRecord(id)
+    showToast('已删除')
+    await loadRecords(true)
+  } catch {
+    showToast('删除失败')
+  }
 }
 
 function formatDate(d: string): string {
   if (!d) return ''
-  const [y, m, day] = d.slice(0, 10).split('-').map(Number)
+  const parts = d.slice(0, 10).split('-').map(Number)
+  if (parts.length !== 3 || parts.some(isNaN)) return d.slice(0, 10)
+  const [y, m, day] = parts
   return new Date(y, m - 1, day).toLocaleDateString('zh-CN')
 }
 
@@ -224,6 +248,7 @@ const hasRecords = computed(() => records.value.length > 0)
 onMounted(async () => {
   await userStore.info()
   if (partnerId.value) {
+    listLoading.value = true
     await loadRecords(true)
     listLoading.value = false
   }

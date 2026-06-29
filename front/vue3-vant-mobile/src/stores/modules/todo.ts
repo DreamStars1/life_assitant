@@ -19,7 +19,7 @@ export const useTodoStore = defineStore('todo', () => {
       todos.value = []
       hasMore.value = true
     }
-    if (!hasMore.value) return
+    if (!hasMore.value || loading.value) return
     loading.value = true
     try {
       const params: Record<string, unknown> = { page: currentPage.value, size: pageSize.value }
@@ -83,14 +83,14 @@ export const useTodoStore = defineStore('todo', () => {
     await loadTodos(true)
   }
 
-  function setFilter(f: { isCompleted?: boolean, startDueDate?: string, endDueDate?: string }) {
+  async function setFilter(f: { isCompleted?: boolean, startDueDate?: string, endDueDate?: string }) {
     filter.value = f
-    loadTodos(true)
+    await loadTodos(true)
   }
 
-  function changePageSize(size: number) {
+  async function changePageSize(size: number) {
     pageSize.value = size
-    loadTodos(true)
+    await loadTodos(true)
   }
 
   return { todos, upcoming, loading, currentPage, hasMore, pageSize, loadTodos, loadUpcoming, create, update, remove, toggleComplete, acknowledge, setFilter, changePageSize }
