@@ -8,12 +8,21 @@ export const useTodoStore = defineStore('todo', () => {
   const todos = ref<TodoItem[]>([])
   const upcoming = ref<TodoItem[]>([])
   const loading = ref(false)
+  const currentPage = ref(1)
+  const hasMore = ref(true)
+  const pageSize = ref(5)
   const filter = ref<{ isCompleted?: boolean, startDueDate?: string, endDueDate?: string }>({})
 
-  async function loadTodos() {
+  async function loadTodos(reset = false) {
+    if (reset) {
+      currentPage.value = 1
+      todos.value = []
+      hasMore.value = true
+    }
+    if (!hasMore.value) return
     loading.value = true
     try {
-      const params: Record<string, unknown> = {}
+      const params: Record<string, unknown> = { page: currentPage.value, size: pageSize.value }
       if (filter.value.isCompleted !== undefined)
         params.isCompleted = filter.value.isCompleted
       if (filter.value.startDueDate)
@@ -21,9 +30,11 @@ export const useTodoStore = defineStore('todo', () => {
       if (filter.value.endDueDate)
         params.endDueDate = filter.value.endDueDate
       const res = await fetchTodos(params)
-      todos.value = res.data ?? []
-    }
-    finally {
+      const data = res.data!
+      todos.value.push(...data.records)
+      hasMore.value = currentPage.value < data.pages
+      currentPage.value++
+    } finally {
       loading.value = false
     }
   }
@@ -32,27 +43,26 @@ export const useTodoStore = defineStore('todo', () => {
     try {
       const res = await fetchUpcomingTodos()
       upcoming.value = res.data ?? []
-    }
-    catch {
+    } catch {
       // silent
     }
   }
 
   async function create(data: { title: string, description?: string, priority: string, dueDate?: string, assignedTo?: string }) {
     const res = await createTodo(data)
-    await loadTodos()
+    await loadTodos(true)
     return res.data
   }
 
   async function update(id: string, data: { title?: string, description?: string, priority?: string, dueDate?: string }) {
     const res = await updateTodo(id, data)
-    await loadTodos()
+    await loadTodos(true)
     return res.data
   }
 
   async function remove(id: string) {
     await deleteTodo(id)
-    await loadTodos()
+    await loadTodos(true)
   }
 
   async function toggleComplete(id: string) {
@@ -61,7 +71,7 @@ export const useTodoStore = defineStore('todo', () => {
       item.isCompleted = !item.isCompleted
     await toggleTodo(id)
     loadUpcoming()
-    loadTodos()
+    loadTodos(true)
   }
 
   async function acknowledge(id: string) {
@@ -70,13 +80,18 @@ export const useTodoStore = defineStore('todo', () => {
     const message = templates.length > 0 ? templates[0]!.content : '收到'
     await acknowledgeTodo(id, message)
     showNotify({ type: 'success', message: '已确认收到' })
-    await loadTodos()
+    await loadTodos(true)
   }
 
   function setFilter(f: { isCompleted?: boolean, startDueDate?: string, endDueDate?: string }) {
     filter.value = f
-    loadTodos()
+    loadTodos(true)
   }
 
-  return { todos, upcoming, loading, filter, loadTodos, loadUpcoming, create, update, remove, toggleComplete, acknowledge, setFilter }
+  function changePageSize(size: number) {
+    pageSize.value = size
+    loadTodos(true)
+  }
+
+  return { todos, upcoming, loading, currentPage, hasMore, pageSize, loadTodos, loadUpcoming, create, update, remove, toggleComplete, acknowledge, setFilter, changePageSize }
 })
