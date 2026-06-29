@@ -30,7 +30,7 @@ export const useTodoStore = defineStore('todo', () => {
       if (filter.value.endDueDate)
         params.endDueDate = filter.value.endDueDate
       const res = await fetchTodos(params)
-      const data = res.data!
+      const data = res.data ?? { records: [] as TodoItem[], pages: 0 }
       todos.value.push(...data.records)
       hasMore.value = currentPage.value < data.pages
       currentPage.value++
