@@ -18,6 +18,9 @@ const editId = ref('')
 const expandedId = ref<string | null>(null)
 const editInitial = ref<{ title: string, description?: string, priority: string, dueDate?: string } | undefined>(undefined)
 
+const listLoading = ref(false)
+const showPageSize = ref(false)
+
 const filters = ['全部', '进行中', '已完成']
 
 watch(activeFilter, (v) => {
@@ -105,7 +108,22 @@ const partnerId = computed(() => userStore.userInfo.partnerId)
 
 function toggleExpand(id: string) { expandedId.value = expandedId.value === id ? null : id }
 
-todoStore.loadTodos()
+async function onRefresh() {
+  await todoStore.loadTodos(true)
+}
+
+async function onLoadMore() {
+  listLoading.value = true
+  await todoStore.loadTodos(false)
+  listLoading.value = false
+}
+
+function onPageSizeChange(size: number) {
+  showPageSize.value = false
+  todoStore.changePageSize(size)
+}
+
+todoStore.loadTodos(true)
 </script>
 
 <template>
@@ -121,8 +139,13 @@ todoStore.loadTodos()
       </div>
     </div>
 
-    <van-pull-refresh v-model="todoStore.loading" @refresh="todoStore.loadTodos">
-      <van-list :finished="true" finished-text="没有更多了">
+    <van-pull-refresh v-model="todoStore.loading" @refresh="onRefresh">
+      <van-list
+        v-model:loading="listLoading"
+        :finished="!todoStore.hasMore"
+        finished-text="没有更多了"
+        @load="onLoadMore"
+      >
         <div v-if="todoStore.todos.length === 0" class="empty-state">
           <van-icon name="todo-list-o" size="48" color="var(--van-gray-4)" />
           <p>暂无待办</p>
@@ -185,6 +208,11 @@ todoStore.loadTodos()
             </template>
           </van-swipe-cell>
         </div>
+
+        <!-- Page size trigger at bottom of list -->
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:12px;font-size:12px;color:var(--van-gray-5);cursor:pointer" @click="showPageSize = true">
+          每页 {{ todoStore.pageSize }} 条 <van-icon name="arrow-down" />
+        </div>
       </van-list>
     </van-pull-refresh>
 
@@ -200,6 +228,10 @@ todoStore.loadTodos()
 
     <van-action-sheet v-model:show="showEdit" title="编辑待办" close-on-popup-safe>
       <TodoForm v-if="editInitial" :key="`edit-${editId}`" :initial="editInitial" @save="onEdit" />
+    </van-action-sheet>
+
+    <van-action-sheet v-model:show="showPageSize" title="每页显示">
+      <van-cell v-for="s in [3, 5, 10]" :key="s" :title="`${s} 条`" :label="s === 5 ? '推荐' : ''" is-link @click="onPageSizeChange(s)" />
     </van-action-sheet>
   </div>
 </template>
