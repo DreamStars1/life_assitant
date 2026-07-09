@@ -94,8 +94,8 @@ public class SharedMediaController {
     private String saveCover(MultipartFile cover) throws IOException {
         if (cover == null || cover.isEmpty()) return null;
         String uploadDir = "uploads/shared-media/";
-        Path dir = Paths.get(uploadDir);
-        if (!Files.exists(dir)) Files.createDirectories(dir);
+        Path dir = Paths.get(uploadDir).toAbsolutePath();
+        Files.createDirectories(dir);
         String filename = UUID.randomUUID() + "_" + cover.getOriginalFilename();
         Path filePath = dir.resolve(filename);
         cover.transferTo(filePath.toFile());
