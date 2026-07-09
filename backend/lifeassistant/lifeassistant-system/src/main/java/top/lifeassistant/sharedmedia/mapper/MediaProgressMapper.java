@@ -11,7 +11,7 @@ import java.util.List;
 @Mapper
 public interface MediaProgressMapper extends BaseMapper<MediaProgressDO> {
 
-    @Select("SELECT * FROM media_progress WHERE media_id = #{mediaId}")
+    @Select("SELECT * FROM media_progress WHERE media_id = #{mediaId} ORDER BY user_id ASC")
     List<MediaProgressDO> selectByMediaId(@Param("mediaId") String mediaId);
 
     @Select("SELECT * FROM media_progress WHERE media_id = #{mediaId} AND user_id IS NULL")

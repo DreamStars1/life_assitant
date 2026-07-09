@@ -9,6 +9,11 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+/**
+ * 媒体进度。每对 (media_id, user_id) 一条记录，
+ * user_id IS NULL 表示共同进度（scope=shared）。
+ * 不继承 BaseDO（该表无审计字段）。
+ */
 @Data
 @TableName("media_progress")
 public class MediaProgressDO implements Serializable {

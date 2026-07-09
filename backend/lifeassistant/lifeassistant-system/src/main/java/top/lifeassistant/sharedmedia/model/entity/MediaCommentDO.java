@@ -9,6 +9,10 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+/**
+ * 媒体评论。与 shared_media 为多对一关系。
+ * 不继承 BaseDO（该表无审计字段）。
+ */
 @Data
 @TableName("media_comment")
 public class MediaCommentDO implements Serializable {
