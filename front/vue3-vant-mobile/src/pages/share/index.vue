@@ -517,9 +517,11 @@ watch(activeTab, (tab) => {
             <van-button :disabled="mediaPage >= mediaTotalPages" size="small" plain @click="goToMediaPage(mediaPage + 1)">下一页</van-button>
           </div>
 
-          <!-- 添加按钮（悬浮） -->
-          <div class="fixed bottom-20 right-4 z-10">
-            <van-button type="primary" round icon="plus" class="!w-12 !h-12 !text-2xl" @click="showAddMedia = true" />
+          <!-- 添加按钮 -->
+          <div class="px-4 mt-3">
+            <van-button type="primary" round block icon="plus" @click="showAddMedia = true">
+              添加看过的
+            </van-button>
           </div>
 
           <!-- 添加弹窗 -->
