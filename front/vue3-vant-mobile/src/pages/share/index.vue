@@ -258,8 +258,8 @@ async function loadMedia() {
   try {
     const params: Record<string, unknown> = { page: mediaPage.value, size: 5 }
     if (mediaTypeFilter.value) params.mediaType = mediaTypeFilter.value
-    if (mediaStatusFilter.value === 'finished') params.isFinished = true
-    else if (mediaStatusFilter.value === 'unfinished') params.isFinished = false
+    if (mediaStatusFilter.value === 'finished') params.status = 'finished'
+    else if (mediaStatusFilter.value === 'unfinished') params.status = 'unfinished'
     const res = await fetchSharedMediaList(params)
     const data = res.data ?? ({ records: [] as SharedMediaItem[], pages: 0 } as any)
     mediaRecords.value = data.records
@@ -315,7 +315,9 @@ function formatMediaType(t: string): string {
 
 function mediaCoverUrl(path: string | null): string {
   if (!path) return ''
-  return path.startsWith('http') ? path : `/${path}`
+  if (path.startsWith('http')) return path
+  // 后端已返回以 / 开头的路径，直接使用
+  return path
 }
 
 onMounted(async () => {

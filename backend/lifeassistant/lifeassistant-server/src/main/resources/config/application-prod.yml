@@ -109,12 +109,12 @@ sa-token.extension:
     - /*/*.js
     - /websocket/**
     - /file/**
+    - /api/v1/uploads/**
     - /api/v1/auth/**
     - /api/v1/login/**
     - /api/v1/users/signup
     - /api/v1/password-recovery/**
     - /api/v1/reset-password
-    - /mcp/**
 
 --- ### Just Auth 配置（已禁用）
 continew-starter.justauth:
