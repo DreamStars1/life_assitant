@@ -21,7 +21,7 @@ const showPageSize = ref(false)
 
 const filters = ['全部', '进行中', '已完成']
 
-watch(activeFilter, async (v) => {
+watch([activeFilter, dateRange], async ([v]) => {
   const params: { isCompleted?: boolean, startDueDate?: string, endDueDate?: string } = {}
   if (v === 1)
     params.isCompleted = false
@@ -32,9 +32,11 @@ watch(activeFilter, async (v) => {
   if (dateRange.value[1])
     params.endDueDate = dateRange.value[1]
   await todoStore.setFilter(params)
-})
+}, { deep: true })
 
-function onSelectDateRange() { showFilterCalendar.value = true }
+function onSelectDateRange() {
+  showFilterCalendar.value = true
+}
 
 function onDateConfirm(dates: [Date, Date]) {
   dateRange.value = [
@@ -42,10 +44,11 @@ function onDateConfirm(dates: [Date, Date]) {
     `${dates[1]!.getFullYear()}-${String(dates[1]!.getMonth() + 1).padStart(2, '0')}-${String(dates[1]!.getDate()).padStart(2, '0')}`,
   ]
   showFilterCalendar.value = false
-  activeFilter.value = activeFilter.value
 }
 
-async function onToggle(todo: { id: string }) { await todoStore.toggleComplete(todo.id) }
+async function onToggle(todo: { id: string }) {
+  await todoStore.toggleComplete(todo.id)
+}
 
 async function onDelete(todo: { id: string, title: string }) {
   try {
@@ -78,7 +81,8 @@ async function onEdit(data: { title: string, description?: string, priority: str
     showToast('已更新')
     showEdit.value = false
     await todoStore.loadTodos()
-  } catch {
+  }
+  catch {
     showToast('更新失败')
   }
 }
@@ -99,7 +103,9 @@ async function onAcknowledge(todo: any) {
   catch { showNotify({ type: 'danger', message: '确认失败' }) }
 }
 
-function formatDate(iso: string | null | undefined): string { return iso ? iso.slice(0, 10) : '' }
+function formatDate(iso: string | null | undefined): string {
+  return iso ? iso.slice(0, 10) : ''
+}
 
 function priorityColor(p: string): string {
   const map: Record<string, string> = { low: '#999', medium: '#1989fa', high: '#ff976a', urgent: '#ee0a24' }
@@ -108,7 +114,9 @@ function priorityColor(p: string): string {
 
 const partnerId = computed(() => userStore.userInfo.partnerId)
 
-function toggleExpand(id: string) { expandedId.value = expandedId.value === id ? null : id }
+function toggleExpand(id: string) {
+  expandedId.value = expandedId.value === id ? null : id
+}
 
 function onPageSizeChange(size: number) {
   showPageSize.value = false
@@ -116,11 +124,13 @@ function onPageSizeChange(size: number) {
 }
 
 function onPrevPage() {
-  if (todoStore.currentPage > 1) todoStore.goToPage(todoStore.currentPage - 1)
+  if (todoStore.currentPage > 1)
+    todoStore.goToPage(todoStore.currentPage - 1)
 }
 
 function onNextPage() {
-  if (todoStore.currentPage < todoStore.totalPages) todoStore.goToPage(todoStore.currentPage + 1)
+  if (todoStore.currentPage < todoStore.totalPages)
+    todoStore.goToPage(todoStore.currentPage + 1)
 }
 
 todoStore.loadTodos()
@@ -175,16 +185,24 @@ todoStore.loadTodos()
           </div>
 
           <div v-if="expandedId === todo.id" class="todo-detail">
-            <p v-if="todo.description" class="detail-desc">{{ todo.description }}</p>
+            <p v-if="todo.description" class="detail-desc">
+              {{ todo.description }}
+            </p>
             <div class="detail-meta">
               <span v-if="todo.assignedTo && todo.userId === userStore.userInfo.id && todo.assignedTo !== userStore.userInfo.id">交给 {{ userStore.partnerName }}</span>
               <span v-if="todo.assignedTo && todo.assignedTo === userStore.userInfo.id">来自 {{ userStore.partnerName }}</span>
               <span v-if="todo.ackStatus === 'confirmed' && todo.ackMessage">回复：{{ todo.ackMessage }}</span>
             </div>
             <div class="detail-actions">
-              <van-button size="small" plain type="primary" @click="openEdit(todo)">编辑</van-button>
-              <van-button v-if="todo.ackStatus === 'unconfirmed' && todo.assignedTo === userStore.userInfo.id" size="small" type="primary" @click="onAcknowledge(todo)">确认收到</van-button>
-              <van-button size="small" plain type="danger" @click="onDelete(todo)">删除</van-button>
+              <van-button size="small" plain type="primary" @click="openEdit(todo)">
+                编辑
+              </van-button>
+              <van-button v-if="todo.ackStatus === 'unconfirmed' && todo.assignedTo === userStore.userInfo.id" size="small" type="primary" @click="onAcknowledge(todo)">
+                确认收到
+              </van-button>
+              <van-button size="small" plain type="danger" @click="onDelete(todo)">
+                删除
+              </van-button>
             </div>
           </div>
         </div>
@@ -196,9 +214,13 @@ todoStore.loadTodos()
 
     <div v-if="todoStore.totalPages > 0" class="pagination">
       <div class="pagination-inner">
-        <van-button :disabled="todoStore.currentPage <= 1" size="small" plain @click="onPrevPage">上一页</van-button>
+        <van-button :disabled="todoStore.currentPage <= 1" size="small" plain @click="onPrevPage">
+          上一页
+        </van-button>
         <span class="page-info">第 {{ todoStore.currentPage }}/{{ todoStore.totalPages }} 页</span>
-        <van-button :disabled="todoStore.currentPage >= todoStore.totalPages" size="small" plain @click="onNextPage">下一页</van-button>
+        <van-button :disabled="todoStore.currentPage >= todoStore.totalPages" size="small" plain @click="onNextPage">
+          下一页
+        </van-button>
         <span class="page-size-trigger" @click="showPageSize = true">每页 {{ todoStore.pageSize }} 条 <van-icon name="arrow-down" /></span>
       </div>
     </div>

@@ -15,7 +15,8 @@ export const useTodoStore = defineStore('todo', () => {
   const filter = ref<{ isCompleted?: boolean, startDueDate?: string, endDueDate?: string }>({})
 
   async function loadTodos() {
-    if (loading.value) return
+    if (loading.value)
+      return
     loading.value = true
     try {
       const params: Record<string, unknown> = { page: currentPage.value, size: pageSize.value }
@@ -30,7 +31,8 @@ export const useTodoStore = defineStore('todo', () => {
       todos.value = data.records
       totalPages.value = data.pages
       hasMore.value = currentPage.value < data.pages
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }
@@ -44,7 +46,8 @@ export const useTodoStore = defineStore('todo', () => {
     try {
       const res = await fetchUpcomingTodos()
       upcoming.value = res.data ?? []
-    } catch {
+    }
+    catch {
       // silent
     }
   }

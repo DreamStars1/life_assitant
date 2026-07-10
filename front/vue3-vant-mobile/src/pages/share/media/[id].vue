@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { showToast, showConfirmDialog } from 'vant'
+import { showConfirmDialog, showToast } from 'vant'
 import { useUserStore } from '@/stores'
 import {
-  getSharedMediaDetail,
-  fetchComments,
   createComment,
+  fetchComments,
   fetchProgress,
+  getSharedMediaDetail,
   updateProgress,
   updateSharedMedia,
 } from '@/api/modules/shared-media'
-import type { SharedMediaItem, MediaComment, MediaProgress } from '@/api/modules/shared-media'
+import type { MediaComment, MediaProgress, SharedMediaItem } from '@/api/modules/shared-media'
 
 const route = useRoute()
 const router = useRouter()
@@ -37,12 +37,14 @@ const myId = computed(() => userStore.userInfo.id)
 const partnerId = computed(() => userStore.userInfo.partnerId)
 
 const myProgress = computed(() => {
-  if (!myId.value) return null
+  if (!myId.value)
+    return null
   return progressList.value.find(p => p.scope === 'personal' && p.userId === myId.value) ?? null
 })
 
 const partnerProgress = computed(() => {
-  if (!partnerId.value) return null
+  if (!partnerId.value)
+    return null
   return progressList.value.find(p => p.scope === 'personal' && p.userId === partnerId.value) ?? null
 })
 
@@ -65,9 +67,11 @@ async function loadData() {
     media.value = detailRes.data ?? null
     comments.value = commentsRes.data ?? []
     progressList.value = progressRes.data ?? []
-  } catch {
+  }
+  catch {
     showToast('加载失败')
-  } finally {
+  }
+  finally {
     loading.value = false
   }
 }
@@ -78,15 +82,19 @@ function isOwnComment(comment: MediaComment): boolean {
 
 async function sendMessage() {
   const text = messageText.value.trim()
-  if (!text) return
+  if (!text)
+    return
   sending.value = true
   try {
     const res = await createComment(mediaId.value, { content: text })
-    if (res.data) comments.value.push(res.data)
+    if (res.data)
+      comments.value.push(res.data)
     messageText.value = ''
-  } catch {
+  }
+  catch {
     showToast('发送失败')
-  } finally {
+  }
+  finally {
     sending.value = false
   }
 }
@@ -117,7 +125,8 @@ async function saveProgress() {
     showProgressDialog.value = false
     // reload data
     await loadData()
-  } catch {
+  }
+  catch {
     showToast('更新失败')
   }
 }
@@ -129,18 +138,22 @@ async function confirmDeleteComment(commentId: string) {
     // ponytail: 等后端提供删除评论接口后再实现
     showToast('已删除')
     comments.value = comments.value.filter(c => c.id !== commentId)
-  } catch { /* cancelled */ }
+  }
+  catch { /* cancelled */ }
 }
 
 function parseDateTime(value: string): Date {
-  if (!value) return new Date(Number.NaN)
-  if (/[zZ]|[+-]\d{2}:?\d{2}$/.test(value)) return new Date(value)
+  if (!value)
+    return new Date(Number.NaN)
+  if (/z|[+-]\d{2}:?\d{2}$/i.test(value))
+    return new Date(value)
   return new Date(value.replace(' ', 'T'))
 }
 
 function formatTime(iso: string): string {
   const d = parseDateTime(iso)
-  if (Number.isNaN(d.getTime())) return ''
+  if (Number.isNaN(d.getTime()))
+    return ''
   return d.toLocaleString('zh-CN', {
     month: '2-digit',
     day: '2-digit',
@@ -174,23 +187,35 @@ onMounted(() => {
     <!-- Progress Bar -->
     <div v-if="media" class="progress-bar">
       <div class="progress-col">
-        <div class="progress-label">共同</div>
-        <div class="progress-value">{{ progressTextOf(sharedProgress) || '–' }}</div>
+        <div class="progress-label">
+          共同
+        </div>
+        <div class="progress-value">
+          {{ progressTextOf(sharedProgress) || '–' }}
+        </div>
       </div>
       <div class="progress-divider" />
       <div class="progress-col">
-        <div class="progress-label">你</div>
-        <div class="progress-value">{{ progressTextOf(myProgress) || '–' }}</div>
+        <div class="progress-label">
+          你
+        </div>
+        <div class="progress-value">
+          {{ progressTextOf(myProgress) || '–' }}
+        </div>
       </div>
       <div class="progress-divider" />
       <div class="progress-col">
-        <div class="progress-label">{{ userStore.partnerName || '对方' }}</div>
-        <div class="progress-value">{{ progressTextOf(partnerProgress) || '–' }}</div>
+        <div class="progress-label">
+          {{ userStore.partnerName || '对方' }}
+        </div>
+        <div class="progress-value">
+          {{ progressTextOf(partnerProgress) || '–' }}
+        </div>
       </div>
     </div>
 
     <!-- Chat Messages -->
-    <div class="chat-container" v-if="!loading">
+    <div v-if="!loading" class="chat-container">
       <div v-if="comments.length === 0" class="chat-empty">
         <van-icon name="chat-o" size="48" color="var(--van-gray-4)" />
         <p>还没有留言，说点什么吧</p>
@@ -202,8 +227,12 @@ onMounted(() => {
         :class="{ 'message-own': isOwnComment(comment), 'message-partner': !isOwnComment(comment) }"
       >
         <div class="message-bubble" @longpress="confirmDeleteComment(comment.id)">
-          <div class="message-content">{{ comment.content }}</div>
-          <div class="message-time">{{ formatTime(comment.createdAt) }}</div>
+          <div class="message-content">
+            {{ comment.content }}
+          </div>
+          <div class="message-time">
+            {{ formatTime(comment.createdAt) }}
+          </div>
         </div>
       </div>
     </div>
@@ -245,8 +274,12 @@ onMounted(() => {
     >
       <div class="progress-form">
         <van-radio-group v-model="progressScope" direction="horizontal">
-          <van-radio name="shared">共同进度</van-radio>
-          <van-radio name="personal">个人进度</van-radio>
+          <van-radio name="shared">
+            共同进度
+          </van-radio>
+          <van-radio name="personal">
+            个人进度
+          </van-radio>
         </van-radio-group>
         <van-field
           v-model="progressText"
@@ -256,7 +289,7 @@ onMounted(() => {
           autosize
           class="!mt-3"
         />
-        <div class="flex items-center gap-2 mt-3 px-1">
+        <div class="mt-3 px-1 flex gap-2 items-center">
           <van-switch v-model="markFinished" size="20" />
           <span class="text-sm text-gray-600">标记为已看完</span>
         </div>

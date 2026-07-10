@@ -72,6 +72,6 @@ export function fetchProgress(mediaId: string) {
   return request.get<ApiResponse<MediaProgress[]>>(`/shared-media/${mediaId}/progress`)
 }
 
-export function updateProgress(mediaId: string, data: { scope: 'shared' | 'personal'; progressText: string }) {
+export function updateProgress(mediaId: string, data: { scope: 'shared' | 'personal', progressText: string }) {
   return request.put<ApiResponse<MediaProgress>>(`/shared-media/${mediaId}/progress`, data)
 }

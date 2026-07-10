@@ -21,11 +21,11 @@ export function fetchSharedRecords(params?: {
   return request.get<ApiResponse<PageResult<SharedRecordItem>>>('/shared-records', { params })
 }
 
-export function createSharedRecord(data: { title: string; content?: string; occurredAt?: string }) {
+export function createSharedRecord(data: { title: string, content?: string, occurredAt?: string }) {
   return request.post<ApiResponse<SharedRecordItem>>('/shared-records', data)
 }
 
-export function updateSharedRecord(id: string, data: { title?: string; content?: string; occurredAt?: string }) {
+export function updateSharedRecord(id: string, data: { title?: string, content?: string, occurredAt?: string }) {
   return request.patch<ApiResponse<SharedRecordItem>>(`/shared-records/${id}`, data)
 }
 

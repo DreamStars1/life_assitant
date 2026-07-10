@@ -169,7 +169,8 @@ async function copyTemplate(code: string, title: string) {
   try {
     await navigator.clipboard.writeText(code)
     showToast(`已复制: ${title}`)
-  } catch {
+  }
+  catch {
     showNotify({ type: 'danger', message: '复制失败，请手动复制' })
   }
 }
@@ -179,7 +180,8 @@ async function loadApiTokens() {
   try {
     const res = await fetchApiTokens()
     apiTokens.value = res.data ?? []
-  } finally {
+  }
+  finally {
     apiTokensLoading.value = false
   }
 }
@@ -190,7 +192,8 @@ function openApiTokenManager() {
 }
 
 async function onCreateApiToken() {
-  if (!newTokenName.value.trim()) return
+  if (!newTokenName.value.trim())
+    return
   try {
     const res = await createApiToken({ name: newTokenName.value.trim() })
     const token = res.data!
@@ -205,7 +208,8 @@ async function onCreateApiToken() {
     }).then(() => {
       loadApiTokens()
     })
-  } catch {
+  }
+  catch {
     showNotify({ type: 'danger', message: '创建失败' })
   }
 }
@@ -216,7 +220,8 @@ async function onRevokeApiToken(t: ApiToken) {
     await deleteApiToken(t.id)
     showToast('已撤销')
     await loadApiTokens()
-  } catch { /* cancelled */ }
+  }
+  catch { /* cancelled */ }
 }
 
 function formatDate(dateStr: string) {
@@ -258,19 +263,19 @@ function formatDate(dateStr: string) {
           暂无模板，点击右上角添加
         </div>
         <div v-else class="template-popup-list">
-          <div v-for="(t, i) in templates" :key="t.id" class="template-popup-item" :class="[{ active: t.id === activeTemplateId }]">
+          <div v-for="(template, i) in templates" :key="template.id" class="template-popup-item" :class="[{ active: template.id === activeTemplateId }]">
             <div class="template-popup-num">
               {{ i + 1 }}
             </div>
-            <span class="template-popup-content">{{ t.content }}</span>
+            <span class="template-popup-content">{{ template.content }}</span>
             <div class="template-popup-actions">
               <van-icon
-                :name="t.id === activeTemplateId ? 'success' : 'circle'"
-                :color="t.id === activeTemplateId ? 'var(--van-green)' : 'var(--van-gray-4)'"
-                @click="setActiveTemplate(t.id)"
+                :name="template.id === activeTemplateId ? 'success' : 'circle'"
+                :color="template.id === activeTemplateId ? 'var(--van-green)' : 'var(--van-gray-4)'"
+                @click="setActiveTemplate(template.id)"
               />
-              <van-icon name="edit" @click="openEdit(t)" />
-              <van-icon name="delete" @click="onDelete(t)" />
+              <van-icon name="edit" @click="openEdit(template)" />
+              <van-icon name="delete" @click="onDelete(template)" />
             </div>
           </div>
           <div v-if="templates.length >= 5" class="template-popup-hint">
@@ -307,15 +312,17 @@ function formatDate(dateStr: string) {
               暂无 API 令牌，点击右上角新建
             </div>
             <div v-else class="template-popup-list">
-              <div v-for="t in apiTokens" :key="t.id" class="template-popup-item">
+              <div v-for="token in apiTokens" :key="token.id" class="template-popup-item">
                 <div style="flex: 1">
-                  <div style="font-size: 14px; font-weight: 500;">{{ t.name }}</div>
+                  <div style="font-size: 14px; font-weight: 500;">
+                    {{ token.name }}
+                  </div>
                   <div style="font-size: 12px; color: var(--van-gray-5); margin-top: 2px;">
-                    {{ t.tokenPrefix }}
-                    <span v-if="t.lastUsedAt"> · 最后使用: {{ formatDate(t.lastUsedAt) }}</span>
+                    {{ token.tokenPrefix }}
+                    <span v-if="token.lastUsedAt"> · 最后使用: {{ formatDate(token.lastUsedAt) }}</span>
                   </div>
                 </div>
-                <van-icon name="delete" @click="onRevokeApiToken(t)" />
+                <van-icon name="delete" @click="onRevokeApiToken(token)" />
               </div>
             </div>
           </div>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { showNotify, showToast, showConfirmDialog } from 'vant'
+import { showConfirmDialog, showNotify, showToast } from 'vant'
 import { useUserStore } from '@/stores'
 import request from '@/utils/request'
-import { fetchSharedRecords, createSharedRecord, updateSharedRecord, deleteSharedRecord } from '@/api/modules/shared-records'
+import { createSharedRecord, deleteSharedRecord, fetchSharedRecords, updateSharedRecord } from '@/api/modules/shared-records'
 import type { SharedRecordItem } from '@/api/modules/shared-records'
-import { fetchSharedMediaList, createSharedMedia, deleteSharedMedia } from '@/api/modules/shared-media'
+import { createSharedMedia, deleteSharedMedia, fetchSharedMediaList } from '@/api/modules/shared-media'
 import type { SharedMediaItem } from '@/api/modules/shared-media'
 import { useRouter } from 'vue-router'
 
@@ -32,7 +32,8 @@ async function copyInvite() {
   try {
     await navigator.clipboard.writeText(inviteToken.value)
     showToast('已复制邀请码，发给你的伴侣吧')
-  } catch {
+  }
+  catch {
     const ta = document.createElement('textarea')
     ta.value = inviteToken.value
     ta.style.position = 'fixed'
@@ -42,9 +43,11 @@ async function copyInvite() {
     try {
       document.execCommand('copy')
       showToast('已复制邀请码，发给你的伴侣吧')
-    } catch {
+    }
+    catch {
       showNotify({ type: 'danger', message: '复制失败，请长按选中后手动复制' })
-    } finally {
+    }
+    finally {
       document.body.removeChild(ta)
     }
   }
@@ -98,14 +101,18 @@ const showCreateCalendar = ref(false)
 async function loadRecords() {
   try {
     const params: Record<string, unknown> = { page: currentPage.value, size: pageSize.value }
-    if (searchKeyword.value.trim()) params.keyword = searchKeyword.value.trim()
-    if (filterStart.value) params.start = filterStart.value
-    if (filterEnd.value) params.end = filterEnd.value
+    if (searchKeyword.value.trim())
+      params.keyword = searchKeyword.value.trim()
+    if (filterStart.value)
+      params.start = filterStart.value
+    if (filterEnd.value)
+      params.end = filterEnd.value
     const res = await fetchSharedRecords(params)
     const data = res.data ?? { records: [] as SharedRecordItem[], pages: 0 }
     records.value = data.records
     totalPages.value = data.pages
-  } catch {
+  }
+  catch {
     showToast('加载失败')
   }
 }
@@ -167,7 +174,10 @@ function cancelEdit() {
 }
 
 async function saveEdit(r: SharedRecordItem) {
-  if (!editForm.title.trim()) { showToast('请输入标题'); return }
+  if (!editForm.title.trim()) {
+    showToast('请输入标题')
+    return
+  }
   try {
     await updateSharedRecord(r.id, {
       title: editForm.title,
@@ -176,9 +186,11 @@ async function saveEdit(r: SharedRecordItem) {
     })
     showToast('已更新')
     await goToPage(1)
-  } catch {
+  }
+  catch {
     showToast('更新失败')
-  } finally {
+  }
+  finally {
     editingRecordId.value = null
   }
 }
@@ -197,7 +209,10 @@ function cancelCreate() {
 }
 
 async function saveCreate() {
-  if (!createForm.title.trim()) { showToast('请输入标题'); return }
+  if (!createForm.title.trim()) {
+    showToast('请输入标题')
+    return
+  }
   try {
     await createSharedRecord({
       title: createForm.title,
@@ -207,7 +222,8 @@ async function saveCreate() {
     showToast('记录已添加')
     showCreateForm.value = false
     await goToPage(1)
-  } catch {
+  }
+  catch {
     showToast('添加失败')
   }
 }
@@ -218,15 +234,18 @@ async function deleteRecord(id: string) {
     await deleteSharedRecord(id)
     showToast('已删除')
     await goToPage(1)
-  } catch {
+  }
+  catch {
     showToast('删除失败')
   }
 }
 
 function formatDate(d: string): string {
-  if (!d) return ''
+  if (!d)
+    return ''
   const parts = d.slice(0, 10).split('-').map(Number)
-  if (parts.length !== 3 || parts.some(isNaN)) return d.slice(0, 10)
+  if (parts.length !== 3 || parts.some(Number.isNaN))
+    return d.slice(0, 10)
   const [y, m, day] = parts
   return new Date(y, m - 1, day).toLocaleDateString('zh-CN')
 }
@@ -257,14 +276,18 @@ const mediaTypeColumns = [
 async function loadMedia() {
   try {
     const params: Record<string, unknown> = { page: mediaPage.value, size: 5 }
-    if (mediaTypeFilter.value) params.mediaType = mediaTypeFilter.value
-    if (mediaStatusFilter.value === 'finished') params.status = 'finished'
-    else if (mediaStatusFilter.value === 'unfinished') params.status = 'unfinished'
+    if (mediaTypeFilter.value)
+      params.mediaType = mediaTypeFilter.value
+    if (mediaStatusFilter.value === 'finished')
+      params.status = 'finished'
+    else if (mediaStatusFilter.value === 'unfinished')
+      params.status = 'unfinished'
     const res = await fetchSharedMediaList(params)
     const data = res.data ?? ({ records: [] as SharedMediaItem[], pages: 0 } as any)
     mediaRecords.value = data.records
     mediaTotalPages.value = data.pages
-  } catch {
+  }
+  catch {
     showToast('加载媒体失败')
   }
 }
@@ -282,13 +305,18 @@ function onMediaStatusFilter(status: string) {
 }
 
 async function onAddMedia() {
-  if (!addMediaForm.title.trim()) { showToast('请输入名称'); return }
+  if (!addMediaForm.title.trim()) {
+    showToast('请输入名称')
+    return
+  }
   try {
     const fd = new FormData()
     fd.append('title', addMediaForm.title)
     fd.append('mediaType', addMediaForm.mediaType)
-    if (addMediaForm.description) fd.append('description', addMediaForm.description)
-    if (addMediaCoverList.value[0]?.file) fd.append('cover', addMediaCoverList.value[0].file)
+    if (addMediaForm.description)
+      fd.append('description', addMediaForm.description)
+    if (addMediaCoverList.value[0]?.file)
+      fd.append('cover', addMediaCoverList.value[0].file)
     await createSharedMedia(fd)
     showToast('已添加')
     showAddMedia.value = false
@@ -298,7 +326,8 @@ async function onAddMedia() {
     addMediaCoverList.value = []
     mediaPage.value = 1
     await loadMedia()
-  } catch {
+  }
+  catch {
     showToast('添加失败')
   }
 }
@@ -306,7 +335,8 @@ async function onAddMedia() {
 async function deleteMedia(id: string) {
   try {
     await showConfirmDialog({ title: '确认删除', message: '删除后将同时删除相关评论和进度记录，确定吗？' })
-  } catch {
+  }
+  catch {
     return
   }
   try {
@@ -314,7 +344,8 @@ async function deleteMedia(id: string) {
     showToast('已删除')
     mediaPage.value = 1
     await loadMedia()
-  } catch {
+  }
+  catch {
     showToast('删除失败')
   }
 }
@@ -330,26 +361,32 @@ function formatMediaType(t: string): string {
 }
 
 function formatFinishedDate(iso: string | null): string {
-  if (!iso) return ''
+  if (!iso)
+    return ''
   const d = new Date(iso)
-  if (isNaN(d.getTime())) return ''
+  if (Number.isNaN(d.getTime()))
+    return ''
   return d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
 }
 
 function mediaCoverUrl(path: string | null): string {
-  if (!path) return ''
-  if (path.startsWith('http')) return path
+  if (!path)
+    return ''
+  if (path.startsWith('http'))
+    return path
   // 后端已返回以 / 开头的路径，直接使用
   return path
 }
 
 onMounted(async () => {
   await userStore.info()
-  if (partnerId.value) goToPage(1)
+  if (partnerId.value)
+    goToPage(1)
 })
 
 watch(partnerId, async (val) => {
-  if (val) goToPage(1)
+  if (val)
+    goToPage(1)
 })
 
 watch(activeTab, (tab) => {
@@ -429,8 +466,12 @@ watch(activeTab, (tab) => {
                   <van-field v-model="editForm.content" placeholder="详细描述（可选）" class="!mb-2" />
                   <van-field v-model="editForm.occurredAt" is-link readonly placeholder="日期（可选）" @click="showCalendar = true" />
                   <div class="flex gap-2">
-                    <van-button size="small" type="primary" @click="saveEdit(r)">保存</van-button>
-                    <van-button size="small" @click="cancelEdit">取消</van-button>
+                    <van-button size="small" type="primary" @click="saveEdit(r)">
+                      保存
+                    </van-button>
+                    <van-button size="small" @click="cancelEdit">
+                      取消
+                    </van-button>
                   </div>
                 </div>
               </template>
@@ -442,17 +483,21 @@ watch(activeTab, (tab) => {
 
           <div v-if="totalPages > 0" class="pagination">
             <div class="pagination-inner">
-              <van-button :disabled="currentPage <= 1" size="small" plain @click="goToPage(currentPage - 1)">上一页</van-button>
+              <van-button :disabled="currentPage <= 1" size="small" plain @click="goToPage(currentPage - 1)">
+                上一页
+              </van-button>
               <span class="page-info">第 {{ currentPage }}/{{ totalPages }} 页</span>
-              <van-button :disabled="currentPage >= totalPages" size="small" plain @click="goToPage(currentPage + 1)">下一页</van-button>
+              <van-button :disabled="currentPage >= totalPages" size="small" plain @click="goToPage(currentPage + 1)">
+                下一页
+              </van-button>
               <span class="page-size-trigger" @click="showPageSize = true">每页 {{ pageSize }} 条 <van-icon name="arrow-down" /></span>
             </div>
           </div>
 
-            <van-calendar v-model:show="showCalendar" :min-date="new Date('2020-01-01')" @confirm="onCalendarConfirm" />
+          <van-calendar v-model:show="showCalendar" :min-date="new Date('2020-01-01')" @confirm="onCalendarConfirm" />
 
           <!-- 新建表单 -->
-          <div class="px-4 mt-3">
+          <div class="mt-3 px-4">
             <van-button v-if="!showCreateForm" type="primary" round block @click="openCreate">
               添加一起做过的事
             </van-button>
@@ -462,8 +507,12 @@ watch(activeTab, (tab) => {
               <van-field v-model="createForm.occurredAt" is-link readonly placeholder="日期（可选）" @click="showCreateCalendar = true" />
               <van-calendar v-model:show="showCreateCalendar" :min-date="new Date('2020-01-01')" @confirm="onCreateCalendarConfirm" />
               <div class="flex gap-2">
-                <van-button type="primary" size="small" @click="saveCreate">保存</van-button>
-                <van-button size="small" @click="cancelCreate">取消</van-button>
+                <van-button type="primary" size="small" @click="saveCreate">
+                  保存
+                </van-button>
+                <van-button size="small" @click="cancelCreate">
+                  取消
+                </van-button>
               </div>
             </div>
           </div>
@@ -476,7 +525,7 @@ watch(activeTab, (tab) => {
 
         <van-tab title="一起看过的" name="media">
           <!-- 媒体类型筛选 -->
-          <div class="px-4 pt-3 flex gap-2 flex-wrap">
+          <div class="px-4 pt-3 flex flex-wrap gap-2">
             <van-tag
               v-for="t in [{ label: '全部', value: '' }, { label: '电影', value: 'movie' }, { label: '书籍', value: 'book' }, { label: '漫剧', value: 'tv' }]"
               :key="t.value"
@@ -489,7 +538,7 @@ watch(activeTab, (tab) => {
             </van-tag>
           </div>
           <!-- 状态筛选 -->
-          <div class="px-4 pt-2 flex gap-2 flex-wrap">
+          <div class="px-4 pt-2 flex flex-wrap gap-2">
             <van-tag
               v-for="s in [{ label: '全部', value: '' }, { label: '没看完', value: 'unfinished' }, { label: '已看完', value: 'finished' }]"
               :key="s.value"
@@ -508,26 +557,30 @@ watch(activeTab, (tab) => {
             <van-empty v-if="mediaRecords.length === 0" description="还没有一起看过的内容，点右下角 + 添加吧" />
             <van-swipe-cell v-for="item in mediaRecords" :key="item.id">
               <div
-                class="media-card flex items-center p-3 mb-2 rounded-lg bg-white"
-                @click="router.push('/share/media/' + item.id)"
+                class="media-card mb-2 p-3 rounded-lg bg-white flex items-center"
+                @click="router.push(`/share/media/${item.id}`)"
               >
                 <img
                   v-if="item.coverPath"
                   :src="mediaCoverUrl(item.coverPath)"
                   alt=""
                   class="media-cover flex-shrink-0"
-                />
+                >
                 <div v-else class="media-cover-placeholder">
                   <van-icon name="photo-o" size="24" />
                 </div>
                 <div class="ml-3 flex-1 min-w-0">
-                  <div class="font-medium truncate">{{ item.title }}</div>
-                  <div class="text-xs text-gray-500 mt-1">{{ formatMediaType(item.mediaType) }}</div>
+                  <div class="font-medium truncate">
+                    {{ item.title }}
+                  </div>
+                  <div class="text-xs text-gray-500 mt-1">
+                    {{ formatMediaType(item.mediaType) }}
+                  </div>
                   <div class="text-xs mt-1">
                     <van-tag :type="item.isFinished ? 'success' : 'warning'">
                       {{ item.isFinished ? '已看完' : '还没看完' }}
                     </van-tag>
-                    <span v-if="item.isFinished && item.finishedAt" class="text-gray-400 ml-1 text-xs">
+                    <span v-if="item.isFinished && item.finishedAt" class="text-xs text-gray-400 ml-1">
                       {{ formatFinishedDate(item.finishedAt) }}
                     </span>
                   </div>
@@ -540,14 +593,18 @@ watch(activeTab, (tab) => {
           </div>
 
           <!-- 分页 -->
-          <div v-if="mediaTotalPages > 0" class="flex justify-center items-center gap-2 px-4 py-3">
-            <van-button :disabled="mediaPage <= 1" size="small" plain @click="goToMediaPage(mediaPage - 1)">上一页</van-button>
+          <div v-if="mediaTotalPages > 0" class="px-4 py-3 flex gap-2 items-center justify-center">
+            <van-button :disabled="mediaPage <= 1" size="small" plain @click="goToMediaPage(mediaPage - 1)">
+              上一页
+            </van-button>
             <span class="text-sm text-gray-500">第 {{ mediaPage }}/{{ mediaTotalPages }} 页</span>
-            <van-button :disabled="mediaPage >= mediaTotalPages" size="small" plain @click="goToMediaPage(mediaPage + 1)">下一页</van-button>
+            <van-button :disabled="mediaPage >= mediaTotalPages" size="small" plain @click="goToMediaPage(mediaPage + 1)">
+              下一页
+            </van-button>
           </div>
 
           <!-- 添加按钮 -->
-          <div class="px-4 mt-3">
+          <div class="mt-3 px-4">
             <van-button type="primary" round block icon="plus" @click="showAddMedia = true">
               添加看过的
             </van-button>
@@ -571,7 +628,9 @@ watch(activeTab, (tab) => {
                 @click="showMediaTypePicker = true"
               />
               <van-field v-model="addMediaForm.description" placeholder="简介（可选）" type="textarea" :rows="2" autosize />
-              <div class="text-sm text-gray-500 mb-1">封面图</div>
+              <div class="text-sm text-gray-500 mb-1">
+                封面图
+              </div>
               <van-uploader v-model="addMediaCoverList" accept="image/*" max-count="1" />
             </div>
           </van-dialog>

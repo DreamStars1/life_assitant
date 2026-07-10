@@ -20,6 +20,16 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserState>({ ...InitUserInfo })
   const partnerName = ref('')
 
+  const loadPartnerName = async (pid: string) => {
+    try {
+      const res = await request.get(`/users/${pid}`)
+      partnerName.value = res.data?.fullName || res.data?.full_name || '对方'
+    }
+    catch {
+      partnerName.value = '对方'
+    }
+  }
+
   const setInfo = (raw: Record<string, unknown>) => {
     const pid = (raw.partnerId || raw.partner_id) as string | null | undefined
     userInfo.value = {
@@ -35,16 +45,6 @@ export const useUserStore = defineStore('user', () => {
     if (pid)
       loadPartnerName(pid)
     else partnerName.value = ''
-  }
-
-  const loadPartnerName = async (pid: string) => {
-    try {
-      const res = await request.get(`/users/${pid}`)
-      partnerName.value = res.data?.fullName || res.data?.full_name || '对方'
-    }
-    catch {
-      partnerName.value = '对方'
-    }
   }
 
   const info = async () => {
