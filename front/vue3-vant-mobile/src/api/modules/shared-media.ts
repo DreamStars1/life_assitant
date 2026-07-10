@@ -9,6 +9,7 @@ export interface SharedMediaItem {
   coverPath: string | null
   description: string | null
   isFinished: boolean
+  finishedAt: string | null
   createdAt: string
   updateTime: string
 }

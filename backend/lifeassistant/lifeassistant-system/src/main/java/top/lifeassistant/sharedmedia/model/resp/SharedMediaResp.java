@@ -18,6 +18,7 @@ public class SharedMediaResp {
     private String coverPath;
     private String description;
     private Boolean isFinished;
+    private LocalDateTime finishedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updateTime;
 
@@ -30,6 +31,7 @@ public class SharedMediaResp {
             .coverPath(media.getCoverPath())
             .description(media.getDescription())
             .isFinished(media.getIsFinished())
+            .finishedAt(media.getFinishedAt())
             .createdAt(media.getCreatedAt())
             .updateTime(media.getUpdateTime())
             .build();

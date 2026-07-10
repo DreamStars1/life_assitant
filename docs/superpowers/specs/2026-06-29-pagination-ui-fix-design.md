@@ -26,16 +26,21 @@ package top.lifeassistant.common.base.model.query;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 @Data
 public class PageQuery {
 
     @Schema(description = "页码", example = "1")
+    @Min(value = 1, message = "页码最小为 1")
     private int page = 1;
 
-    @Schema(description = "每页条数", example = "20")
-    private int size = 20;
+    @Schema(description = "每页条数", example = "5")
+    @Min(value = 1, message = "每页条数最小为 1")
+    @Max(value = 100, message = "每页条数最大为 100")
+    private int size = 5;
 
     public <T> Page<T> toPage() {
         return new Page<>(page, size);
@@ -116,11 +121,11 @@ public class TodoPageQuery extends PageQuery {
 }
 ```
 
-**修改 `TodoController.java`**：
+**修改 `TodoController.java`**（注意 `@Valid` 触发参数校验）：
 
 ```java
 @GetMapping("/todos")
-public ApiResponse<PageResult<TodoResp>> list(@CurrentUser UserDO user, TodoPageQuery query) {
+public ApiResponse<PageResult<TodoResp>> list(@CurrentUser UserDO user, @Valid TodoPageQuery query) {
     return ApiResponse.ok(service.list(user, query));
 }
 ```
@@ -155,16 +160,17 @@ public PageResult<TodoResp> list(UserDO user, TodoPageQuery query) {
 ```java
 @Schema(description = "共享记录分页查询参数")
 public class SharedRecordPageQuery extends PageQuery {
+    private String keyword;
     private LocalDateTime start;
     private LocalDateTime end;
 }
 ```
 
-**修改 `SharedRecordController.java`**：
+**修改 `SharedRecordController.java`**（同样加 `@Valid`）：
 
 ```java
 @GetMapping("/shared-records")
-public ApiResponse<PageResult<SharedRecordResp>> list(@CurrentUser UserDO user, SharedRecordPageQuery query) {
+public ApiResponse<PageResult<SharedRecordResp>> list(@CurrentUser UserDO user, @Valid SharedRecordPageQuery query) {
     return ApiResponse.ok(service.list(user, query));
 }
 ```
@@ -177,6 +183,10 @@ public PageResult<SharedRecordResp> list(UserDO user, SharedRecordPageQuery quer
     Page<SharedRecordDO> page = query.toPage();
     LambdaQueryWrapper<SharedRecordDO> qw = new LambdaQueryWrapper<>();
     qw.in(SharedRecordDO::getCreatedBy, List.of(user.getId(), user.getPartnerId()));
+    if (query.getKeyword() != null) {
+        qw.and(w -> w.like(SharedRecordDO::getTitle, query.getKeyword())
+                      .or().like(SharedRecordDO::getContent, query.getKeyword()));
+    }
     if (query.getStart() != null) qw.ge(SharedRecordDO::getOccurredAt, query.getStart());
     if (query.getEnd() != null) qw.le(SharedRecordDO::getOccurredAt, query.getEnd());
     qw.orderByDesc(SharedRecordDO::getOccurredAt);
@@ -226,7 +236,7 @@ export function fetchTodos(params?: {
 // 新增分页状态
 const currentPage = ref(1)
 const hasMore = ref(true)
-const pageSize = 20
+const pageSize = 5
 
 async function loadTodos(reset = false) {
   if (reset) {
@@ -297,6 +307,7 @@ async function onLoadMore() {
 - 移除全局 `showForm` / `editingId` / `form`，改为每张卡片独立控制
 - 新增 `editingRecordId` 控制当前哪张卡片在编辑
 - 新增分页状态 `currentPage` / `hasMore` / `pageSize`
+- 定义 `SharedRecordItem` 接口替换 `any` 类型：在 `api/modules/shared-records.ts`（新增）或直接页面内定义
 
 **编辑交互**：
 
@@ -348,16 +359,35 @@ async function onLoadMore() {
 </van-list>
 ```
 
-**搜索逻辑改为服务端搜索或保留客户端搜索**：当前搜索是 `computed` 对全量数据过滤。分页后搜索范围缩小的处理方式：
+**搜索改为服务端搜索**：当前搜索是前端 `computed` 过滤。分页后每页只有 20 条，客户端搜索无意义。需要：
 
-- **保持客户端搜索**，但只对当前页生效 → 用户体验差
-- **改为服务端搜索** → 需要后端新增 `keyword` 参数
+- 后端 `SharedRecordPageQuery` 新增 `keyword` 参数
+- Service 在 `LambdaQueryWrapper` 中增加 `keyword` 的条件：`like(SharedRecordDO::getTitle, keyword)` 或 `like(SharedRecordDO::getContent, keyword)`
+- 前端搜索框改为触发 `loadRecords(true)`（重置到第一页），不再使用 `computed filteredRecords`
+- `van-list` 直接渲染 `records` 而不是 `filteredRecords`
 
-推荐：**短期保留客户端搜索 + 兜底"当前页无匹配结果"提示，后续改为服务端搜索**。`ponytail:` 标记。
+### 4. 页面大小切换（前端通用）
+
+两个分页页面在列表尾部增加页面大小切换入口，纯前端控制，不涉及后端额外传参：
+
+```html
+<van-action-sheet v-model:show="showPageSizePicker" title="每页显示">
+  <van-cell v-for="s in [3, 5, 10]" :key="s" :title="`${s} 条`" is-link @click="changePageSize(s)" />
+</van-action-sheet>
+```
+
+放在 `van-list` 的 `finished-text` 区域下方或列表尾部：
+
+```html
+<div class="page-size-trigger" @click="showPageSizePicker = true">
+  每页 {{ pageSize }} 条 <van-icon name="arrow-down" />
+</div>
+```
+
+切换后重置到第一页并重新加载数据。
 
 ## 前端类型安全备注
 
-- 共享记录页当前大量使用 `any` 类型，改造时按项目已有模式保持一致
 - `PageResult<T>` 泛型需要后端返回结构一致
 
 ## 不涉及的改动

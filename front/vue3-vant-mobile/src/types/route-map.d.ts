@@ -115,6 +115,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'MediaDetail': RouteRecordInfo<
+      'MediaDetail',
+      '/share/media/:id',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
+      | never
+    >,
     'Todos': RouteRecordInfo<
       'Todos',
       '/todos',
@@ -230,6 +237,14 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | never
+    }
+    'src/pages/share/media/[id].vue': {
+      routes:
+        | 'MediaDetail'
+      views:
+        | never
+      pathParamNames:
+        | 'id'
     }
     'src/pages/todos/index.vue': {
       routes:

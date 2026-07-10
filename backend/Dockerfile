@@ -23,18 +23,17 @@ RUN cd lifeassistant && mvn package -P fat-jar -DskipTests -B -q && \
 FROM eclipse-temurin:17-jre-alpine
 
 RUN addgroup -g 1001 appgroup && \
-    adduser -u 1001 -G appgroup -s /bin/sh -D appuser
+    adduser -u 1001 -G appgroup -s /bin/sh -D appuser && \
+    apk add --no-cache su-exec
 
 WORKDIR /app
 COPY --from=build /build/app.jar ./app.jar
-
-RUN mkdir -p /logs && chown -R appuser:appgroup /app /logs
-
-USER appuser
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh && mkdir -p /logs && chown -R appuser:appgroup /app /logs
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=15s --timeout=5s --retries=3 --start-period=60s \
     CMD wget -qO- http://localhost:8000/actuator/health || exit 1
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["/entrypoint.sh"]

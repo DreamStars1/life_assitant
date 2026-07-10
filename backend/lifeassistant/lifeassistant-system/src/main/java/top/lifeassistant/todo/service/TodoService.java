@@ -81,7 +81,9 @@ public class TodoService {
     }
 
     public TodoResp update(UserDO user, String id, TodoUpdateReq req) {
-        TodoDO todo = ownerValidator.requireOwner(() -> mapper.selectById(id), user.getId());
+        TodoDO todo = ownerValidator.findAndCheck(
+            () -> mapper.selectById(id), "资源不存在",
+            t -> user.getId().equals(t.getUserId()) || user.getId().equals(t.getAssignedTo()));
         if (req.getTitle() != null) todo.setTitle(req.getTitle());
         if (req.getDescription() != null) todo.setDescription(req.getDescription());
         if (req.getPriority() != null) todo.setPriority(req.getPriority());

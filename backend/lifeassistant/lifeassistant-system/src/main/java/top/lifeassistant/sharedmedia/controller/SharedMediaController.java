@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import top.lifeassistant.common.annotation.CurrentUser;
 import top.lifeassistant.common.base.model.query.PageResult;
 import top.lifeassistant.common.base.model.resp.ApiResponse;
+import top.lifeassistant.common.component.UploadStorage;
 import top.lifeassistant.sharedmedia.model.query.SharedMediaPageQuery;
 import top.lifeassistant.sharedmedia.model.req.SharedMediaCreateReq;
 import top.lifeassistant.sharedmedia.model.req.SharedMediaUpdateReq;
@@ -21,7 +22,6 @@ import top.lifeassistant.system.model.entity.user.UserDO;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.UUID;
 
 @Tag(name = "共享媒体 API")
@@ -32,6 +32,7 @@ public class SharedMediaController {
     private final SharedMediaService service;
     private final MediaCommentService commentService;
     private final MediaProgressService progressService;
+    private final UploadStorage uploadStorage;
 
     @Operation(summary = "添加媒体")
     @PostMapping("/shared-media")
@@ -71,7 +72,8 @@ public class SharedMediaController {
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "mediaType", required = false) String mediaType,
             @RequestParam(value = "description", required = false) String description,
-            @RequestParam(value = "cover", required = false) MultipartFile cover) throws IOException {
+            @RequestParam(value = "cover", required = false) MultipartFile cover,
+            @RequestParam(value = "isFinished", required = false) Boolean isFinished) throws IOException {
 
         SharedMediaUpdateReq req = new SharedMediaUpdateReq();
         req.setTitle(title);
@@ -79,7 +81,7 @@ public class SharedMediaController {
         req.setDescription(description);
 
         String coverPath = saveCover(cover);
-        return ApiResponse.ok(service.update(user, id, req, coverPath));
+        return ApiResponse.ok(service.update(user, id, req, coverPath, isFinished));
     }
 
     @Operation(summary = "删除媒体")
@@ -93,12 +95,11 @@ public class SharedMediaController {
 
     private String saveCover(MultipartFile cover) throws IOException {
         if (cover == null || cover.isEmpty()) return null;
-        String uploadDir = "uploads/shared-media/";
-        Path dir = Paths.get(uploadDir).toAbsolutePath();
+        Path dir = uploadStorage.sharedMediaDir();
         Files.createDirectories(dir);
         String filename = UUID.randomUUID() + "_" + cover.getOriginalFilename();
         Path filePath = dir.resolve(filename);
         cover.transferTo(filePath.toFile());
-        return "/" + uploadDir + filename;
+        return uploadStorage.sharedMediaUrl(filename);
     }
 }

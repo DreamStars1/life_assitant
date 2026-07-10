@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { showNotify, showToast } from 'vant'
+import { showNotify, showToast, showConfirmDialog } from 'vant'
 import { useUserStore } from '@/stores'
 import request from '@/utils/request'
 import { fetchSharedRecords, createSharedRecord, updateSharedRecord, deleteSharedRecord } from '@/api/modules/shared-records'
@@ -303,6 +303,22 @@ async function onAddMedia() {
   }
 }
 
+async function deleteMedia(id: string) {
+  try {
+    await showConfirmDialog({ title: '确认删除', message: '删除后将同时删除相关评论和进度记录，确定吗？' })
+  } catch {
+    return
+  }
+  try {
+    await deleteSharedMedia(id)
+    showToast('已删除')
+    mediaPage.value = 1
+    await loadMedia()
+  } catch {
+    showToast('删除失败')
+  }
+}
+
 function goToMediaPage(page: number) {
   mediaPage.value = page
   loadMedia()
@@ -311,6 +327,13 @@ function goToMediaPage(page: number) {
 function formatMediaType(t: string): string {
   const map: Record<string, string> = { movie: '电影', book: '书籍', tv: '漫剧' }
   return map[t] || t
+}
+
+function formatFinishedDate(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
 }
 
 function mediaCoverUrl(path: string | null): string {
@@ -483,31 +506,37 @@ watch(activeTab, (tab) => {
           <!-- 媒体列表 -->
           <div class="px-4 pt-3">
             <van-empty v-if="mediaRecords.length === 0" description="还没有一起看过的内容，点右下角 + 添加吧" />
-            <div
-              v-for="item in mediaRecords"
-              :key="item.id"
-              class="media-card flex items-center p-3 mb-2 rounded-lg bg-white"
-              @click="router.push('/share/media/' + item.id)"
-            >
-              <img
-                v-if="item.coverPath"
-                :src="mediaCoverUrl(item.coverPath)"
-                alt=""
-                class="media-cover flex-shrink-0"
-              />
-              <div v-else class="media-cover-placeholder">
-                <van-icon name="photo-o" size="24" />
-              </div>
-              <div class="ml-3 flex-1 min-w-0">
-                <div class="font-medium truncate">{{ item.title }}</div>
-                <div class="text-xs text-gray-500 mt-1">{{ formatMediaType(item.mediaType) }}</div>
-                <div class="text-xs mt-1">
-                  <van-tag :type="item.isFinished ? 'success' : 'warning'">
-                    {{ item.isFinished ? '已看完' : '还没看完' }}
-                  </van-tag>
+            <van-swipe-cell v-for="item in mediaRecords" :key="item.id">
+              <div
+                class="media-card flex items-center p-3 mb-2 rounded-lg bg-white"
+                @click="router.push('/share/media/' + item.id)"
+              >
+                <img
+                  v-if="item.coverPath"
+                  :src="mediaCoverUrl(item.coverPath)"
+                  alt=""
+                  class="media-cover flex-shrink-0"
+                />
+                <div v-else class="media-cover-placeholder">
+                  <van-icon name="photo-o" size="24" />
+                </div>
+                <div class="ml-3 flex-1 min-w-0">
+                  <div class="font-medium truncate">{{ item.title }}</div>
+                  <div class="text-xs text-gray-500 mt-1">{{ formatMediaType(item.mediaType) }}</div>
+                  <div class="text-xs mt-1">
+                    <van-tag :type="item.isFinished ? 'success' : 'warning'">
+                      {{ item.isFinished ? '已看完' : '还没看完' }}
+                    </van-tag>
+                    <span v-if="item.isFinished && item.finishedAt" class="text-gray-400 ml-1 text-xs">
+                      {{ formatFinishedDate(item.finishedAt) }}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+              <template #right>
+                <van-button square type="danger" text="删除" @click="deleteMedia(item.id)" />
+              </template>
+            </van-swipe-cell>
           </div>
 
           <!-- 分页 -->

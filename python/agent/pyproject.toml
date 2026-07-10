@@ -1,0 +1,17 @@
+[project]
+name = "life-assistant-agent"
+version = "0.1.0"
+description = "Life Assistant MCP Agent - Python MCP server that proxies to Java backend"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.8.0,<2",
+    "httpx>=0.28.0",
+    "uvicorn>=0.34.0",
+    "starlette>=0.46.0",
+]
+
+[project.scripts]
+life-assistant-agent = "life_assistant_agent.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

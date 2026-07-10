@@ -7,6 +7,7 @@ import top.lifeassistant.common.base.model.entity.BaseDO;
 import top.lifeassistant.common.base.model.entity.OwnedEntity;
 
 import java.io.Serial;
+import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -33,6 +34,9 @@ public class SharedMediaDO extends BaseDO implements OwnedEntity {
 
     /** 是否已完结 */
     private Boolean isFinished;
+
+    /** 看完时间 */
+    private LocalDateTime finishedAt;
 
     @Override
     public String getOwnerId() {

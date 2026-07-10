@@ -11,7 +11,7 @@ x-backend-env: &backend-env
   REDIS_DB: "0"
   DOMAIN: ${DOMAIN}
   FRONTEND_HOST: https://app.${DOMAIN}
-  BACKEND_CORS_ORIGINS: https://app.${DOMAIN},https://api.${DOMAIN}
+  BACKEND_CORS_ORIGINS: https://app.${DOMAIN},https://www.${DOMAIN},https://${DOMAIN},https://api.${DOMAIN}
   SECRET_KEY: ${SECRET_KEY?Variable not set}
   FIRST_SUPERUSER: ${FIRST_SUPERUSER?Variable not set}
   FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD?Variable not set}
@@ -20,6 +20,8 @@ x-backend-env: &backend-env
   SMTP_PASSWORD: ${SMTP_PASSWORD:-}
   EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL:-}
   SENTRY_DSN: ${SENTRY_DSN:-}
+  UPLOAD_DIR: /app/uploads
+  TZ: Asia/Shanghai
 
 services:
 
@@ -88,6 +90,9 @@ services:
     build:
       context: backend
       dockerfile: Dockerfile
+    volumes:
+      # ponytail: 绑定宿主机目录，重建镜像/容器不会丢上传文件；勿用 docker compose down -v
+      - ./data/uploads:/app/uploads
     networks:
       - default
 
@@ -97,6 +102,18 @@ services:
       context: front/vue3-vant-mobile
       dockerfile: Dockerfile
     restart: unless-stopped
+    networks:
+      - default
+
+  agent:
+    image: '${DOCKER_IMAGE_AGENT:-agent}:${TAG:-latest}'
+    build:
+      context: python/agent
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
     networks:
       - default
 
@@ -131,6 +148,7 @@ services:
       - acme-data:/acme.sh
       - acme-webroot:/var/www/acme
       - certs:/certs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       AUTO_UPGRADE: "1"
     command: daemon

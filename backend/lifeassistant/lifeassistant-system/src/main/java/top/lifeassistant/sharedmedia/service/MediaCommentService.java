@@ -9,6 +9,7 @@ import top.lifeassistant.sharedmedia.model.req.MediaCommentCreateReq;
 import top.lifeassistant.sharedmedia.model.resp.MediaCommentResp;
 import top.lifeassistant.system.model.entity.user.UserDO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +28,7 @@ public class MediaCommentService {
         comment.setMediaId(mediaId);
         comment.setUserId(user.getId());
         comment.setContent(req.getContent());
+        comment.setCreatedAt(LocalDateTime.now());
         mapper.insert(comment);
         return MediaCommentResp.from(comment);
     }

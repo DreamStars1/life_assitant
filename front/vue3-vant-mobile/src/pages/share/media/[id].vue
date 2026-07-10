@@ -7,13 +7,18 @@ import {
   createComment,
   fetchProgress,
   updateProgress,
+  updateSharedMedia,
 } from '@/api/modules/shared-media'
 import type { SharedMediaItem, MediaComment, MediaProgress } from '@/api/modules/shared-media'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const mediaId = computed(() => route.params.id as string)
+// ponytail: route.params 基础类型为 Record<string, string | string[]>
+const mediaId = computed(() => {
+  const id = (route.params as Record<string, string | string[]>).id
+  return Array.isArray(id) ? id[0] : (id ?? '')
+})
 
 const media = ref<SharedMediaItem | null>(null)
 const comments = ref<MediaComment[]>([])
@@ -26,6 +31,7 @@ const sending = ref(false)
 const showProgressDialog = ref(false)
 const progressScope = ref<'shared' | 'personal'>('shared')
 const progressText = ref('')
+const markFinished = ref(false)
 
 const myId = computed(() => userStore.userInfo.id)
 const partnerId = computed(() => userStore.userInfo.partnerId)
@@ -89,6 +95,7 @@ function openProgressUpdate() {
   const existing = myProgress.value
   progressScope.value = existing?.scope ?? 'personal'
   progressText.value = existing?.progressText ?? ''
+  markFinished.value = media.value?.isFinished ?? false
   showProgressDialog.value = true
 }
 
@@ -102,11 +109,14 @@ async function saveProgress() {
       scope: progressScope.value,
       progressText: progressText.value.trim(),
     })
+    // 同步更新 isFinished（共同标记）
+    const fd = new FormData()
+    fd.append('isFinished', markFinished.value ? 'true' : 'false')
+    await updateSharedMedia(mediaId.value, fd)
     showToast('已更新')
     showProgressDialog.value = false
-    // reload progress only
-    const progressRes = await fetchProgress(mediaId.value)
-    progressList.value = progressRes.data ?? []
+    // reload data
+    await loadData()
   } catch {
     showToast('更新失败')
   }
@@ -122,10 +132,22 @@ async function confirmDeleteComment(commentId: string) {
   } catch { /* cancelled */ }
 }
 
+function parseDateTime(value: string): Date {
+  if (!value) return new Date(Number.NaN)
+  if (/[zZ]|[+-]\d{2}:?\d{2}$/.test(value)) return new Date(value)
+  return new Date(value.replace(' ', 'T'))
+}
+
 function formatTime(iso: string): string {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  const d = parseDateTime(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).replace(/\//g, '-')
 }
 
 function goBack() {
@@ -234,6 +256,10 @@ onMounted(() => {
           autosize
           class="!mt-3"
         />
+        <div class="flex items-center gap-2 mt-3 px-1">
+          <van-switch v-model="markFinished" size="20" />
+          <span class="text-sm text-gray-600">标记为已看完</span>
+        </div>
       </div>
     </van-dialog>
   </div>
@@ -241,18 +267,20 @@ onMounted(() => {
 
 <style scoped>
 .media-detail-page {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background: var(--van-gray-1);
+  background: #f7f8fa;
 }
 
 .progress-bar {
   display: flex;
   align-items: center;
   padding: 10px 16px;
-  background: white;
-  border-bottom: 1px solid var(--van-gray-3);
+  background: #fff;
+  border-bottom: 1px solid #ebedf0;
+  flex-shrink: 0;
 }
 
 .progress-col {
@@ -263,13 +291,13 @@ onMounted(() => {
 
 .progress-label {
   font-size: 12px;
-  color: var(--van-gray-5);
+  color: #969799;
   margin-bottom: 2px;
 }
 
 .progress-value {
   font-size: 13px;
-  color: var(--van-text-color);
+  color: #323233;
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -279,16 +307,19 @@ onMounted(() => {
 .progress-divider {
   width: 1px;
   height: 24px;
-  background: var(--van-gray-3);
+  background: #ebedf0;
   margin: 0 12px;
   flex-shrink: 0;
 }
 
 .chat-container {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 12px 16px;
   padding-bottom: 60px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .chat-empty {
@@ -298,7 +329,7 @@ onMounted(() => {
   justify-content: center;
   padding: 80px 0;
   gap: 12px;
-  color: var(--van-gray-5);
+  color: #969799;
   font-size: 14px;
 }
 
@@ -323,14 +354,14 @@ onMounted(() => {
 }
 
 .message-own .message-bubble {
-  background: var(--van-blue);
-  color: white;
+  background: #1989fa;
+  color: #fff;
   border-bottom-right-radius: 4px;
 }
 
 .message-partner .message-bubble {
-  background: white;
-  color: var(--van-text-color);
+  background: #fff;
+  color: #323233;
   border-bottom-left-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
@@ -359,8 +390,8 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: white;
-  border-top: 1px solid var(--van-gray-3);
+  background: #fff;
+  border-top: 1px solid #ebedf0;
   padding: 6px 12px;
   padding-bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 10;

@@ -11,6 +11,7 @@ from typing import Any
 
 import uvicorn
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from .client import JavaClient
@@ -25,7 +26,24 @@ PORT = int(os.environ.get("AGENT_PORT", "8089"))
 # Context var to pass auth token from middleware to tool handlers
 _auth_token: ContextVar[str | None] = ContextVar("auth_token", default=None)
 
-mcp = FastMCP("life-assistant")
+mcp = FastMCP(
+    "life-assistant",
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=[
+            "mcp.life-assitant.top",
+            "mcp.life-assitant.top:*",
+            "localhost",
+            "localhost:*",
+            "127.0.0.1",
+            "127.0.0.1:*",
+        ],
+        allowed_origins=[
+            "https://mcp.life-assitant.top",
+            "https://mcp.life-assitant.top:*",
+        ],
+    ),
+)
 
 
 def _get_client() -> JavaClient:
@@ -52,6 +70,7 @@ async def todo_create(
         due_date: 截止日期，格式如 2026-06-29 或 2026-06-29T12:00:00（可选）
         assign_to_partner: 是否自动指派给伴侣（可选）
     """
+    client = _get_client()
     try:
         result = await todo_tools.todo_create(
             client, title, description, priority, due_date, assign_to_partner,
@@ -74,6 +93,7 @@ async def todo_list(
         start_due_date: 截止日期范围起始，格式如 2026-06-29 或 2026-06-29T12:00:00（可选）
         end_due_date: 截止日期范围结束，格式如 2026-06-29 或 2026-06-29T12:00:00（可选）
     """
+    client = _get_client()
     try:
         result = await todo_tools.todo_list(client, is_completed, priority, start_due_date, end_due_date)
         return json.dumps(result, ensure_ascii=False)
@@ -115,6 +135,7 @@ async def todo_update(
         priority: 新优先级 low / medium / high / urgent（可选）
         due_date: 新截止日期，格式如 2026-06-29 或 2026-06-29T12:00:00（可选）
     """
+    client = _get_client()
     try:
         result = await todo_tools.todo_update(client, id, title, description, priority, due_date)
         return json.dumps(result, ensure_ascii=False)
@@ -230,7 +251,10 @@ def main() -> int:
     starlette_app = mcp.streamable_http_app()
     wrapped = AuthASGIWrapper(starlette_app)
 
-    config = uvicorn.Config(wrapped, host=HOST, port=PORT, log_level="info")
+    config = uvicorn.Config(
+        wrapped, host=HOST, port=PORT, log_level="info",
+        proxy_headers=True, forwarded_allow_ips="*",
+    )
     server = uvicorn.Server(config)
     server.run()
     return 0

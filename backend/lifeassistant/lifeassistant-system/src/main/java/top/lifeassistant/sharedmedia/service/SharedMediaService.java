@@ -15,6 +15,7 @@ import top.lifeassistant.sharedmedia.model.req.SharedMediaUpdateReq;
 import top.lifeassistant.sharedmedia.model.resp.SharedMediaResp;
 import top.lifeassistant.system.model.entity.user.UserDO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -76,14 +77,21 @@ public class SharedMediaService {
         return SharedMediaResp.from(media);
     }
 
-    public SharedMediaResp update(UserDO user, String id, SharedMediaUpdateReq req, String coverPath) {
+    public SharedMediaResp update(UserDO user, String id, SharedMediaUpdateReq req, String coverPath, Boolean isFinished) {
         requirePartner(user);
-        SharedMediaDO media = ownerValidator.requireOwner(() -> mapper.selectById(id), user.getId());
+        SharedMediaDO media = ownerValidator.findAndCheck(
+            () -> mapper.selectById(id), "媒体不存在",
+            m -> user.getId().equals(m.getCreatedBy()) || user.getPartnerId().equals(m.getCreatedBy())
+        );
 
         if (req.getTitle() != null) media.setTitle(req.getTitle());
         if (req.getMediaType() != null) media.setMediaType(req.getMediaType());
         if (req.getDescription() != null) media.setDescription(req.getDescription());
         if (coverPath != null) media.setCoverPath(coverPath);
+        if (isFinished != null) {
+            media.setIsFinished(isFinished);
+            media.setFinishedAt(isFinished ? LocalDateTime.now() : null);
+        }
 
         mapper.updateById(media);
         return SharedMediaResp.from(mapper.selectById(id));

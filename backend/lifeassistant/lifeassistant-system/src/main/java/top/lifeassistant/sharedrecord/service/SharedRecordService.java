@@ -79,7 +79,9 @@ public class SharedRecordService {
 
     public SharedRecordResp update(UserDO user, String id, SharedRecordUpdateReq req) {
         requirePartner(user);
-        SharedRecordDO record = ownerValidator.requireOwner(() -> mapper.selectById(id), user.getId());
+        SharedRecordDO record = ownerValidator.findAndCheck(
+            () -> mapper.selectById(id), "记录不存在",
+            r -> user.getId().equals(r.getCreatedBy()) || user.getPartnerId().equals(r.getCreatedBy()));
         if (req.getTitle() != null) record.setTitle(req.getTitle());
         if (req.getContent() != null) record.setContent(req.getContent());
         if (req.getOccurredAt() != null) record.setOccurredAt(req.getOccurredAt());

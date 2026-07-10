@@ -24,6 +24,11 @@ export default ({ mode }: ConfigEnv): UserConfig => {
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api/, ''),
         },
+        '/uploads': {
+          target: 'http://localhost:8000',
+          ws: false,
+          changeOrigin: true,
+        },
       },
     },
 

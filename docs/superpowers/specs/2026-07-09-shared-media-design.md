@@ -49,11 +49,13 @@
 |------|------|------|
 | `id` | CHAR(36) PK | UUID |
 | `media_id` | CHAR(36) FK → `shared_media.id` | 所属媒体 |
-| `user_id` | CHAR(36) | `NULL`=共同进度，`非NULL`=某方个人进度 |
+| `user_id` | CHAR(36) | `NULL`=共同进度（scope=shared），`非NULL`=该用户的个人进度（scope=personal） |
 | `progress_text` | VARCHAR(100) | 如"第 5 集/共 24 集"、"120 页/共 300 页" |
 | `created_at` | DATETIME | |
 
 每对 `(media_id, user_id)` 只保留一条最新记录，更新时 upsert。`user_id IS NULL` 为共同进度，`user_id` 为具体值代表某方的个人进度。双方均可看到所有进度。
+
+**进度同步规则**：共同进度是基准线。更新共同进度时，自动将双方的个人进度也更新为相同的值。个人进度可单独覆盖（如一方先追了几集），此时不受共同进度影响。
 
 ### 后端 API
 
@@ -79,7 +81,7 @@
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/shared-media/{id}/progress` | 获取所有进度（共同 + 双方个人） |
-| PUT | `/shared-media/{id}/progress` | 更新进度（body 传 `user_id` 区分共同/个人） |
+| PUT | `/shared-media/{id}/progress` | 更新进度（body 传 `scope: "shared"|"personal"` 区分） |
 
 #### 文件上传
 

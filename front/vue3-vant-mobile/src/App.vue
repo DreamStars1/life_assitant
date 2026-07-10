@@ -7,7 +7,9 @@ const { t } = useI18n()
 const route = useRoute()
 
 const PUBLIC_ROUTES = ['Login', 'Register', 'ForgotPassword']
+const LAYOUT_WITHOUT_NAVBAR = ['MediaDetail']
 const showLayout = computed(() => !PUBLIC_ROUTES.includes(route.name as string))
+const showNavBar = computed(() => showLayout.value && !LAYOUT_WITHOUT_NAVBAR.includes(route.name as string))
 
 useHead({
   title: () => t('app.name'),
@@ -32,7 +34,7 @@ const mode = computed<'light' | 'dark'>(() => 'light')
 
 <template>
   <van-config-provider :theme="mode">
-    <nav-bar v-if="showLayout" />
+    <nav-bar v-if="showNavBar" />
     <router-view v-slot="{ Component }">
       <section class="app-wrapper">
         <keep-alive :include="keepAliveRouteNames">

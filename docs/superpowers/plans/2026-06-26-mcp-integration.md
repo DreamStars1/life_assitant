@@ -4,7 +4,7 @@
 
 **目标:** 将待办和共享记录功能封装为 MCP 服务，通过 Streamable HTTP 对外暴露，支持第三方客户端集成。
 
-**架构:** 在 `lifeassistant-server` 模块中嵌入 MCP Server，依赖 `spring-ai-mcp-server-webmvc`。新增 `@McpTool` 注解的工具类，注入现有 Service。Token 通过 HTTP Header 传递，`ApiTokenFilter` 前置过滤器校验。另需新增 `api_token` 表和对应的 CRUD 端点及前端管理页面。
+**架构:** 在 `lifeassistant-server` 模块中嵌入 MCP Server，依赖 `spring-ai-starter-mcp-server-webmvc` (Spring AI 1.1.8，SSE 传输)。新增 `@McpTool`(org.springaicommunity.mcp.annotation) 注解的工具类，注入现有 Service。Token 通过 HTTP Header 传递，`ApiTokenFilter` 前置过滤器校验。另需新增 `api_token` 表和对应的 CRUD 端点及前端管理页面。
 
 **执行顺序:** 先完成 OwnerValidator 重构（独立 change），再执行本计划。
 
@@ -31,27 +31,39 @@
 ### Task 1: 在 server pom.xml 中添加 Spring AI MCP 依赖
 
 **文件:**
+- Modify: `backend/lifeassistant/pom.xml`
 - Modify: `backend/lifeassistant/lifeassistant-server/pom.xml`
 
-- [ ] **步骤 1: 添加 spring-ai-mcp-server-webmvc 依赖**
+- [ ] **步骤 1: 在父 POM 添加 Spring AI BOM**
+
+```xml
+<!-- Spring AI BOM（统一管理 MCP 相关依赖版本） -->
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-bom</artifactId>
+    <version>1.1.8</version>
+    <type>pom</type>
+    <scope>import</scope>
+</dependency>
+```
+
+- [ ] **步骤 2: 在 server pom.xml 添加 MCP 依赖**
 
 ```xml
 <!-- Spring AI MCP Server (Streamable HTTP) -->
 <dependency>
     <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-mcp-server-webmvc</artifactId>
-    <!-- ponytail: 实际版本号需根据 ContiNew Starter 2.15.0 确认兼容性 -->
-    <version>1.1.0</version>
+    <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
 </dependency>
 ```
 
-阅读现有 pom.xml，将依赖加在适当的 `<dependencies>` 区域。同时在父 POM 的 `<dependencyManagement>` 中引入 Spring AI BOM（如需要）。
+（不写 version，由父 POM 的 BOM 统一管理）
 
-- [ ] **步骤 2: 提交**
+- [ ] **步骤 3: 提交**
 
 ```bash
-git add backend/lifeassistant/lifeassistant-server/pom.xml
-git commit -m "feat: add spring-ai-mcp-server-webmvc dependency"
+git add backend/lifeassistant/pom.xml backend/lifeassistant/lifeassistant-server/pom.xml
+git commit -m "feat: add Spring AI MCP dependencies"
 ```
 
 ---
@@ -269,8 +281,7 @@ public class ApiTokenService {
         token.setTokenPrefix(prefix);
         token.setExpiresAt(req.getExpiresAt());
         token.setIsActive(true);
-        token.setCreatedAt(LocalDateTime.now());
-        token.setUpdateTime(LocalDateTime.now());
+        // ponytail: createdAt / updateTime / createBy / updateBy 由 MetaObjectHandler 自动填充
         mapper.insert(token);
 
         return ApiTokenResp.withFullToken(token, rawToken);
@@ -354,38 +365,15 @@ git commit -m "feat: add ApiToken CRUD service and controller"
 
 ---
 
-### Task 5: 创建 MCP 基础设施 — McpConfig + ApiTokenAuthHelper + ApiTokenFilter
+### Task 5: 创建 MCP 基础设施 — ApiTokenAuthHelper + ApiTokenFilter
+
+**说明：** Spring AI 1.x 的 `spring-ai-starter-mcp-server-webmvc` 自带 auto-configuration，SSE 为默认传输。**无需**额外 YAML 配置或自定义 `McpConfig`。工具类通过 `@McpTool` 注解自动注册。
 
 **文件:**
-- Create: `backend/lifeassistant/lifeassistant-server/src/main/java/top/lifeassistant/mcp/config/McpConfig.java`
 - Create: `backend/lifeassistant/lifeassistant-server/src/main/java/top/lifeassistant/mcp/auth/ApiTokenAuthHelper.java`
 - Create: `backend/lifeassistant/lifeassistant-server/src/main/java/top/lifeassistant/mcp/interceptor/ApiTokenFilter.java`
 
-- [ ] **步骤 1: 创建 McpConfig**
-
-```java
-package top.lifeassistant.mcp.config;
-
-import org.springframework.ai.mcp.server.McpServer;
-import org.springframework.ai.mcp.server.McpServer.Builder;
-import org.springframework.ai.mcp.server.transport.StreamableHttpServerTransport;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
-public class McpConfig {
-
-    @Bean
-    public StreamableHttpServerTransport mcpTransport() {
-        // ponytail: Streamable HTTP 使用 /mcp 作为统一端点
-        return new StreamableHttpServerTransport("/mcp");
-    }
-}
-```
-
-注意：Spring AI MCP Server 的 Streamable HTTP 配置方式需根据实际版本确认。上面的代码是预期结构，实际实现时可能需要微调。
-
-- [ ] **步骤 2: 创建 ApiTokenAuthHelper**
+- [ ] **步骤 1: 创建 ApiTokenAuthHelper**
 
 ```java
 package top.lifeassistant.mcp.auth;
@@ -515,8 +503,8 @@ package top.lifeassistant.mcp.tool;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.tool.annotation.McpTool;
+import org.springframework.ai.tool.annotation.McpToolParam;
 import org.springframework.stereotype.Component;
 import top.lifeassistant.todo.model.req.TodoCreateReq;
 import top.lifeassistant.todo.model.req.TodoUpdateReq;
@@ -538,13 +526,13 @@ public class TodoMcpTools {
         return (UserDO) request.getAttribute("currentUser");
     }
 
-    @Tool(description = "创建待办事项")
+    @McpTool(description = "创建待办事项")
     public TodoResp todo_create(
-            @ToolParam(description = "标题") String title,
-            @ToolParam(description = "详细描述（可选）") String description,
-            @ToolParam(description = "优先级：low / medium / high / urgent（可选，默认 medium）") String priority,
-            @ToolParam(description = "截止日期（ISO 格式，可选）") String dueDate,
-            @ToolParam(description = "是否自动指派给伴侣（可选，默认 false）") Boolean assignToPartner) {
+            @McpToolParam(description = "标题") String title,
+            @McpToolParam(description = "详细描述（可选）") String description,
+            @McpToolParam(description = "优先级：low / medium / high / urgent（可选，默认 medium）") String priority,
+            @McpToolParam(description = "截止日期（ISO 格式，可选）") String dueDate,
+            @McpToolParam(description = "是否自动指派给伴侣（可选，默认 false）") Boolean assignToPartner) {
 
         UserDO user = getCurrentUser();
         TodoCreateReq req = new TodoCreateReq();
@@ -560,12 +548,12 @@ public class TodoMcpTools {
         return todoService.create(user, req);
     }
 
-    @Tool(description = "查询待办列表，支持筛选")
+    @McpTool(description = "查询待办列表，支持筛选")
     public List<TodoResp> todo_list(
-            @ToolParam(description = "是否已完成（可选）") Boolean isCompleted,
-            @ToolParam(description = "优先级筛选：low / medium / high / urgent（可选）") String priority,
-            @ToolParam(description = "截止日期范围起始（ISO 格式，可选）") String startDueDate,
-            @ToolParam(description = "截止日期范围结束（ISO 格式，可选）") String endDueDate) {
+            @McpToolParam(description = "是否已完成（可选）") Boolean isCompleted,
+            @McpToolParam(description = "优先级筛选：low / medium / high / urgent（可选）") String priority,
+            @McpToolParam(description = "截止日期范围起始（ISO 格式，可选）") String startDueDate,
+            @McpToolParam(description = "截止日期范围结束（ISO 格式，可选）") String endDueDate) {
 
         UserDO user = getCurrentUser();
         LocalDateTime start = startDueDate != null ? LocalDateTime.parse(startDueDate) : null;
@@ -573,23 +561,23 @@ public class TodoMcpTools {
         return todoService.list(user, isCompleted, priority, start, end);
     }
 
-    @Tool(description = "获取首页最近的未完成待办")
+    @McpTool(description = "获取首页最近的未完成待办")
     public List<TodoResp> todo_upcoming() {
         return todoService.getUpcoming(getCurrentUser());
     }
 
-    @Tool(description = "获取待办详情")
-    public TodoResp todo_get(@ToolParam(description = "待办 ID") String id) {
+    @McpTool(description = "获取待办详情")
+    public TodoResp todo_get(@McpToolParam(description = "待办 ID") String id) {
         return todoService.getById(getCurrentUser(), id);
     }
 
-    @Tool(description = "更新待办事项")
+    @McpTool(description = "更新待办事项")
     public TodoResp todo_update(
-            @ToolParam(description = "待办 ID") String id,
-            @ToolParam(description = "新标题（可选）") String title,
-            @ToolParam(description = "新详细描述（可选）") String description,
-            @ToolParam(description = "新优先级（可选）") String priority,
-            @ToolParam(description = "新截止日期 ISO 格式（可选）") String dueDate) {
+            @McpToolParam(description = "待办 ID") String id,
+            @McpToolParam(description = "新标题（可选）") String title,
+            @McpToolParam(description = "新详细描述（可选）") String description,
+            @McpToolParam(description = "新优先级（可选）") String priority,
+            @McpToolParam(description = "新截止日期 ISO 格式（可选）") String dueDate) {
 
         UserDO user = getCurrentUser();
         TodoUpdateReq req = new TodoUpdateReq();
@@ -600,15 +588,15 @@ public class TodoMcpTools {
         return todoService.update(user, id, req);
     }
 
-    @Tool(description = "切换待办完成状态")
-    public TodoResp todo_toggle(@ToolParam(description = "待办 ID") String id) {
+    @McpTool(description = "切换待办完成状态")
+    public TodoResp todo_toggle(@McpToolParam(description = "待办 ID") String id) {
         return todoService.toggleComplete(getCurrentUser(), id);
     }
 
-    @Tool(description = "确认收到待办（仅被指派者可操作）")
+    @McpTool(description = "确认收到待办（仅被指派者可操作）")
     public TodoResp todo_acknowledge(
-            @ToolParam(description = "待办 ID") String id,
-            @ToolParam(description = "确认回复文案（可选）") String message) {
+            @McpToolParam(description = "待办 ID") String id,
+            @McpToolParam(description = "确认回复文案（可选）") String message) {
         return todoService.acknowledge(getCurrentUser(), id, message);
     }
 }
@@ -635,8 +623,8 @@ package top.lifeassistant.mcp.tool;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.tool.annotation.McpTool;
+import org.springframework.ai.tool.annotation.McpToolParam;
 import org.springframework.stereotype.Component;
 import top.lifeassistant.sharedrecord.model.req.SharedRecordCreateReq;
 import top.lifeassistant.sharedrecord.model.req.SharedRecordUpdateReq;
@@ -658,11 +646,11 @@ public class SharedRecordMcpTools {
         return (UserDO) request.getAttribute("currentUser");
     }
 
-    @Tool(description = "记录一起做过的事")
+    @McpTool(description = "记录一起做过的事")
     public SharedRecordResp record_create(
-            @ToolParam(description = "标题") String title,
-            @ToolParam(description = "详细描述（可选）") String content,
-            @ToolParam(description = "事件发生时间 ISO 格式（可选，默认当前时间）") String occurredAt) {
+            @McpToolParam(description = "标题") String title,
+            @McpToolParam(description = "详细描述（可选）") String content,
+            @McpToolParam(description = "事件发生时间 ISO 格式（可选，默认当前时间）") String occurredAt) {
 
         UserDO user = getCurrentUser();
         SharedRecordCreateReq req = new SharedRecordCreateReq();
@@ -672,10 +660,10 @@ public class SharedRecordMcpTools {
         return recordService.create(user, req);
     }
 
-    @Tool(description = "查询共享记录列表，支持时间范围筛选")
+    @McpTool(description = "查询共享记录列表，支持时间范围筛选")
     public List<SharedRecordResp> record_list(
-            @ToolParam(description = "开始时间 ISO 格式（可选）") String start,
-            @ToolParam(description = "结束时间 ISO 格式（可选）") String end) {
+            @McpToolParam(description = "开始时间 ISO 格式（可选）") String start,
+            @McpToolParam(description = "结束时间 ISO 格式（可选）") String end) {
 
         UserDO user = getCurrentUser();
         LocalDateTime startTime = start != null ? LocalDateTime.parse(start) : null;
@@ -683,17 +671,17 @@ public class SharedRecordMcpTools {
         return recordService.list(user, startTime, endTime);
     }
 
-    @Tool(description = "获取共享记录详情")
-    public SharedRecordResp record_get(@ToolParam(description = "记录 ID") String id) {
+    @McpTool(description = "获取共享记录详情")
+    public SharedRecordResp record_get(@McpToolParam(description = "记录 ID") String id) {
         return recordService.getById(getCurrentUser(), id);
     }
 
-    @Tool(description = "更新共享记录")
+    @McpTool(description = "更新共享记录")
     public SharedRecordResp record_update(
-            @ToolParam(description = "记录 ID") String id,
-            @ToolParam(description = "新标题（可选）") String title,
-            @ToolParam(description = "新详细描述（可选）") String content,
-            @ToolParam(description = "新事件发生时间 ISO 格式（可选）") String occurredAt) {
+            @McpToolParam(description = "记录 ID") String id,
+            @McpToolParam(description = "新标题（可选）") String title,
+            @McpToolParam(description = "新详细描述（可选）") String content,
+            @McpToolParam(description = "新事件发生时间 ISO 格式（可选）") String occurredAt) {
 
         UserDO user = getCurrentUser();
         SharedRecordUpdateReq req = new SharedRecordUpdateReq();
