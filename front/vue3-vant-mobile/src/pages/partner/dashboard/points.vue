@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { showToast } from 'vant'
-import { getPointsBalance, getPointsHistory, addPoints } from '@/api/modules/partner-points'
+import { addPoints, getPointsBalance, getPointsHistory } from '@/api/modules/partner-points'
 import type { PointsRecord } from '@/api/modules/partner-points'
 
 useI18n()
@@ -97,22 +97,36 @@ onMounted(() => {
       <div class="balance-number" :class="{ negative: balance < 0 }">
         {{ balance }}
       </div>
-      <div class="balance-label">{{ $t('dashboard.points') }}</div>
+      <div class="balance-label">
+        {{ $t('dashboard.points') }}
+      </div>
     </div>
 
     <div class="action-card">
       <div class="action-group">
         <span class="action-label">{{ $t('dashboard.addPoints') }}</span>
-        <van-button size="small" round type="primary" @click="setQuickAmount(1)">+1</van-button>
-        <van-button size="small" round type="primary" @click="setQuickAmount(3)">+3</van-button>
-        <van-button size="small" round type="primary" @click="setQuickAmount(5)">+5</van-button>
+        <van-button size="small" round type="primary" @click="setQuickAmount(1)">
+          +1
+        </van-button>
+        <van-button size="small" round type="primary" @click="setQuickAmount(3)">
+          +3
+        </van-button>
+        <van-button size="small" round type="primary" @click="setQuickAmount(5)">
+          +5
+        </van-button>
       </div>
       <div class="action-divider" />
       <div class="action-group">
         <span class="action-label">{{ $t('dashboard.subPoints') }}</span>
-        <van-button size="small" round type="danger" @click="setQuickAmount(-1)">-1</van-button>
-        <van-button size="small" round type="danger" @click="setQuickAmount(-3)">-3</van-button>
-        <van-button size="small" round type="danger" @click="setQuickAmount(-5)">-5</van-button>
+        <van-button size="small" round type="danger" @click="setQuickAmount(-1)">
+          -1
+        </van-button>
+        <van-button size="small" round type="danger" @click="setQuickAmount(-3)">
+          -3
+        </van-button>
+        <van-button size="small" round type="danger" @click="setQuickAmount(-5)">
+          -5
+        </van-button>
       </div>
     </div>
 
@@ -133,8 +147,8 @@ onMounted(() => {
       </div>
       <van-button
         :type="mode === 'add' ? 'primary' : 'danger'"
-        block
-        round
+
+        round block
         :disabled="!reason.trim()"
         :loading="submitting"
         @click="confirmPoints"
@@ -144,7 +158,9 @@ onMounted(() => {
     </div>
 
     <div class="history-section">
-      <div class="history-title">{{ $t('dashboard.pointsHistory') }}</div>
+      <div class="history-title">
+        {{ $t('dashboard.pointsHistory') }}
+      </div>
       <div v-if="history.length === 0 && !loading" class="empty-hint">
         {{ $t('common.noData') }}
       </div>
@@ -157,8 +173,12 @@ onMounted(() => {
       >
         <div v-for="item in history" :key="item.id" class="history-item">
           <div class="hi-left">
-            <div class="hi-reason">{{ item.reason }}</div>
-            <div class="hi-time">{{ new Date(item.createdAt).toLocaleString('zh-CN') }}</div>
+            <div class="hi-reason">
+              {{ item.reason }}
+            </div>
+            <div class="hi-time">
+              {{ new Date(item.createdAt).toLocaleString('zh-CN') }}
+            </div>
           </div>
           <div class="hi-change" :class="{ add: item.pointsChange > 0, sub: item.pointsChange < 0 }">
             {{ item.pointsChange > 0 ? '+' : '' }}{{ item.pointsChange }}

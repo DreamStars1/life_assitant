@@ -1,0 +1,97 @@
+---
+description: 前端 ESLint 规范与常见 CI 失败模式（@antfu/eslint-config）
+globs: front/vue3-vant-mobile/**/*.{ts,vue}
+alwaysApply: false
+---
+
+# 前端 ESLint 工作流
+
+## 提交前必跑
+
+```powershell
+cd front/vue3-vant-mobile
+pnpm lint --fix
+pnpm lint
+```
+
+CI（`.github/workflows/ci.yml`）在每次 push 执行 `pnpm lint`，未通过会阻断合并。
+
+## 高频错误与写法
+
+### 类型内联对象：用逗号不用分号
+
+```typescript
+// ❌
+data: { scope: 'shared' | 'personal'; progressText: string }
+
+// ✅
+data: { scope: 'shared' | 'personal', progressText: string }
+```
+
+### import 命名导出按字母序
+
+```typescript
+// ❌ showToast, showConfirmDialog
+// ✅ showConfirmDialog, showToast
+```
+
+### 大括号风格：catch/else 另起一行
+
+```typescript
+// ❌ } catch {
+// ✅
+}
+catch {
+```
+
+### if 必须换行（antfu/if-newline）
+
+```typescript
+// ❌ if (!title.trim()) { showToast('...'); return }
+// ✅
+if (!title.trim()) {
+  showToast('...')
+  return
+}
+
+// ❌ if (pid) loadPartnerName(pid)
+// ✅
+if (pid)
+  loadPartnerName(pid)
+```
+
+### 每行一条语句（style/max-statements-per-line）
+
+```typescript
+// ❌ async function onToggle(todo) { await store.toggle(todo.id) }
+// ✅ 拆成多行函数体
+```
+
+### Number.isNaN 替代 isNaN
+
+```typescript
+// ❌ isNaN(d.getTime()) / parts.some(isNaN)
+// ✅ Number.isNaN(d.getTime()) / parts.some(Number.isNaN)
+```
+
+### Pinia/composable：先定义再引用
+
+```typescript
+// ❌ setInfo 里调用 loadPartnerName，但 loadPartnerName 写在后面
+// ✅ 被调用的函数写在调用方之前
+```
+
+### watch 触发副作用，禁止自赋值
+
+```typescript
+// ❌ activeFilter.value = activeFilter.value  // 仅为触发 watch
+// ✅ watch([activeFilter, dateRange], handler, { deep: true })
+```
+
+### Vue 模板：避免遮蔽 i18n 的 t
+
+```vue
+<!-- script 有 const { t } = useI18n() 时 -->
+<!-- ❌ v-for="t in items" -->
+<!-- ✅ v-for="item in items" -->
+```

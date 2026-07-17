@@ -41,6 +41,8 @@ public class MediaProgressService {
             throw new BadRequestException("scope 必须是 shared 或 personal");
         }
 
+        sharedMediaService.touchActivity(mediaId);
+
         if ("shared".equals(req.getScope())) {
             return MediaProgressResp.from(mapper.selectSharedByMediaId(mediaId));
         } else {

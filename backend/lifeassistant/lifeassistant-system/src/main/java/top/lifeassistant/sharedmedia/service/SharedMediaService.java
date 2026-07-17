@@ -107,4 +107,11 @@ public class SharedMediaService {
         mapper.delete(new LambdaQueryWrapper<SharedMediaDO>()
             .in(SharedMediaDO::getCreatedBy, List.of(userId1, userId2)));
     }
+
+    /** 评论、进度等互动时刷新列表排序用的更新时间 */
+    public void touchActivity(String mediaId) {
+        SharedMediaDO media = new SharedMediaDO();
+        media.setId(mediaId);
+        mapper.updateById(media);
+    }
 }

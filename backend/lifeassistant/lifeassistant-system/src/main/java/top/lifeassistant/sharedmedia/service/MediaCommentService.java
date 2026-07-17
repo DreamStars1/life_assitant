@@ -26,6 +26,7 @@ public class MediaCommentService {
         comment.setUserId(user.getId());
         comment.setContent(req.getContent().trim());
         mapper.insert(comment);
+        sharedMediaService.touchActivity(mediaId);
         MediaCommentDO saved = mapper.selectById(comment.getId());
         return MediaCommentResp.from(saved != null ? saved : comment);
     }

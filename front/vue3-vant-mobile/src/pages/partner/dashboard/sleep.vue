@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import * as echarts from 'echarts'
 import { showToast } from 'vant'
 import { useUserStore } from '@/stores'
-import { getTodayCheckin, getWeeklyCheckin, doCheckin } from '@/api/modules/partner-checkin'
+import { doCheckin, getTodayCheckin, getWeeklyCheckin } from '@/api/modules/partner-checkin'
 import type { CheckinRecord } from '@/api/modules/partner-checkin'
 
 const { t } = useI18n()
@@ -319,11 +319,17 @@ onUnmounted(() => chart?.dispose())
 
 <template>
   <div class="sleep-page">
-    <div class="section-title">{{ $t('dashboard.todayCheckin') }}</div>
+    <div class="section-title">
+      {{ $t('dashboard.todayCheckin') }}
+    </div>
     <div class="checkin-row">
       <div class="checkin-card" :class="{ done: wakeDone }">
-        <div class="checkin-icon">🌅</div>
-        <div class="checkin-label">{{ $t('dashboard.wakeUp') }}</div>
+        <div class="checkin-icon">
+          🌅
+        </div>
+        <div class="checkin-label">
+          {{ $t('dashboard.wakeUp') }}
+        </div>
         <div v-if="wakeDone" class="checkin-time">
           {{ formatTime(wakeRecord!.checkinTime) }}
         </div>
@@ -339,8 +345,12 @@ onUnmounted(() => chart?.dispose())
       </div>
 
       <div class="checkin-card" :class="{ done: sleepDone }">
-        <div class="checkin-icon">🌙</div>
-        <div class="checkin-label">{{ $t('dashboard.goToSleep') }}</div>
+        <div class="checkin-icon">
+          🌙
+        </div>
+        <div class="checkin-label">
+          {{ $t('dashboard.goToSleep') }}
+        </div>
         <div v-if="sleepDone" class="checkin-time">
           {{ formatTime(sleepRecord!.checkinTime) }}
         </div>
@@ -357,7 +367,9 @@ onUnmounted(() => chart?.dispose())
     </div>
 
     <div class="chart-card">
-      <div class="chart-title">{{ $t('dashboard.sleepTrend') }}</div>
+      <div class="chart-title">
+        {{ $t('dashboard.sleepTrend') }}
+      </div>
       <div id="sleep-detail-chart" class="sleep-chart" />
     </div>
   </div>

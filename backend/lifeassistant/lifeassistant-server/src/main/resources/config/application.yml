@@ -3,7 +3,7 @@ application:
   id: lifeassistant
   name: Life Assistant
   description: 智能生活助手后端服务
-  version: 1.1.0-SNAPSHOT
+  version: 1.2.0-SNAPSHOT
   base-package: top.lifeassistant
 
 lifeassistant:

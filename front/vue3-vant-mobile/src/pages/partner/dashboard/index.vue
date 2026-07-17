@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
 import * as echarts from 'echarts'
-import { getPointsBalance, getPointsHistory, addPoints } from '@/api/modules/partner-points'
+import { addPoints, getPointsBalance, getPointsHistory } from '@/api/modules/partner-points'
 import type { PointsRecord } from '@/api/modules/partner-points'
 import { getTodayCheckin, getWeeklyCheckin } from '@/api/modules/partner-checkin'
 import type { CheckinRecord } from '@/api/modules/partner-checkin'
@@ -20,7 +20,8 @@ const myId = computed(() => userStore.userInfo?.id || '')
 const partnerUserId = computed(() => userStore.userInfo?.partnerId || '')
 
 const daysTogether = computed(() => {
-  if (!userStore.userInfo.createdAt) return 0
+  if (!userStore.userInfo.createdAt)
+    return 0
   const created = new Date(userStore.userInfo.createdAt)
   const now = new Date()
   return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
@@ -166,7 +167,8 @@ let chart: echarts.ECharts | null = null
 function initChart() {
   nextTick(() => {
     const el = document.getElementById('dashboard-sleep-chart')
-    if (!el) return
+    if (!el)
+      return
     chart?.dispose()
     chart = echarts.init(el)
     const dates = sleepData.value.map(d => d.date)
@@ -181,9 +183,11 @@ function initChart() {
         trigger: 'axis',
         formatter: (params: any) => {
           const i = params[0]?.dataIndex
-          if (i == null) return ''
+          if (i == null)
+            return ''
           const d = sleepData.value[i!]
-          if (!d) return ''
+          if (!d)
+            return ''
           return [
             d.date,
             `我·${t('dashboard.wakeUp')}: ${d.wake ?? '-'}`,
@@ -366,7 +370,9 @@ onUnmounted(() => chart?.dispose())
     <!-- No partner empty state -->
     <div v-if="!hasPartner" class="empty-state">
       <van-icon name="friends-o" size="64" color="#ccc" />
-      <p class="empty-text">{{ $t('dashboard.noPartner') }}</p>
+      <p class="empty-text">
+        {{ $t('dashboard.noPartner') }}
+      </p>
       <van-button type="primary" round @click="router.push('/share')">
         {{ $t('share.goToBind') }}
       </van-button>
@@ -377,23 +383,41 @@ onUnmounted(() => chart?.dispose())
       <div class="card-grid">
         <!-- 纪念日 Card -->
         <div class="card card-anniv" @click="router.push('/share')">
-          <div class="card-icon">💕</div>
-          <div class="anniv-number">{{ daysTogether }}</div>
-          <div class="anniv-unit">{{ $t('dashboard.days') }}</div>
-          <div class="anniv-label">{{ $t('dashboard.anniversary') }}</div>
-          <div class="anniv-partner">{{ partnerName }}</div>
+          <div class="card-icon">
+            💕
+          </div>
+          <div class="anniv-number">
+            {{ daysTogether }}
+          </div>
+          <div class="anniv-unit">
+            {{ $t('dashboard.days') }}
+          </div>
+          <div class="anniv-label">
+            {{ $t('dashboard.anniversary') }}
+          </div>
+          <div class="anniv-partner">
+            {{ partnerName }}
+          </div>
         </div>
 
         <!-- 积分 Card -->
         <div class="card card-points">
-          <div class="card-icon">⭐</div>
+          <div class="card-icon">
+            ⭐
+          </div>
           <div class="points-number" :class="{ negative: pointsBalance < 0 }">
             {{ pointsBalance }}
           </div>
-          <div class="points-label">{{ $t('dashboard.points') }}</div>
+          <div class="points-label">
+            {{ $t('dashboard.points') }}
+          </div>
           <div class="points-actions">
-            <van-button size="mini" round type="primary" @click.stop="openAdd">+</van-button>
-            <van-button size="mini" round type="danger" @click.stop="openSub">-</van-button>
+            <van-button size="mini" round type="primary" @click.stop="openAdd">
+              +
+            </van-button>
+            <van-button size="mini" round type="danger" @click.stop="openSub">
+              -
+            </van-button>
           </div>
         </div>
       </div>
@@ -421,22 +445,34 @@ onUnmounted(() => chart?.dispose())
       <div class="card-grid">
         <!-- 数据统计 Card -->
         <div class="card card-stats" @click="router.push('/share')">
-          <div class="card-icon">📊</div>
+          <div class="card-icon">
+            📊
+          </div>
           <div class="stats-grid-inner">
             <div class="stat-item">
-              <div class="stat-num">{{ recordsCount }}</div>
-              <div class="stat-lbl">{{ $t('dashboard.recordsCount') }}</div>
+              <div class="stat-num">
+                {{ recordsCount }}
+              </div>
+              <div class="stat-lbl">
+                {{ $t('dashboard.recordsCount') }}
+              </div>
             </div>
             <div class="stat-item">
-              <div class="stat-num">{{ mediaFinishedCount }}</div>
-              <div class="stat-lbl">{{ $t('dashboard.mediaFinished') }}</div>
+              <div class="stat-num">
+                {{ mediaFinishedCount }}
+              </div>
+              <div class="stat-lbl">
+                {{ $t('dashboard.mediaFinished') }}
+              </div>
             </div>
           </div>
         </div>
 
         <!-- 作息打卡 Card -->
         <div class="card card-sleep" @click="router.push('/partner/dashboard/sleep')">
-          <div class="card-icon">😴</div>
+          <div class="card-icon">
+            😴
+          </div>
           <div class="sleep-summary">
             <div class="sleep-stat" :class="{ done: wakeChecked }">
               {{ $t('dashboard.wakeUp') }}: {{ wakeChecked ? wakeTime : $t('dashboard.notCheckedIn') }}
@@ -460,10 +496,12 @@ onUnmounted(() => chart?.dispose())
       <!-- 加分弹窗 -->
       <van-action-sheet v-model:show="showAddPopup" :title="$t('dashboard.addPoints')" :close-on-click-action="false">
         <div class="popup-body">
-          <div class="popup-amount add">+{{ popupAmount }}</div>
+          <div class="popup-amount add">
+            +{{ popupAmount }}
+          </div>
           <van-stepper v-model="popupAmount" :min="1" :max="100" />
           <van-field v-model="popupReason" :placeholder="$t('dashboard.reasonPlaceholder')" clearable :maxlength="50" required />
-          <van-button type="primary" block round :disabled="!popupReason.trim()" @click="confirmAdd">
+          <van-button type="primary" round block :disabled="!popupReason.trim()" @click="confirmAdd">
             {{ $t('dashboard.confirmAdd') }}
           </van-button>
         </div>
@@ -472,10 +510,12 @@ onUnmounted(() => chart?.dispose())
       <!-- 扣分弹窗 -->
       <van-action-sheet v-model:show="showSubPopup" :title="$t('dashboard.subPoints')" :close-on-click-action="false">
         <div class="popup-body">
-          <div class="popup-amount sub">-{{ popupAmount }}</div>
+          <div class="popup-amount sub">
+            -{{ popupAmount }}
+          </div>
           <van-stepper v-model="popupAmount" :min="1" :max="100" />
           <van-field v-model="popupReason" :placeholder="$t('dashboard.reasonPlaceholder')" clearable :maxlength="50" required />
-          <van-button type="danger" block round :disabled="!popupReason.trim()" @click="confirmSub">
+          <van-button type="danger" round block :disabled="!popupReason.trim()" @click="confirmSub">
             {{ $t('dashboard.confirmSub') }}
           </van-button>
         </div>

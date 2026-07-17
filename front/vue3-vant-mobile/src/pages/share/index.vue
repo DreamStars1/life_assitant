@@ -4,7 +4,7 @@ import { useUserStore } from '@/stores'
 import request from '@/utils/request'
 import { createSharedRecord, deleteSharedRecord, fetchSharedRecords, updateSharedRecord } from '@/api/modules/shared-records'
 import type { SharedRecordItem } from '@/api/modules/shared-records'
-import { createSharedMedia, deleteSharedMedia, fetchSharedMediaList } from '@/api/modules/shared-media'
+import { createSharedMedia, deleteSharedMedia, fetchSharedMediaList, updateSharedMedia } from '@/api/modules/shared-media'
 import type { SharedMediaItem } from '@/api/modules/shared-media'
 import { useRouter } from 'vue-router'
 
@@ -266,7 +266,12 @@ const mediaStatusFilter = ref('')
 const showAddMedia = ref(false)
 const addMediaForm = reactive({ title: '', mediaType: 'movie', description: '' })
 const addMediaCoverList = ref<{ file?: File }[]>([])
+const showEditMedia = ref(false)
+const editingMediaId = ref('')
+const editMediaForm = reactive({ title: '', mediaType: 'movie', description: '' })
+const editMediaCoverList = ref<{ file?: File }[]>([])
 const showMediaTypePicker = ref(false)
+const showEditMediaTypePicker = ref(false)
 const mediaTypeColumns = [
   { text: '电影', value: 'movie' },
   { text: '书籍', value: 'book' },
@@ -332,6 +337,37 @@ async function onAddMedia() {
   }
 }
 
+function openEditMedia(item: SharedMediaItem) {
+  editingMediaId.value = item.id
+  editMediaForm.title = item.title
+  editMediaForm.mediaType = item.mediaType
+  editMediaForm.description = item.description || ''
+  editMediaCoverList.value = []
+  showEditMedia.value = true
+}
+
+async function onEditMedia() {
+  if (!editMediaForm.title.trim()) {
+    showToast('请输入名称')
+    return
+  }
+  try {
+    const fd = new FormData()
+    fd.append('title', editMediaForm.title)
+    fd.append('mediaType', editMediaForm.mediaType)
+    fd.append('description', editMediaForm.description)
+    if (editMediaCoverList.value[0]?.file)
+      fd.append('cover', editMediaCoverList.value[0].file)
+    await updateSharedMedia(editingMediaId.value, fd)
+    showToast('已更新')
+    showEditMedia.value = false
+    await loadMedia()
+  }
+  catch {
+    showToast('更新失败')
+  }
+}
+
 async function deleteMedia(id: string) {
   try {
     await showConfirmDialog({ title: '确认删除', message: '删除后将同时删除相关评论和进度记录，确定吗？' })
@@ -367,6 +403,22 @@ function formatFinishedDate(iso: string | null): string {
   if (Number.isNaN(d.getTime()))
     return ''
   return d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+}
+
+function formatLastWatched(iso: string | null): string {
+  if (!iso)
+    return ''
+  const d = new Date(iso.includes('T') ? iso : iso.replace(' ', 'T'))
+  if (Number.isNaN(d.getTime()))
+    return ''
+  return d.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).replace(/\//g, '-')
 }
 
 function mediaCoverUrl(path: string | null): string {
@@ -584,9 +636,19 @@ watch(activeTab, (tab) => {
                       {{ formatFinishedDate(item.finishedAt) }}
                     </span>
                   </div>
+                  <div v-if="item.updateTime" class="text-xs text-gray-400 mt-1">
+                    上次一起看：{{ formatLastWatched(item.updateTime) }}
+                  </div>
                 </div>
+                <van-icon
+                  name="edit"
+                  size="18"
+                  class="media-edit-btn flex-shrink-0"
+                  @click.stop="openEditMedia(item)"
+                />
               </div>
               <template #right>
+                <van-button square type="primary" text="编辑" @click="openEditMedia(item)" />
                 <van-button square type="danger" text="删除" @click="deleteMedia(item.id)" />
               </template>
             </van-swipe-cell>
@@ -643,6 +705,39 @@ watch(activeTab, (tab) => {
               @cancel="showMediaTypePicker = false"
             />
           </van-popup>
+
+          <!-- 编辑弹窗 -->
+          <van-dialog
+            v-model:show="showEditMedia"
+            title="编辑一起看过的"
+            show-cancel-button
+            @confirm="onEditMedia"
+          >
+            <div class="px-4 py-3 space-y-3">
+              <van-field v-model="editMediaForm.title" placeholder="名称" clearable />
+              <van-field
+                :model-value="formatMediaType(editMediaForm.mediaType)"
+                is-link
+                readonly
+                placeholder="选择类型"
+                label="类型"
+                @click="showEditMediaTypePicker = true"
+              />
+              <van-field v-model="editMediaForm.description" placeholder="简介（可选）" type="textarea" :rows="2" autosize />
+              <div class="text-sm text-gray-500 mb-1">
+                封面图（不选则保留原图）
+              </div>
+              <van-uploader v-model="editMediaCoverList" accept="image/*" max-count="1" />
+            </div>
+          </van-dialog>
+
+          <van-popup v-model:show="showEditMediaTypePicker" position="bottom">
+            <van-picker
+              :columns="mediaTypeColumns"
+              @confirm="({ selectedOptions }: any) => { editMediaForm.mediaType = selectedOptions[0]?.value ?? 'movie'; showEditMediaTypePicker = false }"
+              @cancel="showEditMediaTypePicker = false"
+            />
+          </van-popup>
         </van-tab>
       </van-tabs>
     </template>
@@ -695,6 +790,12 @@ watch(activeTab, (tab) => {
   align-items: center;
   justify-content: center;
   color: var(--van-gray-5);
+}
+
+.media-edit-btn {
+  color: var(--van-gray-5);
+  padding: 8px;
+  margin-right: -8px;
 }
 </style>
 
