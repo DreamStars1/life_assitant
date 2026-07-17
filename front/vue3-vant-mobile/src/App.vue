@@ -6,7 +6,7 @@ import { useRouteCacheStore } from '@/stores'
 const { t } = useI18n()
 const route = useRoute()
 
-const PUBLIC_ROUTES = ['Login', 'Register', 'ForgotPassword']
+const PUBLIC_ROUTES = ['Login', 'ForgotPassword']
 const LAYOUT_WITHOUT_NAVBAR = ['MediaDetail']
 const showLayout = computed(() => !PUBLIC_ROUTES.includes(route.name as string))
 const showNavBar = computed(() => showLayout.value && !LAYOUT_WITHOUT_NAVBAR.includes(route.name as string))

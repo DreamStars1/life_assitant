@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "Life Assistant",
-    "description": "Smart life assistant for couples"
+    "name": "Todo Recorder",
+    "description": "Todo and life recording tool"
   },
 
   "navbar": {
@@ -17,7 +17,10 @@
     "Settings": "Settings",
     "Share": "Partner",
     "404": "Page Not Found",
-    "Undefined": "Undefined title"
+    "Undefined": "Undefined title",
+    "PartnerDashboard": "Dashboard",
+    "PartnerDashboardPoints": "Points",
+    "PartnerDashboardSleep": "Sleep Check-in"
   },
 
   "tabbar": {
@@ -25,7 +28,8 @@
     "todos": "Todos",
     "events": "Events",
     "lifelog": "Logs",
-    "profile": "Profile"
+    "profile": "Profile",
+    "dashboard": "Dashboard"
   },
 
   "today": {
@@ -107,7 +111,12 @@
     "enterCode": "Enter partner's invite code",
     "bind": "Bind",
     "partner": "My Partner",
-    "noPartner": "No partner yet"
+    "noPartner": "No partner yet",
+    "unbind": "Unbind Partner",
+    "unbindConfirm": "Unbind partner?",
+    "unbindWarning": "All shared records will be deleted. This action cannot be undone.",
+    "unbindSuccess": "Partner unbound",
+    "goToBind": "Bind Partner"
   },
 
   "profile": {
@@ -170,5 +179,35 @@
     "logout": "Sign Out",
     "currentVersion": "Current Version",
     "confirmTitle": "Confirm Exit?"
+  },
+
+  "common": {
+    "noData": "No records yet"
+  },
+
+  "dashboard": {
+    "title": "Partner Dashboard",
+    "points": "Points",
+    "sleep": "Sleep Check-in",
+    "anniversary": "Together",
+    "days": "days",
+    "recordsCount": "Records",
+    "mediaFinished": "Finished",
+    "pointsHistory": "Points History",
+    "sleepTrend": "7-Day Sleep Trend",
+    "wakeUp": "Wake Up",
+    "goToSleep": "Sleep",
+    "checkin": "Check In",
+    "noPartner": "Please bind a partner first",
+    "addPoints": "Add Points",
+    "subPoints": "Deduct Points",
+    "reason": "Reason",
+    "reasonPlaceholder": "Enter reason...",
+    "confirmAdd": "Confirm Add",
+    "confirmSub": "Confirm Deduct",
+    "todayCheckin": "Today's Check-in",
+    "wakeTime": "Wake Time",
+    "sleepTime": "Sleep Time",
+    "notCheckedIn": "Not checked in"
   }
 }

@@ -5,4 +5,5 @@ export const rootRouteList: readonly string[] = [
   'LifeLog',
   'Profile',
   'Share',
+  'PartnerDashboard',
 ]

@@ -26,6 +26,18 @@ const progressList = ref<MediaProgress[]>([])
 const loading = ref(true)
 const messageText = ref('')
 const sending = ref(false)
+const chatContainer = ref<HTMLElement | null>(null)
+let loadSeq = 0
+
+function commentListFromResponse(res: unknown): MediaComment[] | null {
+  if (Array.isArray(res))
+    return res as MediaComment[]
+  if (res && typeof res === 'object' && 'data' in res) {
+    const data = (res as { data?: unknown }).data
+    return Array.isArray(data) ? data as MediaComment[] : null
+  }
+  return null
+}
 
 // progress update dialog
 const showProgressDialog = ref(false)
@@ -57,23 +69,59 @@ function progressTextOf(entry: MediaProgress | null): string {
 }
 
 async function loadData() {
+  const id = mediaId.value
+  if (!id)
+    return
+
+  const seq = ++loadSeq
   loading.value = true
   try {
     const [detailRes, commentsRes, progressRes] = await Promise.all([
-      getSharedMediaDetail(mediaId.value),
-      fetchComments(mediaId.value),
-      fetchProgress(mediaId.value),
+      getSharedMediaDetail(id),
+      fetchComments(id),
+      fetchProgress(id),
     ])
+    if (seq !== loadSeq)
+      return
+
     media.value = detailRes.data ?? null
-    comments.value = commentsRes.data ?? []
+    const list = commentListFromResponse(commentsRes)
+    if (list)
+      comments.value = list
     progressList.value = progressRes.data ?? []
+    await nextTick()
+    scrollChatToBottom()
   }
   catch {
-    showToast('加载失败')
+    if (seq === loadSeq)
+      showToast('加载失败')
   }
   finally {
-    loading.value = false
+    if (seq === loadSeq)
+      loading.value = false
   }
+}
+
+async function reloadComments() {
+  const id = mediaId.value
+  if (!id)
+    return null
+
+  const res = await fetchComments(id)
+  const list = commentListFromResponse(res)
+  if (list) {
+    // ponytail: 避免异常空列表覆盖已有评论（并发加载竞态）
+    if (list.length > 0 || comments.value.length === 0)
+      comments.value = list
+    await nextTick()
+    scrollChatToBottom()
+  }
+  return list
+}
+
+function scrollChatToBottom() {
+  if (chatContainer.value)
+    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
 }
 
 function isOwnComment(comment: MediaComment): boolean {
@@ -82,16 +130,26 @@ function isOwnComment(comment: MediaComment): boolean {
 
 async function sendMessage() {
   const text = messageText.value.trim()
-  if (!text)
+  if (!text || sending.value)
     return
+  const id = mediaId.value
+  if (!id) {
+    showToast('页面未就绪，请稍后重试')
+    return
+  }
+
   sending.value = true
+  const draft = text
+  messageText.value = ''
+  const previous = comments.value
   try {
-    const res = await createComment(mediaId.value, { content: text })
-    if (res.data)
-      comments.value.push(res.data)
-    messageText.value = ''
+    const created = await createComment(id, { content: draft })
+    const list = await reloadComments()
+    if (!list?.length && created.data)
+      comments.value = [...previous, created.data]
   }
   catch {
+    messageText.value = draft
     showToast('发送失败')
   }
   finally {
@@ -170,6 +228,11 @@ function goBack() {
 onMounted(() => {
   loadData()
 })
+
+watch(mediaId, (id, prev) => {
+  if (id && id !== prev)
+    loadData()
+})
 </script>
 
 <template>
@@ -215,14 +278,14 @@ onMounted(() => {
     </div>
 
     <!-- Chat Messages -->
-    <div v-if="!loading" class="chat-container">
+    <div v-if="!loading" ref="chatContainer" class="chat-container">
       <div v-if="comments.length === 0" class="chat-empty">
         <van-icon name="chat-o" size="48" color="var(--van-gray-4)" />
         <p>还没有留言，说点什么吧</p>
       </div>
       <div
-        v-for="comment in comments"
-        :key="comment.id"
+        v-for="(comment, index) in comments"
+        :key="comment.id || `${comment.createdAt}-${index}`"
         class="message-row"
         :class="{ 'message-own': isOwnComment(comment), 'message-partner': !isOwnComment(comment) }"
       >
@@ -237,8 +300,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Loading -->
-    <div v-if="loading" class="loading-state">
+    <div v-else class="loading-state">
       <van-loading type="spinner" size="24" />
     </div>
 
@@ -247,9 +309,9 @@ onMounted(() => {
       <van-field
         v-model="messageText"
         placeholder="输入留言..."
-        :disabled="sending"
+        :disabled="sending || loading"
         clearable
-        @keypress.enter="sendMessage"
+        @keydown.enter.prevent="sendMessage"
       >
         <template #button>
           <van-button
@@ -300,19 +362,19 @@ onMounted(() => {
 
 <style scoped>
 .media-detail-page {
-  position: absolute;
-  inset: 0;
   display: flex;
   flex-direction: column;
-  background: #f7f8fa;
+  min-height: 100dvh;
+  margin-bottom: -16px;
+  background: var(--van-background);
 }
 
 .progress-bar {
   display: flex;
   align-items: center;
   padding: 10px 16px;
-  background: #fff;
-  border-bottom: 1px solid #ebedf0;
+  background: var(--van-background-2);
+  border-bottom: 1px solid var(--van-border-color);
   flex-shrink: 0;
 }
 
@@ -324,13 +386,13 @@ onMounted(() => {
 
 .progress-label {
   font-size: 12px;
-  color: #969799;
+  color: var(--van-text-color-3);
   margin-bottom: 2px;
 }
 
 .progress-value {
   font-size: 13px;
-  color: #323233;
+  color: var(--van-text-color);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -340,7 +402,7 @@ onMounted(() => {
 .progress-divider {
   width: 1px;
   height: 24px;
-  background: #ebedf0;
+  background: var(--van-border-color);
   margin: 0 12px;
   flex-shrink: 0;
 }
@@ -350,9 +412,8 @@ onMounted(() => {
   min-height: 0;
   overflow-y: auto;
   padding: 12px 16px;
-  padding-bottom: 60px;
-  width: 100%;
   box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 
 .chat-empty {
@@ -360,9 +421,9 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 0;
+  min-height: 100%;
   gap: 12px;
-  color: #969799;
+  color: var(--van-text-color-3);
   font-size: 14px;
 }
 
@@ -393,8 +454,8 @@ onMounted(() => {
 }
 
 .message-partner .message-bubble {
-  background: #fff;
-  color: #323233;
+  background: var(--van-cell-background);
+  color: var(--van-text-color);
   border-bottom-left-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
@@ -413,21 +474,19 @@ onMounted(() => {
 }
 
 .loading-state {
+  flex: 1;
+  min-height: 0;
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 80px 0;
 }
 
 .input-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #fff;
-  border-top: 1px solid #ebedf0;
+  flex-shrink: 0;
+  background: var(--van-cell-background);
+  border-top: 1px solid var(--van-border-color);
   padding: 6px 12px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom));
-  z-index: 10;
+  padding-bottom: calc(6px + env(safe-area-inset-bottom));
 }
 
 .progress-form {

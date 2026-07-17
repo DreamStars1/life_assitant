@@ -15,6 +15,8 @@ from mcp.server.transport_security import TransportSecuritySettings
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from .client import JavaClient
+from .tools import checkin as checkin_tools
+from .tools import points as points_tools
 from .tools import record as record_tools
 from .tools import todo as todo_tools
 
@@ -201,6 +203,86 @@ async def record_update(
     client = _get_client()
     try:
         result = await record_tools.record_update(client, id, title, content, occurred_at)
+        return json.dumps(result, ensure_ascii=False)
+    finally:
+        await client.close()
+
+
+@mcp.tool(description="查询伴侣积分余额")
+async def points_get() -> str:
+    """查询当前双方总分余额。"""
+    client = _get_client()
+    try:
+        result = await points_tools.points_get(client)
+        return json.dumps(result, ensure_ascii=False)
+    finally:
+        await client.close()
+
+
+@mcp.tool(description="查询积分变动历史")
+async def points_history(page: int | None = None, size: int | None = None) -> str:
+    """查询积分变动历史记录。
+
+    Args:
+        page: 页码，从 1 开始（可选）
+        size: 每页条数（可选）
+    """
+    client = _get_client()
+    try:
+        result = await points_tools.points_history(client, page, size)
+        return json.dumps(result, ensure_ascii=False)
+    finally:
+        await client.close()
+
+
+@mcp.tool(description="记录积分变动（加分或扣分）")
+async def points_change(points_change: int, reason: str) -> str:
+    """记录积分变动。
+
+    Args:
+        points_change: 变动值，正数为加分、负数为扣分
+        reason: 变动原因（必填）
+    """
+    client = _get_client()
+    try:
+        result = await points_tools.points_change(client, points_change, reason)
+        return json.dumps(result, ensure_ascii=False)
+    finally:
+        await client.close()
+
+
+@mcp.tool(description="作息打卡（起床/睡觉）")
+async def checkin_do(checkin_type: str) -> str:
+    """作息打卡。
+
+    Args:
+        checkin_type: 打卡类型，'wake' 为起床，'sleep' 为睡觉
+    """
+    client = _get_client()
+    try:
+        result = await checkin_tools.checkin_do(client, checkin_type)
+        return json.dumps(result, ensure_ascii=False)
+    finally:
+        await client.close()
+
+
+@mcp.tool(description="查询今日打卡状态（双方）")
+async def checkin_today() -> str:
+    """查询自己和伴侣今天的起床/睡觉打卡情况。"""
+    client = _get_client()
+    try:
+        result = await checkin_tools.checkin_today(client)
+        return json.dumps(result, ensure_ascii=False)
+    finally:
+        await client.close()
+
+
+@mcp.tool(description="查询近 7 天双方作息打卡数据")
+async def checkin_weekly() -> str:
+    """获取近 7 天的起床/睡觉打卡数据，用于作息趋势展示。"""
+    client = _get_client()
+    try:
+        result = await checkin_tools.checkin_weekly(client)
         return json.dumps(result, ensure_ascii=False)
     finally:
         await client.close()

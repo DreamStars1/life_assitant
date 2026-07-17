@@ -20,7 +20,7 @@ const router = createRouter({
 if (import.meta.hot)
   handleHotUpdate(router)
 
-const PUBLIC_ROUTES = ['Login', 'Register', 'ForgotPassword']
+const PUBLIC_ROUTES = ['Login', 'ForgotPassword']
 
 router.beforeEach(async (to: EnhancedRouteLocation) => {
   NProgress.start()

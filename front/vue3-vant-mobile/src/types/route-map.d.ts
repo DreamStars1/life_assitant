@@ -73,6 +73,27 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'PartnerDashboard': RouteRecordInfo<
+      'PartnerDashboard',
+      '/partner/dashboard',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    'PartnerDashboardPoints': RouteRecordInfo<
+      'PartnerDashboardPoints',
+      '/partner/dashboard/points',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    'PartnerDashboardSleep': RouteRecordInfo<
+      'PartnerDashboardSleep',
+      '/partner/dashboard/sleep',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     'PartnerDetail': RouteRecordInfo<
       'PartnerDetail',
       '/partner/detail',
@@ -90,13 +111,6 @@ declare module 'vue-router/auto-routes' {
     'ProfileEdit': RouteRecordInfo<
       'ProfileEdit',
       '/profile/edit',
-      Record<never, never>,
-      Record<never, never>,
-      | never
-    >,
-    'Register': RouteRecordInfo<
-      'Register',
-      '/register',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -190,6 +204,30 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/partner/dashboard/index.vue': {
+      routes:
+        | 'PartnerDashboard'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/partner/dashboard/points.vue': {
+      routes:
+        | 'PartnerDashboardPoints'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/partner/dashboard/sleep.vue': {
+      routes:
+        | 'PartnerDashboardSleep'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/partner/detail.vue': {
       routes:
         | 'PartnerDetail'
@@ -209,14 +247,6 @@ declare module 'vue-router/auto-routes' {
     'src/pages/profile/edit.vue': {
       routes:
         | 'ProfileEdit'
-      views:
-        | never
-      pathParamNames:
-        | never
-    }
-    'src/pages/register/index.vue': {
-      routes:
-        | 'Register'
       views:
         | never
       pathParamNames:

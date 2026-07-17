@@ -32,6 +32,12 @@ const show = computed(() => {
         <van-icon name="like-o" />
       </template>
     </van-tabbar-item>
+    <van-tabbar-item replace to="/partner/dashboard">
+      {{ $t('tabbar.dashboard') }}
+      <template #icon>
+        <van-icon name="chart-trending-o" />
+      </template>
+    </van-tabbar-item>
     <van-tabbar-item replace to="/profile">
       {{ $t('tabbar.profile') }}
       <template #icon>

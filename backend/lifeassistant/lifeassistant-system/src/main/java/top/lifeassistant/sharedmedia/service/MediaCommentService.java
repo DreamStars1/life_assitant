@@ -9,9 +9,7 @@ import top.lifeassistant.sharedmedia.model.req.MediaCommentCreateReq;
 import top.lifeassistant.sharedmedia.model.resp.MediaCommentResp;
 import top.lifeassistant.system.model.entity.user.UserDO;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,13 +22,12 @@ public class MediaCommentService {
         sharedMediaService.getById(user, mediaId);
 
         MediaCommentDO comment = new MediaCommentDO();
-        comment.setId(UUID.randomUUID().toString());
         comment.setMediaId(mediaId);
         comment.setUserId(user.getId());
-        comment.setContent(req.getContent());
-        comment.setCreatedAt(LocalDateTime.now());
+        comment.setContent(req.getContent().trim());
         mapper.insert(comment);
-        return MediaCommentResp.from(comment);
+        MediaCommentDO saved = mapper.selectById(comment.getId());
+        return MediaCommentResp.from(saved != null ? saved : comment);
     }
 
     public List<MediaCommentResp> list(UserDO user, String mediaId) {

@@ -246,6 +246,9 @@ function formatDate(dateStr: string) {
     <div class="text-gray mt-2 text-center">
       {{ $t("settings.currentVersion") }}: v{{ version }}
     </div>
+    <div class="beian-footer">
+      <a href="https://beian.miit.gov.cn/" target="_blank">苏ICP备2026047415号-1</a>
+    </div>
 
     <!-- 模板管理弹窗 -->
     <van-popup v-model:show="showTemplates" position="bottom" round title="确认回复模板" style="max-height: 70vh;">
@@ -475,6 +478,16 @@ function formatDate(dateStr: string) {
   padding: 8px 12px;
   background: #fff8e1;
   border-radius: 6px;
+}
+.beian-footer {
+  margin-top: 8px;
+  padding-bottom: 16px;
+  text-align: center;
+}
+.beian-footer a {
+  font-size: 12px;
+  color: var(--van-gray-5);
+  text-decoration: none;
 }
 </style>
 

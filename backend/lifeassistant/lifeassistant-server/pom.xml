@@ -6,7 +6,7 @@
     <parent>
         <groupId>top.lifeassistant</groupId>
         <artifactId>lifeassistant</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.3.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>lifeassistant-server</artifactId>
@@ -53,6 +53,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.4.10</version>
                 <configuration>
                     <skip>${spring-boot.repackage.skip}</skip>
                     <includeSystemScope>true</includeSystemScope>
@@ -93,6 +94,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-jar-plugin</artifactId>
+                        <version>3.4.2</version>
                         <configuration>
                             <excludes>
                                 <exclude>${config-path}</exclude>
@@ -133,6 +135,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.3.1</version>
                         <executions>
                             <execution>
                                 <id>copy-resources</id>

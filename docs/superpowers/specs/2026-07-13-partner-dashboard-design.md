@@ -90,7 +90,9 @@
 | `checkin_time` | DATETIME | 打卡时间 |
 | `checkin_date` | DATE | 打卡日期 |
 
-**约束**：每人每天每种类型只能打卡一次（`UNIQUE(user_id, checkin_date, checkin_type)`）。
+**约束**：每人每个作息日每种类型只能打卡一次（`UNIQUE(user_id, checkin_date, checkin_type)`）。
+
+**作息日分界**：以凌晨 **4:00** 为界。`0:00–3:59` 归入前一天，`4:00` 起算当天。例如 7/14 02:00 打睡觉卡，记为 `checkin_date = 7/13`。
 
 **API 端点**
 

@@ -3,7 +3,6 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores'
 
 import logo from '~/images/logo.svg'
-import vw from '@/utils/inline-px-to-vw'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -87,11 +86,23 @@ async function login() {
       </div>
     </van-form>
 
-    <GhostButton block to="register" :style="{ 'margin-top': vw(18) }">
-      {{ $t('login.signUp') }}
-    </GhostButton>
+    <div class="beian-footer">
+      <a href="https://beian.miit.gov.cn/" target="_blank">苏ICP备2026047415号-1</a>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.beian-footer {
+  margin-top: 24px;
+  text-align: center;
+}
+.beian-footer a {
+  font-size: 12px;
+  color: var(--van-gray-5);
+  text-decoration: none;
+}
+</style>
 
 <route lang="json5">
 {

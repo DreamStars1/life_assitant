@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "小助手",
-    "description": "情侣生活智能助手"
+    "name": "代办记录工具",
+    "description": "代办事项与生活记录工具"
   },
 
   "navbar": {
@@ -19,7 +19,10 @@
     "PartnerDetail": "伴侣详情",
     "AckTemplates": "确认回复模板",
     "404": "页面未找到",
-    "Undefined": "未定义标题"
+    "Undefined": "未定义标题",
+    "PartnerDashboard": "看板",
+    "PartnerDashboardPoints": "积分详情",
+    "PartnerDashboardSleep": "作息打卡"
   },
 
   "tabbar": {
@@ -27,7 +30,8 @@
     "todos": "待办",
     "events": "日历",
     "lifelog": "记录",
-    "profile": "我的"
+    "profile": "我的",
+    "dashboard": "看板"
   },
 
   "today": {
@@ -185,6 +189,33 @@
     "copied": "已复制",
     "generated": "已生成",
     "bound": "已绑定",
-    "confirmDelete": "确认删除？"
+    "confirmDelete": "确认删除？",
+    "noData": "暂无记录"
+  },
+
+  "dashboard": {
+    "title": "看板",
+    "points": "积分",
+    "sleep": "作息打卡",
+    "anniversary": "在一起",
+    "days": "天",
+    "recordsCount": "共享记录",
+    "mediaFinished": "已看完",
+    "pointsHistory": "积分记录",
+    "sleepTrend": "近7天作息",
+    "wakeUp": "起床",
+    "goToSleep": "睡觉",
+    "checkin": "打卡",
+    "noPartner": "请先绑定伴侣后再使用看板功能",
+    "addPoints": "加分",
+    "subPoints": "扣分",
+    "reason": "原因",
+    "reasonPlaceholder": "填写积分变动原因...",
+    "confirmAdd": "确认加分",
+    "confirmSub": "确认扣分",
+    "todayCheckin": "今日打卡",
+    "wakeTime": "起床时间",
+    "sleepTime": "睡觉时间",
+    "notCheckedIn": "未打卡"
   }
 }
