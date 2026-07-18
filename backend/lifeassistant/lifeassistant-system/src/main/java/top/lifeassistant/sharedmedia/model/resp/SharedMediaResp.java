@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import top.lifeassistant.sharedmedia.model.entity.SharedMediaDO;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -19,6 +20,7 @@ public class SharedMediaResp {
     private String description;
     private Boolean isFinished;
     private LocalDateTime finishedAt;
+    private LocalDate lastWatchedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updateTime;
 
@@ -32,6 +34,7 @@ public class SharedMediaResp {
             .description(media.getDescription())
             .isFinished(media.getIsFinished())
             .finishedAt(media.getFinishedAt())
+            .lastWatchedAt(media.getLastWatchedAt())
             .createdAt(media.getCreatedAt())
             .updateTime(media.getUpdateTime())
             .build();
