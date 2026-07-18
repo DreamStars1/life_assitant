@@ -35,6 +35,7 @@ public class MediaProgressService {
             if (user.getPartnerId() != null) {
                 upsertProgress(mediaId, user.getPartnerId(), req.getProgressText());
             }
+            sharedMediaService.markLastWatchedToday(mediaId);
         } else if ("personal".equals(req.getScope())) {
             upsertProgress(mediaId, user.getId(), req.getProgressText());
         } else {
