@@ -255,7 +255,7 @@ const hasRecords = computed(() => records.value.length > 0)
 
 // ---- 共享媒体（一起看过的） ----
 const router = useRouter()
-const activeTab = ref<'records' | 'media'>('records')
+const activeTab = ref<'records' | 'media'>('media')
 
 const mediaRecords = ref<SharedMediaItem[]>([])
 const mediaPage = ref(1)
@@ -264,11 +264,13 @@ const mediaTypeFilter = ref('')
 const mediaStatusFilter = ref('')
 
 const showAddMedia = ref(false)
-const addMediaForm = reactive({ title: '', mediaType: 'movie', description: '' })
+const addMediaForm = reactive({ title: '', mediaType: 'movie', description: '', lastWatchedAt: '' })
 const addMediaCoverList = ref<{ file?: File }[]>([])
+const showAddLastWatchedCalendar = ref(false)
 const showEditMedia = ref(false)
 const editingMediaId = ref('')
-const editMediaForm = reactive({ title: '', mediaType: 'movie', description: '' })
+const editMediaForm = reactive({ title: '', mediaType: 'movie', description: '', lastWatchedAt: '' })
+const showEditLastWatchedCalendar = ref(false)
 const editMediaCoverList = ref<{ file?: File }[]>([])
 const showMediaTypePicker = ref(false)
 const showEditMediaTypePicker = ref(false)
@@ -322,12 +324,14 @@ async function onAddMedia() {
       fd.append('description', addMediaForm.description)
     if (addMediaCoverList.value[0]?.file)
       fd.append('cover', addMediaCoverList.value[0].file)
+    fd.append('lastWatchedAt', addMediaForm.lastWatchedAt || '')
     await createSharedMedia(fd)
     showToast('已添加')
     showAddMedia.value = false
     addMediaForm.title = ''
     addMediaForm.mediaType = 'movie'
     addMediaForm.description = ''
+    addMediaForm.lastWatchedAt = toLocalDateStr(new Date())
     addMediaCoverList.value = []
     mediaPage.value = 1
     await loadMedia()
@@ -337,11 +341,27 @@ async function onAddMedia() {
   }
 }
 
+function openAddMedia() {
+  addMediaForm.lastWatchedAt = toLocalDateStr(new Date())
+  showAddMedia.value = true
+}
+
+function onAddLastWatchedConfirm(d: Date) {
+  addMediaForm.lastWatchedAt = toLocalDateStr(d)
+  showAddLastWatchedCalendar.value = false
+}
+
+function onEditLastWatchedConfirm(d: Date) {
+  editMediaForm.lastWatchedAt = toLocalDateStr(d)
+  showEditLastWatchedCalendar.value = false
+}
+
 function openEditMedia(item: SharedMediaItem) {
   editingMediaId.value = item.id
   editMediaForm.title = item.title
   editMediaForm.mediaType = item.mediaType
   editMediaForm.description = item.description || ''
+  editMediaForm.lastWatchedAt = item.lastWatchedAt ? item.lastWatchedAt.slice(0, 10) : ''
   editMediaCoverList.value = []
   showEditMedia.value = true
 }
@@ -358,6 +378,7 @@ async function onEditMedia() {
     fd.append('description', editMediaForm.description)
     if (editMediaCoverList.value[0]?.file)
       fd.append('cover', editMediaCoverList.value[0].file)
+    fd.append('lastWatchedAt', editMediaForm.lastWatchedAt || '')
     await updateSharedMedia(editingMediaId.value, fd)
     showToast('已更新')
     showEditMedia.value = false
@@ -405,20 +426,10 @@ function formatFinishedDate(iso: string | null): string {
   return d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
 }
 
-function formatLastWatched(iso: string | null): string {
+function formatLastWatchedDate(iso: string | null): string {
   if (!iso)
     return ''
-  const d = new Date(iso.includes('T') ? iso : iso.replace(' ', 'T'))
-  if (Number.isNaN(d.getTime()))
-    return ''
-  return d.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).replace(/\//g, '-')
+  return iso.slice(0, 10)
 }
 
 function mediaCoverUrl(path: string | null): string {
@@ -433,18 +444,19 @@ function mediaCoverUrl(path: string | null): string {
 onMounted(async () => {
   await userStore.info()
   if (partnerId.value)
-    goToPage(1)
+    await loadMedia()
 })
 
 watch(partnerId, async (val) => {
   if (val)
-    goToPage(1)
+    await loadMedia()
 })
 
 watch(activeTab, (tab) => {
-  if (tab === 'media' && mediaRecords.value.length === 0) {
+  if (tab === 'records' && records.value.length === 0)
+    goToPage(1)
+  else if (tab === 'media' && mediaRecords.value.length === 0)
     loadMedia()
-  }
 })
 </script>
 
@@ -636,8 +648,8 @@ watch(activeTab, (tab) => {
                       {{ formatFinishedDate(item.finishedAt) }}
                     </span>
                   </div>
-                  <div v-if="item.updateTime" class="text-xs text-gray-400 mt-1">
-                    上次一起看：{{ formatLastWatched(item.updateTime) }}
+                  <div v-if="item.lastWatchedAt" class="text-xs text-gray-400 mt-1">
+                    上次一起看：{{ formatLastWatchedDate(item.lastWatchedAt) }}
                   </div>
                 </div>
                 <van-icon
@@ -667,7 +679,7 @@ watch(activeTab, (tab) => {
 
           <!-- 添加按钮 -->
           <div class="mt-3 px-4">
-            <van-button type="primary" round block icon="plus" @click="showAddMedia = true">
+            <van-button type="primary" round block icon="plus" @click="openAddMedia">
               添加看过的
             </van-button>
           </div>
@@ -690,6 +702,21 @@ watch(activeTab, (tab) => {
                 @click="showMediaTypePicker = true"
               />
               <van-field v-model="addMediaForm.description" placeholder="简介（可选）" type="textarea" :rows="2" autosize />
+              <van-field
+                v-model="addMediaForm.lastWatchedAt"
+                is-link
+                readonly
+                clearable
+                label="上次一起看"
+                placeholder="可选日期"
+                @click="showAddLastWatchedCalendar = true"
+                @clear="addMediaForm.lastWatchedAt = ''"
+              />
+              <van-calendar
+                v-model:show="showAddLastWatchedCalendar"
+                :min-date="new Date('2020-01-01')"
+                @confirm="onAddLastWatchedConfirm"
+              />
               <div class="text-sm text-gray-500 mb-1">
                 封面图
               </div>
@@ -724,6 +751,21 @@ watch(activeTab, (tab) => {
                 @click="showEditMediaTypePicker = true"
               />
               <van-field v-model="editMediaForm.description" placeholder="简介（可选）" type="textarea" :rows="2" autosize />
+              <van-field
+                v-model="editMediaForm.lastWatchedAt"
+                is-link
+                readonly
+                clearable
+                label="上次一起看"
+                placeholder="可选日期"
+                @click="showEditLastWatchedCalendar = true"
+                @clear="editMediaForm.lastWatchedAt = ''"
+              />
+              <van-calendar
+                v-model:show="showEditLastWatchedCalendar"
+                :min-date="new Date('2020-01-01')"
+                @confirm="onEditLastWatchedConfirm"
+              />
               <div class="text-sm text-gray-500 mb-1">
                 封面图（不选则保留原图）
               </div>

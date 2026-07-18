@@ -12,6 +12,7 @@ export interface SharedMediaItem {
   finishedAt: string | null
   createdAt: string
   updateTime: string
+  lastWatchedAt: string | null
 }
 
 export interface MediaComment {
