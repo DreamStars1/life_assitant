@@ -12,4 +12,6 @@ public class SharedMediaUpdateReq {
     private String mediaType;
     @Schema(description = "简介")
     private String description;
+    @Schema(description = "上次一起看日期 yyyy-MM-dd，可空")
+    private String lastWatchedAt;
 }

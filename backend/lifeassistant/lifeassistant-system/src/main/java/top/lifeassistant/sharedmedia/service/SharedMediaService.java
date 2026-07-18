@@ -40,6 +40,11 @@ public class SharedMediaService {
         media.setCoverPath(coverPath);
         media.setDescription(req.getDescription());
         media.setIsFinished(false);
+        if (req.getLastWatchedAt() == null || req.getLastWatchedAt().isBlank()) {
+            media.setLastWatchedAt(java.time.LocalDate.now());
+        } else {
+            media.setLastWatchedAt(java.time.LocalDate.parse(req.getLastWatchedAt().trim()));
+        }
         mapper.insert(media);
         return SharedMediaResp.from(media);
     }
@@ -93,6 +98,18 @@ public class SharedMediaService {
             media.setFinishedAt(isFinished ? LocalDateTime.now() : null);
         }
 
+        String lw = req.getLastWatchedAt();
+        if (lw != null) {
+            if (lw.isBlank()) {
+                mapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<SharedMediaDO>()
+                    .eq(SharedMediaDO::getId, id)
+                    .set(SharedMediaDO::getLastWatchedAt, null));
+                media.setLastWatchedAt(null);
+            } else {
+                media.setLastWatchedAt(java.time.LocalDate.parse(lw.trim()));
+            }
+        }
+
         mapper.updateById(media);
         return SharedMediaResp.from(mapper.selectById(id));
     }
@@ -106,6 +123,14 @@ public class SharedMediaService {
     public void deleteByCreatedBy(String userId1, String userId2) {
         mapper.delete(new LambdaQueryWrapper<SharedMediaDO>()
             .in(SharedMediaDO::getCreatedBy, List.of(userId1, userId2)));
+    }
+
+    /** 共同进度更新时刷新「上次一起看」为当天 */
+    public void markLastWatchedToday(String mediaId) {
+        SharedMediaDO media = new SharedMediaDO();
+        media.setId(mediaId);
+        media.setLastWatchedAt(java.time.LocalDate.now());
+        mapper.updateById(media);
     }
 
     /** 评论、进度等互动时刷新列表排序用的更新时间 */

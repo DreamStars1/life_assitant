@@ -41,12 +41,14 @@ public class SharedMediaController {
             @RequestParam("title") String title,
             @RequestParam("mediaType") String mediaType,
             @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "lastWatchedAt", required = false) String lastWatchedAt,
             @RequestParam(value = "cover", required = false) MultipartFile cover) throws IOException {
 
         SharedMediaCreateReq req = new SharedMediaCreateReq();
         req.setTitle(title);
         req.setMediaType(mediaType);
         req.setDescription(description);
+        req.setLastWatchedAt(lastWatchedAt);
 
         String coverPath = saveCover(cover);
         return ApiResponse.ok(service.create(user, req, coverPath));
@@ -73,12 +75,14 @@ public class SharedMediaController {
             @RequestParam(value = "mediaType", required = false) String mediaType,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "cover", required = false) MultipartFile cover,
-            @RequestParam(value = "isFinished", required = false) Boolean isFinished) throws IOException {
+            @RequestParam(value = "isFinished", required = false) Boolean isFinished,
+            @RequestParam(value = "lastWatchedAt", required = false) String lastWatchedAt) throws IOException {
 
         SharedMediaUpdateReq req = new SharedMediaUpdateReq();
         req.setTitle(title);
         req.setMediaType(mediaType);
         req.setDescription(description);
+        req.setLastWatchedAt(lastWatchedAt);
 
         String coverPath = saveCover(cover);
         return ApiResponse.ok(service.update(user, id, req, coverPath, isFinished));
