@@ -15,7 +15,9 @@ import top.lifeassistant.sharedmedia.model.req.SharedMediaUpdateReq;
 import top.lifeassistant.sharedmedia.model.resp.SharedMediaResp;
 import top.lifeassistant.system.model.entity.user.UserDO;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Service
@@ -31,6 +33,14 @@ public class SharedMediaService {
         }
     }
 
+    private LocalDate parseLastWatchedAt(String value) {
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (DateTimeParseException e) {
+            throw new BadRequestException("上次一起看日期格式无效，请使用 yyyy-MM-dd");
+        }
+    }
+
     public SharedMediaResp create(UserDO user, SharedMediaCreateReq req, String coverPath) {
         requirePartner(user);
         SharedMediaDO media = new SharedMediaDO();
@@ -41,9 +51,9 @@ public class SharedMediaService {
         media.setDescription(req.getDescription());
         media.setIsFinished(false);
         if (req.getLastWatchedAt() == null || req.getLastWatchedAt().isBlank()) {
-            media.setLastWatchedAt(java.time.LocalDate.now());
+            media.setLastWatchedAt(LocalDate.now());
         } else {
-            media.setLastWatchedAt(java.time.LocalDate.parse(req.getLastWatchedAt().trim()));
+            media.setLastWatchedAt(parseLastWatchedAt(req.getLastWatchedAt()));
         }
         mapper.insert(media);
         return SharedMediaResp.from(media);
@@ -106,7 +116,7 @@ public class SharedMediaService {
                     .set(SharedMediaDO::getLastWatchedAt, null));
                 media.setLastWatchedAt(null);
             } else {
-                media.setLastWatchedAt(java.time.LocalDate.parse(lw.trim()));
+                media.setLastWatchedAt(parseLastWatchedAt(lw));
             }
         }
 
@@ -129,7 +139,7 @@ public class SharedMediaService {
     public void markLastWatchedToday(String mediaId) {
         SharedMediaDO media = new SharedMediaDO();
         media.setId(mediaId);
-        media.setLastWatchedAt(java.time.LocalDate.now());
+        media.setLastWatchedAt(LocalDate.now());
         mapper.updateById(media);
     }
 
