@@ -155,6 +155,10 @@ public class ScheduleService {
             throw new BadRequestException("邀约已处理");
         }
 
+        if (!"accept".equals(action) && !"reject".equals(action)) {
+            throw new BadRequestException("无效操作，action 必须为 accept 或 reject");
+        }
+
         LocalDateTime now = LocalDateTime.now();
         if ("reject".equals(action)) {
             invite.setStatus("rejected");
