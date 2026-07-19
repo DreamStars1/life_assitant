@@ -119,7 +119,8 @@
     "created": "Created",
     "updated": "Updated",
     "deleted": "Deleted",
-    "viewWeek": "Week view"
+    "viewWeek": "Week view",
+    "partnerReadonly": "Partner's event — view only"
   },
 
   "lifelog": {

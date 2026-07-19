@@ -91,11 +91,21 @@ function formatDateTime(d: Date): string {
 }
 
 function initPrimaryTab() {
-  if (route.query.view === 'schedule')
+  if (route.query.view === 'schedule') {
     primaryTab.value = 1
-  else
+    localStorage.setItem(PRIMARY_TAB_KEY, 'schedule')
+  }
+  else {
     primaryTab.value = localStorage.getItem(PRIMARY_TAB_KEY) === 'schedule' ? 1 : 0
+  }
 }
+
+watch(() => route.query.view, (view) => {
+  if (view === 'schedule')
+    primaryTab.value = 1
+  else if (view === 'todos')
+    primaryTab.value = 0
+})
 
 watch(primaryTab, (v) => {
   localStorage.setItem(PRIMARY_TAB_KEY, v === 1 ? 'schedule' : 'todos')
@@ -505,6 +515,7 @@ if (primaryTab.value === 1)
         :mine="mineEvents"
         :partner="partnerEvents"
         @select-day="onWeekSelectDay"
+        @open-event="onOpenEvent"
       />
       <DayTimeline
         v-else
@@ -551,6 +562,9 @@ if (primaryTab.value === 1)
         </p>
         <p v-if="selectedEvent.note" class="event-detail-note">
           {{ selectedEvent.note }}
+        </p>
+        <p v-if="!isOwnEvent && !selectedEvent.pendingInviteId" class="event-detail-readonly">
+          {{ t('schedule.partnerReadonly') }}
         </p>
         <div class="event-detail-actions">
           <template v-if="selectedEvent.pendingInviteId">
@@ -640,6 +654,11 @@ if (primaryTab.value === 1)
 }
 .event-detail-note {
   font-size: 13px;
+  color: var(--van-text-color-3);
+  margin-bottom: 16px;
+}
+.event-detail-readonly {
+  font-size: 12px;
   color: var(--van-text-color-3);
   margin-bottom: 16px;
 }

@@ -121,7 +121,8 @@
     "created": "已创建",
     "updated": "已更新",
     "deleted": "已删除",
-    "viewWeek": "查看周视图"
+    "viewWeek": "查看周视图",
+    "partnerReadonly": "这是伴侣的日程，仅可查看"
   },
 
   "lifelog": {

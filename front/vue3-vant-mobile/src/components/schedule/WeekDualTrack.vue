@@ -10,6 +10,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'select-day': [date: string]
+  'open-event': [event: ScheduleEventItem]
 }>()
 
 const { t, locale } = useI18n()
@@ -59,6 +60,10 @@ function dayNumber(dateStr: string): number {
 function onSelectDay(date: string) {
   emit('select-day', date)
 }
+
+function onEventClick(event: ScheduleEventItem) {
+  emit('open-event', event)
+}
 </script>
 
 <template>
@@ -88,7 +93,15 @@ function onSelectDay(date: string) {
         @click="onSelectDay(day.date)"
         @keydown.enter="onSelectDay(day.date)"
       >
-        <div v-for="event in day.events" :key="event.instanceKey" class="event-chip">
+        <div
+          v-for="event in day.events"
+          :key="event.instanceKey"
+          class="event-chip"
+          role="button"
+          tabindex="0"
+          @click.stop="onEventClick(event)"
+          @keydown.enter.stop="onEventClick(event)"
+        >
           <span class="event-title">{{ event.title }}</span>
           <span v-if="event.pendingInviteId" class="pending-badge">{{ t('schedule.pendingInvite') }}</span>
         </div>
@@ -106,7 +119,15 @@ function onSelectDay(date: string) {
         @click="onSelectDay(day.date)"
         @keydown.enter="onSelectDay(day.date)"
       >
-        <div v-for="event in day.events" :key="event.instanceKey" class="event-chip">
+        <div
+          v-for="event in day.events"
+          :key="event.instanceKey"
+          class="event-chip"
+          role="button"
+          tabindex="0"
+          @click.stop="onEventClick(event)"
+          @keydown.enter.stop="onEventClick(event)"
+        >
           <span class="event-title">{{ event.title }}</span>
         </div>
       </div>
