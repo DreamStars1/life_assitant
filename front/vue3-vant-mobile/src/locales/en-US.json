@@ -107,7 +107,19 @@
     "validationTime": "End time must be after start time",
     "mine": "Me",
     "partner": "Partner",
-    "pendingInvite": "Pending"
+    "pendingInvite": "Pending",
+    "viewSelf": "Just me",
+    "viewDual": "Both",
+    "delete": "Delete",
+    "invite": "Invite partner",
+    "accept": "Accept",
+    "reject": "Reject",
+    "deleteConfirm": "Delete this event?",
+    "inviteSent": "Invite sent",
+    "created": "Created",
+    "updated": "Updated",
+    "deleted": "Deleted",
+    "viewWeek": "Week view"
   },
 
   "lifelog": {

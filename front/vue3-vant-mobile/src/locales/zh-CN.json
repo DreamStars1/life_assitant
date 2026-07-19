@@ -109,7 +109,19 @@
     "validationTime": "结束时间须晚于开始时间",
     "mine": "我",
     "partner": "TA",
-    "pendingInvite": "待确认"
+    "pendingInvite": "待确认",
+    "viewSelf": "只看我",
+    "viewDual": "两人",
+    "delete": "删除",
+    "invite": "邀约伴侣",
+    "accept": "接受",
+    "reject": "拒绝",
+    "deleteConfirm": "确定删除此日程？",
+    "inviteSent": "已发送邀约",
+    "created": "已创建",
+    "updated": "已更新",
+    "deleted": "已删除",
+    "viewWeek": "查看周视图"
   },
 
   "lifelog": {
