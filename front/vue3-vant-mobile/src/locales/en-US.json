@@ -87,6 +87,27 @@
     "day": "Day"
   },
 
+  "schedule": {
+    "titleLabel": "Title",
+    "titlePlaceholder": "Enter title",
+    "startAt": "Start",
+    "endAt": "End",
+    "note": "Note",
+    "notePlaceholder": "Optional note",
+    "recurrence": "Repeat",
+    "recurrenceNone": "None",
+    "recurrenceDaily": "Daily",
+    "recurrenceWeekly": "Weekly",
+    "recurrenceEndDate": "Repeat until",
+    "selectDateTime": "Select date & time",
+    "selectTime": "Select time",
+    "selectDate": "Select date",
+    "save": "Save",
+    "mine": "Me",
+    "partner": "Partner",
+    "pendingInvite": "Pending"
+  },
+
   "lifelog": {
     "title": "Life Logs",
     "add": "New Log",
@@ -195,6 +216,10 @@
     "mediaFinished": "Finished",
     "pointsHistory": "Points History",
     "sleepTrend": "7-Day Sleep Trend",
+    "wakeTrend": "Wake Trend",
+    "sleepTrendDetail": "Sleep Trend",
+    "range7Days": "7 Days",
+    "range30Days": "30 Days",
     "wakeUp": "Wake Up",
     "goToSleep": "Sleep",
     "checkin": "Check In",

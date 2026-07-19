@@ -89,6 +89,27 @@
     "day": "日"
   },
 
+  "schedule": {
+    "titleLabel": "标题",
+    "titlePlaceholder": "请输入标题",
+    "startAt": "开始时间",
+    "endAt": "结束时间",
+    "note": "备注",
+    "notePlaceholder": "可选备注",
+    "recurrence": "重复",
+    "recurrenceNone": "不重复",
+    "recurrenceDaily": "每天",
+    "recurrenceWeekly": "每周",
+    "recurrenceEndDate": "重复结束日期",
+    "selectDateTime": "选择日期时间",
+    "selectTime": "选择时间",
+    "selectDate": "选择日期",
+    "save": "保存",
+    "mine": "我",
+    "partner": "TA",
+    "pendingInvite": "待确认"
+  },
+
   "lifelog": {
     "title": "生活记录",
     "add": "记录生活",
@@ -203,6 +224,10 @@
     "mediaFinished": "已看完",
     "pointsHistory": "积分记录",
     "sleepTrend": "近7天作息",
+    "wakeTrend": "起床走势",
+    "sleepTrendDetail": "睡觉走势",
+    "range7Days": "7天",
+    "range30Days": "30天",
     "wakeUp": "起床",
     "goToSleep": "睡觉",
     "checkin": "打卡",
