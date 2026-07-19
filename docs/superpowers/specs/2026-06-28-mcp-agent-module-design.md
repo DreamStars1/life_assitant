@@ -1,5 +1,9 @@
 # Python MCP Agent 模块设计
 
+> **工具面更新（2026-07-19）：** 细粒度工具已收束为 6 个域路由工具。
+> 见 `docs/superpowers/specs/2026-07-19-mcp-domain-router-design.md`。
+> 工具：`todo` / `record` / `schedule` / `media` / `points` / `checkin`（各带 `action`）。
+
 ## 背景
 
 Java 后端的 Spring AI MCP Server 协议兼容性问题（SDK 0.18.3 与 Cursor 客户端 JSON-RPC 格式不兼容），决定将 MCP 接入层迁移到 Python。Java 后端保留 API Token 鉴权、REST API 和 `api_token` 管理能力。
@@ -42,12 +46,17 @@ python/agent/
 │   └── life_assistant_agent/
 │       ├── __init__.py
 │       ├── __main__.py           # python -m 入口
-│       ├── server.py             # MCP Streamable HTTP Server
+│       ├── server.py             # MCP Streamable HTTP Server（6 个域路由 @mcp.tool）
 │       ├── client.py             # Java REST API 客户端
+│       ├── dispatch_util.py      # action 校验错误辅助
 │       └── tools/
 │           ├── __init__.py
-│           ├── todo.py           # 7 个工具
-│           └── record.py         # 4 个工具
+│           ├── todo.py           # HTTP + dispatch
+│           ├── record.py
+│           ├── schedule.py
+│           ├── media.py
+│           ├── points.py
+│           └── checkin.py
 ```
 
 **依赖：** `mcp`（Python MCP SDK），`httpx`（HTTP 客户端）
@@ -56,21 +65,18 @@ python/agent/
 
 **MCP 协议：** Streamable HTTP（用户选定）
 
-**11 个工具映射到 Java REST API：**
+**MCP 工具（6 域路由）：** 各域一个 `@mcp.tool`，必填 `action` 分发到 `tools/{domain}.py` 的 `dispatch()`。REST 映射与 action 清单见 `2026-07-19-mcp-domain-router-design.md`。
 
-| 工具 | Java REST API |
-|------|--------------|
-| `todo_create` | `POST /todos` |
-| `todo_list` | `GET /todos` |
-| `todo_upcoming` | `GET /todos/upcoming` |
-| `todo_get` | `GET /todos/{id}` |
-| `todo_update` | `PUT /todos/{id}` |
-| `todo_toggle` | `PUT /todos/{id}/toggle` |
-| `todo_acknowledge` | `PUT /todos/{id}/acknowledge` |
-| `record_create` | `POST /shared-records` |
-| `record_list` | `GET /shared-records` |
-| `record_get` | `GET /shared-records/{id}` |
-| `record_update` | `PUT /shared-records/{id}` |
+| 域工具 | 说明 |
+|--------|------|
+| `todo` | 待办 |
+| `record` | 一起做过的事 |
+| `schedule` | 日程 |
+| `media` | 一起看过的内容 |
+| `points` | 伴侣积分 |
+| `checkin` | 作息打卡 |
+
+~~**历史：11 个细粒度工具（已废弃）**~~ — 旧名如 `todo_create`、`todo_list` 等已删除，不做别名兼容。
 
 ## 开发期启动管理
 
