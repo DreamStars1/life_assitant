@@ -42,6 +42,28 @@ class JavaClient:
         return self._unwrap(resp.json())
 
     @staticmethod
+    def _form_data(data: dict[str, Any]) -> dict[str, str]:
+        out: dict[str, str] = {}
+        for k, v in data.items():
+            if v is None:
+                continue
+            if isinstance(v, bool):
+                out[k] = "true" if v else "false"
+            else:
+                out[k] = str(v)
+        return out
+
+    async def post_form(self, path: str, data: dict[str, Any]) -> Any:
+        resp = await self._client.post(path, data=self._form_data(data))
+        resp.raise_for_status()
+        return self._unwrap(resp.json())
+
+    async def patch_form(self, path: str, data: dict[str, Any]) -> Any:
+        resp = await self._client.request("PATCH", path, data=self._form_data(data))
+        resp.raise_for_status()
+        return self._unwrap(resp.json())
+
+    @staticmethod
     def _unwrap(data: dict[str, Any]) -> Any:
         """Unwrap standard ApiResponse {code, message, data} wrapper."""
         if "data" in data:
