@@ -16,8 +16,10 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from .client import JavaClient
 from .tools import checkin as checkin_tools
+from .tools import media as media_tools
 from .tools import points as points_tools
 from .tools import record as record_tools
+from .tools import schedule as schedule_tools
 from .tools import todo as todo_tools
 
 logger = logging.getLogger(__name__)
@@ -57,235 +59,128 @@ def _get_client() -> JavaClient:
 
 # ── Tools ──────────────────────────────────────────────────────────────
 
-@mcp.tool(description="创建待办事项")
-async def todo_create(
-    title: str, description: str | None = None,
-    priority: str | None = None, due_date: str | None = None,
+async def _run(domain_dispatch, action: str, **fields) -> str:
+    client = _get_client()
+    try:
+        result = await domain_dispatch(client, action, **fields)
+        return json.dumps(result, ensure_ascii=False)
+    finally:
+        await client.close()
+
+
+@mcp.tool(description="待办：action=list|upcoming|get|create|update|toggle|acknowledge")
+async def todo(
+    action: str,
+    id: str | None = None,
+    title: str | None = None,
+    description: str | None = None,
+    priority: str | None = None,
+    due_date: str | None = None,
     assign_to_partner: bool | None = None,
+    is_completed: bool | None = None,
+    start_due_date: str | None = None,
+    end_due_date: str | None = None,
+    message: str | None = None,
 ) -> str:
-    """创建待办事项。
-
-    Args:
-        title: 标题
-        description: 详细描述（可选）
-        priority: 优先级 low / medium / high / urgent（可选，默认 medium）
-        due_date: 截止日期，格式如 2026-06-29 或 2026-06-29T12:00:00（可选）
-        assign_to_partner: 是否自动指派给伴侣（可选）
-    """
-    client = _get_client()
-    try:
-        result = await todo_tools.todo_create(
-            client, title, description, priority, due_date, assign_to_partner,
-        )
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
+    return await _run(
+        todo_tools.dispatch, action,
+        id=id, title=title, description=description, priority=priority,
+        due_date=due_date, assign_to_partner=assign_to_partner,
+        is_completed=is_completed, start_due_date=start_due_date,
+        end_due_date=end_due_date, message=message,
+    )
 
 
-@mcp.tool(description="查询待办列表，支持筛选")
-async def todo_list(
-    is_completed: bool | None = None, priority: str | None = None,
-    start_due_date: str | None = None, end_due_date: str | None = None,
-) -> str:
-    """查询待办列表，支持筛选。
-
-    Args:
-        is_completed: 是否已完成（可选）
-        priority: 优先级筛选 low / medium / high / urgent（可选）
-        start_due_date: 截止日期范围起始，格式如 2026-06-29 或 2026-06-29T12:00:00（可选）
-        end_due_date: 截止日期范围结束，格式如 2026-06-29 或 2026-06-29T12:00:00（可选）
-    """
-    client = _get_client()
-    try:
-        result = await todo_tools.todo_list(client, is_completed, priority, start_due_date, end_due_date)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="获取首页最近的未完成待办")
-async def todo_upcoming() -> str:
-    client = _get_client()
-    try:
-        result = await todo_tools.todo_upcoming(client)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="获取待办详情")
-async def todo_get(id: str) -> str:
-    client = _get_client()
-    try:
-        result = await todo_tools.todo_get(client, id)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="更新待办事项")
-async def todo_update(
-    id: str, title: str | None = None, description: str | None = None,
-    priority: str | None = None, due_date: str | None = None,
-) -> str:
-    """更新待办事项。
-
-    Args:
-        id: 待办 ID
-        title: 新标题（可选）
-        description: 新详细描述（可选）
-        priority: 新优先级 low / medium / high / urgent（可选）
-        due_date: 新截止日期，格式如 2026-06-29 或 2026-06-29T12:00:00（可选）
-    """
-    client = _get_client()
-    try:
-        result = await todo_tools.todo_update(client, id, title, description, priority, due_date)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="切换待办完成状态")
-async def todo_toggle(id: str) -> str:
-    client = _get_client()
-    try:
-        result = await todo_tools.todo_toggle(client, id)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="确认收到待办（仅被指派者可操作）")
-async def todo_acknowledge(id: str, message: str | None = None) -> str:
-    client = _get_client()
-    try:
-        result = await todo_tools.todo_acknowledge(client, id, message)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="记录一起做过的事")
-async def record_create(title: str, content: str | None = None, occurred_at: str | None = None) -> str:
-    client = _get_client()
-    try:
-        result = await record_tools.record_create(client, title, content, occurred_at)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="查询共享记录列表，支持时间范围筛选")
-async def record_list(start: str | None = None, end: str | None = None) -> str:
-    client = _get_client()
-    try:
-        result = await record_tools.record_list(client, start, end)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="获取共享记录详情")
-async def record_get(id: str) -> str:
-    client = _get_client()
-    try:
-        result = await record_tools.record_get(client, id)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="更新共享记录")
-async def record_update(
-    id: str, title: str | None = None, content: str | None = None,
+@mcp.tool(description="一起做过的事（不是看过的媒体）：action=list|get|create|update")
+async def record(
+    action: str,
+    id: str | None = None,
+    title: str | None = None,
+    content: str | None = None,
+    start: str | None = None,
+    end: str | None = None,
     occurred_at: str | None = None,
 ) -> str:
-    client = _get_client()
-    try:
-        result = await record_tools.record_update(client, id, title, content, occurred_at)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
+    return await _run(
+        record_tools.dispatch, action,
+        id=id, title=title, content=content, start=start, end=end, occurred_at=occurred_at,
+    )
 
 
-@mcp.tool(description="查询伴侣积分余额")
-async def points_get() -> str:
-    """查询当前双方总分余额。"""
-    client = _get_client()
-    try:
-        result = await points_tools.points_get(client)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="查询积分变动历史")
-async def points_history(page: int | None = None, size: int | None = None) -> str:
-    """查询积分变动历史记录。
-
-    Args:
-        page: 页码，从 1 开始（可选）
-        size: 每页条数（可选）
-    """
-    client = _get_client()
-    try:
-        result = await points_tools.points_history(client, page, size)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="记录积分变动（加分或扣分）")
-async def points_change(points_change: int, reason: str) -> str:
-    """记录积分变动。
+@mcp.tool(description="日程：action=list|create|update；list 时 scope=me|partner")
+async def schedule(
+    action: str,
+    from_: str | None = None,
+    to: str | None = None,
+    scope: str | None = None,
+    id: str | None = None,
+    title: str | None = None,
+    start_at: str | None = None,
+    end_at: str | None = None,
+    note: str | None = None,
+    recurrence: str | None = None,
+    recurrence_end_date: str | None = None,
+) -> str:
+    """日程（独立时间块，非待办）。
 
     Args:
-        points_change: 变动值，正数为加分、负数为扣分
-        reason: 变动原因（必填）
+        action: list / create / update
+        from_: list 区间起点，如 2026-07-01 或 2026-07-01T00:00:00
+        to: list 区间终点
+        scope: me（默认）或 partner
+        id: update 时必填
+        title, start_at, end_at: create 必填；update 可选
+        note, recurrence, recurrence_end_date: 可选；recurrence=none|daily|weekly
     """
-    client = _get_client()
-    try:
-        result = await points_tools.points_change(client, points_change, reason)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
+    return await _run(
+        schedule_tools.dispatch, action,
+        from_=from_, to=to, scope=scope, id=id, title=title,
+        start_at=start_at, end_at=end_at, note=note,
+        recurrence=recurrence, recurrence_end_date=recurrence_end_date,
+    )
 
 
-@mcp.tool(description="作息打卡（起床/睡觉）")
-async def checkin_do(checkin_type: str) -> str:
-    """作息打卡。
-
-    Args:
-        checkin_type: 打卡类型，'wake' 为起床，'sleep' 为睡觉
-    """
-    client = _get_client()
-    try:
-        result = await checkin_tools.checkin_do(client, checkin_type)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
-
-
-@mcp.tool(description="查询今日打卡状态（双方）")
-async def checkin_today() -> str:
-    """查询自己和伴侣今天的起床/睡觉打卡情况。"""
-    client = _get_client()
-    try:
-        result = await checkin_tools.checkin_today(client)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
+@mcp.tool(description="一起看过的内容（电影/书/剧，不是做过的事）：action=list|get|create|update；无封面上传")
+async def media(
+    action: str,
+    id: str | None = None,
+    title: str | None = None,
+    media_type: str | None = None,
+    description: str | None = None,
+    last_watched_at: str | None = None,
+    is_finished: bool | None = None,
+    status: str | None = None,
+    page: int | None = None,
+    size: int | None = None,
+) -> str:
+    return await _run(
+        media_tools.dispatch, action,
+        id=id, title=title, media_type=media_type, description=description,
+        last_watched_at=last_watched_at, is_finished=is_finished,
+        status=status, page=page, size=size,
+    )
 
 
-@mcp.tool(description="查询近 7 天双方作息打卡数据")
-async def checkin_weekly() -> str:
-    """获取近 7 天的起床/睡觉打卡数据，用于作息趋势展示。"""
-    client = _get_client()
-    try:
-        result = await checkin_tools.checkin_weekly(client)
-        return json.dumps(result, ensure_ascii=False)
-    finally:
-        await client.close()
+@mcp.tool(description="伴侣积分：action=get|history|change")
+async def points(
+    action: str,
+    page: int | None = None,
+    size: int | None = None,
+    points_change: int | None = None,
+    reason: str | None = None,
+) -> str:
+    return await _run(
+        points_tools.dispatch, action,
+        page=page, size=size, points_change=points_change, reason=reason,
+    )
+
+
+@mcp.tool(description="作息打卡：action=do|today|weekly；do 时 checkin_type=wake|sleep")
+async def checkin(
+    action: str,
+    checkin_type: str | None = None,
+) -> str:
+    return await _run(checkin_tools.dispatch, action, checkin_type=checkin_type)
 
 
 # ── ASGI Auth wrapper (preserves lifespan) ────────────────────────────
