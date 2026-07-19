@@ -82,12 +82,12 @@ function addDays(dateStr: string, days: number): string {
 }
 
 function toApiDateTime(iso: string): string {
-  return iso.replace('T', ' ').slice(0, 19)
+  return iso.replace(' ', 'T').slice(0, 19)
 }
 
 function formatDateTime(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:00`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`
 }
 
 function initPrimaryTab() {
@@ -140,8 +140,8 @@ async function loadSchedule() {
   scheduleLoading.value = true
   try {
     const range = scheduleRange.value === 'week'
-      ? { from: `${weekStart.value} 00:00:00`, to: `${addDays(weekStart.value, 6)} 23:59:59` }
-      : { from: `${selectedDate.value} 00:00:00`, to: `${selectedDate.value} 23:59:59` }
+      ? { from: `${weekStart.value}T00:00:00`, to: `${addDays(weekStart.value, 6)}T23:59:59` }
+      : { from: `${selectedDate.value}T00:00:00`, to: `${selectedDate.value}T23:59:59` }
     const mineRes = await fetchMyScheduleEvents(range)
     mineEvents.value = mineRes.data ?? []
     if (scheduleMode.value === 'dual' && partnerId.value) {
