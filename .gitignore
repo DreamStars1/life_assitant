@@ -57,6 +57,9 @@ admin_front/
 # === Visual Companion 临时文件 ===
 .superpowers/
 
+# === Git worktrees (local isolation) ===
+.worktrees/
+
 # === 操作系统 ===
 .DS_Store
 Thumbs.db
