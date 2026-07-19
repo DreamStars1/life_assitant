@@ -24,3 +24,21 @@ async def points_change(client: JavaClient, points_change: int, reason: str) -> 
         "pointsChange": points_change,
         "reason": reason,
     })
+
+
+from ..dispatch_util import invalid_action, require
+
+_POINTS_ACTIONS = ["get", "history", "change"]
+
+
+async def dispatch(client: JavaClient, action: str, **fields: Any) -> Any:
+    if action not in _POINTS_ACTIONS:
+        return invalid_action(_POINTS_ACTIONS)
+    if action == "get":
+        return await points_get(client)
+    if action == "history":
+        return await points_history(client, fields.get("page"), fields.get("size"))
+    if action == "change":
+        err = require(fields, "points_change", "reason")
+        return err or await points_change(client, fields["points_change"], fields["reason"])
+    return invalid_action(_POINTS_ACTIONS)

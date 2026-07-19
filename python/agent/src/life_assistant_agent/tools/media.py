@@ -65,3 +65,45 @@ async def media_update(
             "isFinished": is_finished,
         },
     )
+
+
+from ..dispatch_util import invalid_action, require
+
+_MEDIA_ACTIONS = ["list", "get", "create", "update"]
+
+
+async def dispatch(client: JavaClient, action: str, **fields: Any) -> Any:
+    if action not in _MEDIA_ACTIONS:
+        return invalid_action(_MEDIA_ACTIONS)
+    if action == "list":
+        return await media_list(
+            client,
+            fields.get("media_type"),
+            fields.get("status"),
+            fields.get("page"),
+            fields.get("size"),
+        )
+    if action == "get":
+        err = require(fields, "id")
+        return err or await media_get(client, fields["id"])
+    if action == "create":
+        err = require(fields, "title", "media_type")
+        return err or await media_create(
+            client,
+            fields["title"],
+            fields["media_type"],
+            fields.get("description"),
+            fields.get("last_watched_at"),
+        )
+    if action == "update":
+        err = require(fields, "id")
+        return err or await media_update(
+            client,
+            fields["id"],
+            fields.get("title"),
+            fields.get("media_type"),
+            fields.get("description"),
+            fields.get("last_watched_at"),
+            fields.get("is_finished"),
+        )
+    return invalid_action(_MEDIA_ACTIONS)

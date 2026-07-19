@@ -82,3 +82,53 @@ async def todo_acknowledge(client: JavaClient, id: str, message: str | None = No
     if message is not None:
         body["message"] = message
     return await client.post(f"/todos/{id}/acknowledge", body)
+
+
+from ..dispatch_util import invalid_action, require
+
+_TODO_ACTIONS = ["list", "upcoming", "get", "create", "update", "toggle", "acknowledge"]
+
+
+async def dispatch(client: JavaClient, action: str, **fields: Any) -> Any:
+    if action not in _TODO_ACTIONS:
+        return invalid_action(_TODO_ACTIONS)
+    if action == "list":
+        return await todo_list(
+            client,
+            fields.get("is_completed"),
+            fields.get("priority"),
+            fields.get("start_due_date"),
+            fields.get("end_due_date"),
+        )
+    if action == "upcoming":
+        return await todo_upcoming(client)
+    if action == "get":
+        err = require(fields, "id")
+        return err or await todo_get(client, fields["id"])
+    if action == "create":
+        err = require(fields, "title")
+        return err or await todo_create(
+            client,
+            fields["title"],
+            fields.get("description"),
+            fields.get("priority"),
+            fields.get("due_date"),
+            fields.get("assign_to_partner"),
+        )
+    if action == "update":
+        err = require(fields, "id")
+        return err or await todo_update(
+            client,
+            fields["id"],
+            fields.get("title"),
+            fields.get("description"),
+            fields.get("priority"),
+            fields.get("due_date"),
+        )
+    if action == "toggle":
+        err = require(fields, "id")
+        return err or await todo_toggle(client, fields["id"])
+    if action == "acknowledge":
+        err = require(fields, "id")
+        return err or await todo_acknowledge(client, fields["id"], fields.get("message"))
+    return invalid_action(_TODO_ACTIONS)

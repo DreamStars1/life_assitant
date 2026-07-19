@@ -53,3 +53,36 @@ async def record_update(client: JavaClient, id: str, title: str | None = None,
     if v is not None:
         body["occurredAt"] = v
     return await client.patch(f"/shared-records/{id}", body)
+
+
+from ..dispatch_util import invalid_action, require
+
+_RECORD_ACTIONS = ["list", "get", "create", "update"]
+
+
+async def dispatch(client: JavaClient, action: str, **fields: Any) -> Any:
+    if action not in _RECORD_ACTIONS:
+        return invalid_action(_RECORD_ACTIONS)
+    if action == "list":
+        return await record_list(client, fields.get("start"), fields.get("end"))
+    if action == "get":
+        err = require(fields, "id")
+        return err or await record_get(client, fields["id"])
+    if action == "create":
+        err = require(fields, "title")
+        return err or await record_create(
+            client,
+            fields["title"],
+            fields.get("content"),
+            fields.get("occurred_at"),
+        )
+    if action == "update":
+        err = require(fields, "id")
+        return err or await record_update(
+            client,
+            fields["id"],
+            fields.get("title"),
+            fields.get("content"),
+            fields.get("occurred_at"),
+        )
+    return invalid_action(_RECORD_ACTIONS)

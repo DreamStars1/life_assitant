@@ -73,3 +73,45 @@ async def schedule_update(
     if recurrence_end_date is not None:
         body["recurrenceEndDate"] = recurrence_end_date
     return await client.patch(f"/schedule/events/{id}", body)
+
+
+from ..dispatch_util import invalid_action, require
+
+_SCHEDULE_ACTIONS = ["list", "create", "update"]
+
+
+async def dispatch(client: JavaClient, action: str, **fields: Any) -> Any:
+    if action not in _SCHEDULE_ACTIONS:
+        return invalid_action(_SCHEDULE_ACTIONS)
+    if action == "list":
+        err = require(fields, "from_", "to")
+        if err:
+            return err
+        scope = fields.get("scope") or "me"
+        if scope not in ("me", "partner"):
+            return {"error": "invalid_scope", "allowed": ["me", "partner"]}
+        return await schedule_list(client, fields["from_"], fields["to"], scope)
+    if action == "create":
+        err = require(fields, "title", "start_at", "end_at")
+        return err or await schedule_create(
+            client,
+            fields["title"],
+            fields["start_at"],
+            fields["end_at"],
+            fields.get("note"),
+            fields.get("recurrence"),
+            fields.get("recurrence_end_date"),
+        )
+    if action == "update":
+        err = require(fields, "id")
+        return err or await schedule_update(
+            client,
+            fields["id"],
+            fields.get("title"),
+            fields.get("start_at"),
+            fields.get("end_at"),
+            fields.get("note"),
+            fields.get("recurrence"),
+            fields.get("recurrence_end_date"),
+        )
+    return invalid_action(_SCHEDULE_ACTIONS)

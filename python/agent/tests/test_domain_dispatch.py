@@ -1,0 +1,63 @@
+import unittest
+from unittest.mock import AsyncMock, MagicMock
+
+from life_assistant_agent.tools import checkin, media, points, record, schedule, todo
+
+
+def _client():
+    c = MagicMock()
+    c.get = AsyncMock(return_value={"ok": True})
+    c.post = AsyncMock(return_value={"ok": True})
+    c.patch = AsyncMock(return_value={"ok": True})
+    c.post_form = AsyncMock(return_value={"ok": True})
+    c.patch_form = AsyncMock(return_value={"ok": True})
+    return c
+
+
+class DomainDispatchTest(unittest.IsolatedAsyncioTestCase):
+    async def test_todo_invalid_action(self):
+        r = await todo.dispatch(_client(), "delete")
+        self.assertEqual(r["error"], "invalid_action")
+        self.assertIn("list", r["allowed"])
+
+    async def test_todo_missing_id_on_get(self):
+        r = await todo.dispatch(_client(), "get")
+        self.assertEqual(r, {"error": "missing_field", "field": "id"})
+
+    async def test_todo_list_calls_http(self):
+        c = _client()
+        await todo.dispatch(c, "list", is_completed=False)
+        c.get.assert_awaited()
+
+    async def test_schedule_list_requires_from_to(self):
+        r = await schedule.dispatch(_client(), "list", from_="2026-07-01")
+        self.assertEqual(r["field"], "to")
+
+    async def test_schedule_bad_scope(self):
+        r = await schedule.dispatch(
+            _client(), "list",
+            from_="2026-07-01T00:00:00", to="2026-07-02T00:00:00", scope="all",
+        )
+        self.assertEqual(r["error"], "invalid_scope")
+
+    async def test_media_create_requires_media_type(self):
+        r = await media.dispatch(_client(), "create", title="x")
+        self.assertEqual(r, {"error": "missing_field", "field": "media_type"})
+
+    async def test_points_change_requires_reason(self):
+        r = await points.dispatch(_client(), "change", points_change=1)
+        self.assertEqual(r["field"], "reason")
+
+    async def test_checkin_do(self):
+        c = _client()
+        await checkin.dispatch(c, "do", checkin_type="wake")
+        c.post.assert_awaited()
+
+    async def test_record_get(self):
+        c = _client()
+        await record.dispatch(c, "get", id="r1")
+        c.get.assert_awaited_with("/shared-records/r1")
+
+
+if __name__ == "__main__":
+    unittest.main()
