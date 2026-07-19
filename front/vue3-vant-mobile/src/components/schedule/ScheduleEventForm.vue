@@ -132,7 +132,7 @@ function onSave() {
       v-model="title"
       :label="t('schedule.titleLabel')"
       :placeholder="t('schedule.titlePlaceholder')"
-      maxlength="255"
+      maxlength="200"
       required
       clearable
     />

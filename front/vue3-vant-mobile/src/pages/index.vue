@@ -389,6 +389,9 @@ async function onInviteAck(action: 'accept' | 'reject') {
         <p v-if="selectedEvent.note" class="event-detail-note">
           {{ selectedEvent.note }}
         </p>
+        <p v-if="!isOwnEvent && !selectedEvent.pendingInviteId" class="event-detail-readonly">
+          {{ t('schedule.partnerReadonly') }}
+        </p>
         <div class="event-detail-actions">
           <template v-if="selectedEvent.pendingInviteId">
             <van-button block type="primary" @click="onInviteAck('accept')">
@@ -455,6 +458,11 @@ async function onInviteAck(action: 'accept' | 'reject') {
 }
 .event-detail-note {
   font-size: 13px;
+  color: var(--van-text-color-3);
+  margin-bottom: 16px;
+}
+.event-detail-readonly {
+  font-size: 12px;
   color: var(--van-text-color-3);
   margin-bottom: 16px;
 }

@@ -20,7 +20,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -111,7 +113,9 @@ public class ScheduleService {
 
     public List<ScheduleEventResp> listMine(UserDO user, LocalDateTime from, LocalDateTime to) {
         assertRange(from, to);
-        return expandAll(findCandidates(user.getId(), from, to), from, to);
+        List<ScheduleEventResp> events = expandAll(findCandidates(user.getId(), from, to), from, to);
+        attachPendingInvites(events, user.getId(), true);
+        return events;
     }
 
     public List<ScheduleEventResp> listPartner(UserDO user, LocalDateTime from, LocalDateTime to) {
@@ -119,7 +123,9 @@ public class ScheduleService {
             throw new BadRequestException("请先绑定伴侣");
         }
         assertRange(from, to);
-        return expandAll(findCandidates(user.getPartnerId(), from, to), from, to);
+        List<ScheduleEventResp> events = expandAll(findCandidates(user.getPartnerId(), from, to), from, to);
+        attachPendingInvites(events, user.getId(), false);
+        return events;
     }
 
     public void invite(UserDO user, String eventId) {
@@ -228,6 +234,32 @@ public class ScheduleService {
             .flatMap(e -> ScheduleRecurrenceExpander.expand(e, from, to).stream())
             .sorted(Comparator.comparing(ScheduleEventResp::getStartAt))
             .toList();
+    }
+
+    /** 批量挂载待处理邀约 ID（sourceEventId → invite.id）。 */
+    private void attachPendingInvites(List<ScheduleEventResp> events, String userId, boolean mine) {
+        if (events.isEmpty()) {
+            return;
+        }
+        Set<String> eventIds = events.stream().map(ScheduleEventResp::getId).collect(Collectors.toSet());
+        LambdaQueryWrapper<ScheduleInviteDO> qw = new LambdaQueryWrapper<ScheduleInviteDO>()
+            .eq(ScheduleInviteDO::getStatus, "pending")
+            .in(ScheduleInviteDO::getSourceEventId, eventIds);
+        if (mine) {
+            qw.and(w -> w.eq(ScheduleInviteDO::getInviterUserId, userId)
+                .or()
+                .eq(ScheduleInviteDO::getInviteeUserId, userId));
+        } else {
+            qw.eq(ScheduleInviteDO::getInviteeUserId, userId);
+        }
+        Map<String, String> inviteBySource = inviteMapper.selectList(qw).stream()
+            .collect(Collectors.toMap(ScheduleInviteDO::getSourceEventId, ScheduleInviteDO::getId, (a, b) -> a));
+        for (ScheduleEventResp event : events) {
+            String inviteId = inviteBySource.get(event.getId());
+            if (inviteId != null) {
+                event.setPendingInviteId(inviteId);
+            }
+        }
     }
 
     private String normalizeRecurrence(String recurrence) {

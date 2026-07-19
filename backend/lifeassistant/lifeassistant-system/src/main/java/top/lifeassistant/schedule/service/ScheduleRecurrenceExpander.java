@@ -50,6 +50,21 @@ public final class ScheduleRecurrenceExpander {
             ? recurrenceEnd.atTime(LocalTime.of(23, 59, 59))
             : null;
 
+        // ponytail: skip instances entirely before `from` to avoid O(years) empty iterations
+        while (true) {
+            if (recurrenceEndAt != null && instanceStart.isAfter(recurrenceEndAt)) {
+                return List.of();
+            }
+            if (!instanceStart.isBefore(to)) {
+                return List.of();
+            }
+            LocalDateTime instanceEnd = instanceStart.plus(duration);
+            if (instanceEnd.isAfter(from)) {
+                break;
+            }
+            instanceStart = instanceStart.plusDays(stepDays);
+        }
+
         while (true) {
             if (recurrenceEndAt != null && instanceStart.isAfter(recurrenceEndAt)) {
                 break;
