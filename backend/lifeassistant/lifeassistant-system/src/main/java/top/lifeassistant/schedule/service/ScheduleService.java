@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import top.continew.starter.core.exception.BadRequestException;
 import top.lifeassistant.common.base.component.OwnerValidator;
 import top.lifeassistant.schedule.mapper.ScheduleEventMapper;
@@ -88,6 +89,7 @@ public class ScheduleService {
         return ScheduleEventResp.from(event);
     }
 
+    @Transactional
     public void delete(UserDO user, String id) {
         ScheduleEventDO event = ownerValidator.requireOwner(() -> eventMapper.selectById(id), user.getId());
 
@@ -118,6 +120,76 @@ public class ScheduleService {
         }
         assertRange(from, to);
         return expandAll(findCandidates(user.getPartnerId(), from, to), from, to);
+    }
+
+    public void invite(UserDO user, String eventId) {
+        if (user.getPartnerId() == null) {
+            throw new BadRequestException("请先绑定伴侣");
+        }
+        ownerValidator.requireOwner(() -> eventMapper.selectById(eventId), user.getId());
+
+        Long pending = inviteMapper.selectCount(new LambdaQueryWrapper<ScheduleInviteDO>()
+            .eq(ScheduleInviteDO::getSourceEventId, eventId)
+            .eq(ScheduleInviteDO::getStatus, "pending"));
+        if (pending > 0) {
+            throw new BadRequestException("已有待处理邀约");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        ScheduleInviteDO invite = new ScheduleInviteDO();
+        invite.setSourceEventId(eventId);
+        invite.setInviterUserId(user.getId());
+        invite.setInviteeUserId(user.getPartnerId());
+        invite.setStatus("pending");
+        invite.setCreatedAt(now);
+        inviteMapper.insert(invite);
+    }
+
+    @Transactional
+    public ScheduleEventResp acknowledge(UserDO user, String inviteId, String action) {
+        ScheduleInviteDO invite = ownerValidator.findAndCheck(
+            () -> inviteMapper.selectById(inviteId),
+            "资源不存在",
+            i -> user.getId().equals(i.getInviteeUserId()));
+        if (!"pending".equals(invite.getStatus())) {
+            throw new BadRequestException("邀约已处理");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if ("reject".equals(action)) {
+            invite.setStatus("rejected");
+            invite.setRespondedAt(now);
+            inviteMapper.updateById(invite);
+            return null;
+        }
+
+        ScheduleEventDO source = eventMapper.selectById(invite.getSourceEventId());
+        if (source == null) {
+            throw new BadRequestException("源事件不存在");
+        }
+
+        ScheduleEventDO mirror = new ScheduleEventDO();
+        mirror.setUserId(user.getId());
+        mirror.setTitle(source.getTitle());
+        mirror.setStartAt(source.getStartAt());
+        mirror.setEndAt(source.getEndAt());
+        mirror.setNote(source.getNote());
+        mirror.setRecurrence("none");
+        mirror.setRecurrenceEndDate(null);
+        mirror.setLinkedEventId(source.getId());
+        mirror.setCreatedAt(now);
+        mirror.setUpdateTime(now);
+        eventMapper.insert(mirror);
+
+        source.setLinkedEventId(mirror.getId());
+        source.setUpdateTime(now);
+        eventMapper.updateById(source);
+
+        invite.setStatus("accepted");
+        invite.setRespondedAt(now);
+        inviteMapper.updateById(invite);
+
+        return ScheduleEventResp.from(mirror);
     }
 
     private void assertRange(LocalDateTime from, LocalDateTime to) {
