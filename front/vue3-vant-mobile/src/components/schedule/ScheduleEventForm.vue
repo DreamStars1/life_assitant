@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ScheduleEventItem } from '@/api/modules/schedule'
+import { showToast } from 'vant'
 
 const props = defineProps<{
   initial?: Partial<Pick<ScheduleEventItem, 'title' | 'startAt' | 'endAt' | 'note' | 'recurrence' | 'recurrenceEndDate'>>
@@ -106,10 +107,14 @@ function onRecurrenceEndConfirm(d: Date) {
 }
 
 function onSave() {
-  if (!title.value.trim() || !startAt.value || !endAt.value)
+  if (!title.value.trim()) {
+    showToast(t('schedule.validationTitle'))
     return
-  if (new Date(endAt.value) <= new Date(startAt.value))
+  }
+  if (!startAt.value || !endAt.value || new Date(endAt.value) <= new Date(startAt.value)) {
+    showToast(t('schedule.validationTime'))
     return
+  }
   emit('save', {
     title: title.value.trim(),
     startAt: startAt.value.replace(' ', 'T'),

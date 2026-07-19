@@ -103,6 +103,8 @@
     "selectTime": "Select time",
     "selectDate": "Select date",
     "save": "Save",
+    "validationTitle": "Please enter a title",
+    "validationTime": "End time must be after start time",
     "mine": "Me",
     "partner": "Partner",
     "pendingInvite": "Pending"

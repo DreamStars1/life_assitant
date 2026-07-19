@@ -105,6 +105,8 @@
     "selectTime": "选择时间",
     "selectDate": "选择日期",
     "save": "保存",
+    "validationTitle": "请输入标题",
+    "validationTime": "结束时间须晚于开始时间",
     "mine": "我",
     "partner": "TA",
     "pendingInvite": "待确认"
