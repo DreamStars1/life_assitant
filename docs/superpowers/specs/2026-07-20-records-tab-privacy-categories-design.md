@@ -1,7 +1,7 @@
 # 记录 Tab 拆分、待办导航合并、私密与自定义分类
 
 **日期：** 2026-07-20
-**状态：** 已确认设计，待写实现计划
+**状态：** 已确认；实现计划见 `docs/superpowers/plans/2026-07-20-records-tab-privacy-categories.md`
 
 ## 背景
 
