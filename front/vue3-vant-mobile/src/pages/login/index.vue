@@ -30,7 +30,7 @@ async function login() {
     await userStore.login({ email: postData.email, password: postData.password })
     const { redirect, ...othersQuery } = router.currentRoute.value.query
     router.push({
-      name: (redirect as any) || 'Today',
+      name: (redirect as any) || 'Todos',
       query: { ...othersQuery },
     })
   }

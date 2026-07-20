@@ -41,7 +41,7 @@ router.beforeEach(async (to: EnhancedRouteLocation) => {
   if (isLogin() && isPublic) {
     // 已登录 → 登录/注册页直接跳到首页
     NProgress.done()
-    return { name: 'Today' }
+    return { name: 'Todos' }
   }
 
   // 已登录 → 预加载用户信息（仅首次）

@@ -253,8 +253,32 @@ async function onAcknowledge(todo: any) {
   catch { showNotify({ type: 'danger', message: '确认失败' }) }
 }
 
+function dueDateDiff(iso: string | null | undefined): number | null {
+  if (!iso) return null
+  const d = new Date(`${iso.slice(0, 10)}T00:00:00`)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.round((d.getTime() - today.getTime()) / 86400000)
+}
+
+function dueLabelClass(iso: string | null | undefined): string {
+  const diff = dueDateDiff(iso)
+  if (diff == null) return ''
+  if (diff < 0) return 'due-overdue'
+  if (diff === 0) return 'due-today'
+  if (diff === 1) return 'due-tomorrow'
+  return 'due-later'
+}
+
 function formatDateLabel(iso: string | null | undefined): string {
-  return iso ? iso.slice(0, 10) : ''
+  const diff = dueDateDiff(iso)
+  if (diff == null) return ''
+  if (diff < 0) return `已逾期 ${Math.abs(diff)} 天`
+  if (diff === 0) return '今天'
+  if (diff === 1) return '明天'
+  if (diff === 2) return '后天'
+  const d = new Date(`${iso!.slice(0, 10)}T00:00:00`)
+  return `${d.getMonth() + 1}/${d.getDate()}`
 }
 
 function priorityColor(p: string): string {
@@ -437,7 +461,13 @@ if (primaryTab.value === 1)
                   <span v-if="todo.ackStatus === 'confirmed'" class="ack-badge ack-done">✓ {{ todo.ackMessage }}</span>
                 </div>
                 <div class="todo-meta-row">
-                  <span v-if="todo.dueDate" class="meta-item"><van-icon name="clock-o" /> {{ formatDateLabel(todo.dueDate) }}</span>
+                  <span
+                    v-if="todo.dueDate"
+                    class="meta-item"
+                    :class="dueLabelClass(todo.dueDate)"
+                  >
+                    <van-icon name="clock-o" /> {{ formatDateLabel(todo.dueDate) }}
+                  </span>
                   <span v-if="todo.assignedTo && todo.assignedTo === userStore.userInfo.id" class="meta-item">来自 {{ userStore.partnerName }}</span>
                   <span v-if="todo.assignedTo && todo.userId === userStore.userInfo.id && todo.assignedTo !== userStore.userInfo.id" class="meta-item">交给 {{ userStore.partnerName }}</span>
                 </div>
@@ -775,6 +805,10 @@ if (primaryTab.value === 1)
 .meta-item .van-icon {
   font-size: 11px;
 }
+.meta-item.due-overdue { color: #ee0a24; font-weight: 500; }
+.meta-item.due-today { color: #ff976a; font-weight: 500; }
+.meta-item.due-tomorrow { color: #f2c97d; font-weight: 500; }
+.meta-item.due-later { color: var(--van-gray-5); }
 .expand-arrow {
   font-size: 14px;
   color: var(--van-gray-5);

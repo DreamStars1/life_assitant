@@ -14,12 +14,6 @@ const show = computed(() => {
 
 <template>
   <van-tabbar v-if="show" v-model="active" route placeholder>
-    <van-tabbar-item replace to="/">
-      {{ $t('tabbar.today') }}
-      <template #icon>
-        <van-icon name="calendar-o" />
-      </template>
-    </van-tabbar-item>
     <van-tabbar-item replace to="/todos">
       {{ $t('tabbar.todos') }}
       <template #icon>
