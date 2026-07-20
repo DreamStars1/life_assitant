@@ -3,10 +3,14 @@ package top.lifeassistant.sharedmedia.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import top.continew.starter.core.exception.BadRequestException;
+import top.lifeassistant.sharedmedia.mapper.MediaProgressEventMapper;
 import top.lifeassistant.sharedmedia.mapper.MediaProgressMapper;
 import top.lifeassistant.sharedmedia.model.entity.MediaProgressDO;
+import top.lifeassistant.sharedmedia.model.entity.MediaProgressEventDO;
 import top.lifeassistant.sharedmedia.model.req.MediaProgressUpdateReq;
+import top.lifeassistant.sharedmedia.model.resp.MediaProgressEventResp;
 import top.lifeassistant.sharedmedia.model.resp.MediaProgressResp;
 import top.lifeassistant.system.model.entity.user.UserDO;
 
@@ -18,6 +22,7 @@ import java.util.UUID;
 public class MediaProgressService {
 
     private final MediaProgressMapper mapper;
+    private final MediaProgressEventMapper eventMapper;
     private final SharedMediaService sharedMediaService;
 
     public List<MediaProgressResp> list(UserDO user, String mediaId) {
@@ -26,6 +31,7 @@ public class MediaProgressService {
         return list.stream().map(MediaProgressResp::from).toList();
     }
 
+    @Transactional
     public MediaProgressResp update(UserDO user, String mediaId, MediaProgressUpdateReq req) {
         sharedMediaService.getById(user, mediaId);
 
@@ -44,11 +50,25 @@ public class MediaProgressService {
 
         sharedMediaService.touchActivity(mediaId);
 
+        MediaProgressEventDO ev = new MediaProgressEventDO();
+        ev.setId(UUID.randomUUID().toString());
+        ev.setMediaId(mediaId);
+        ev.setUserId(user.getId());
+        ev.setScope(req.getScope());
+        ev.setProgressText(req.getProgressText());
+        eventMapper.insert(ev);
+
         if ("shared".equals(req.getScope())) {
             return MediaProgressResp.from(mapper.selectSharedByMediaId(mediaId));
         } else {
             return MediaProgressResp.from(mapper.selectByMediaIdAndUser(mediaId, user.getId()));
         }
+    }
+
+    public List<MediaProgressEventResp> listEvents(String mediaId) {
+        return eventMapper.selectByMediaId(mediaId).stream()
+            .map(MediaProgressEventResp::from)
+            .toList();
     }
 
     private void upsertProgress(String mediaId, String userId, String progressText) {
@@ -73,5 +93,6 @@ public class MediaProgressService {
 
     public void deleteByMediaId(String mediaId) {
         mapper.delete(new LambdaQueryWrapper<MediaProgressDO>().eq(MediaProgressDO::getMediaId, mediaId));
+        eventMapper.delete(new LambdaQueryWrapper<MediaProgressEventDO>().eq(MediaProgressEventDO::getMediaId, mediaId));
     }
 }

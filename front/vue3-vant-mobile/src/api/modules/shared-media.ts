@@ -34,6 +34,15 @@ export interface MediaProgress {
   createdAt: string
 }
 
+export interface MediaProgressEvent {
+  id: string
+  mediaId: string
+  userId: string
+  scope: 'shared' | 'personal'
+  progressText: string
+  createdAt: string
+}
+
 export function fetchSharedMediaList(params?: {
   page?: number
   size?: number
@@ -77,4 +86,8 @@ export function fetchProgress(mediaId: string) {
 
 export function updateProgress(mediaId: string, data: { scope: 'shared' | 'personal', progressText: string }) {
   return request.put<ApiResponse<MediaProgress>>(`/shared-media/${mediaId}/progress`, data)
+}
+
+export function fetchProgressEvents(mediaId: string) {
+  return request.get<ApiResponse<MediaProgressEvent[]>>(`/shared-media/${mediaId}/progress-events`)
 }

@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.*;
 import top.lifeassistant.common.annotation.CurrentUser;
 import top.lifeassistant.common.base.model.resp.ApiResponse;
 import top.lifeassistant.sharedmedia.model.req.MediaProgressUpdateReq;
+import top.lifeassistant.sharedmedia.model.resp.MediaProgressEventResp;
 import top.lifeassistant.sharedmedia.model.resp.MediaProgressResp;
 import top.lifeassistant.sharedmedia.service.MediaProgressService;
+import top.lifeassistant.sharedmedia.service.SharedMediaService;
 import top.lifeassistant.system.model.entity.user.UserDO;
 
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.List;
 public class MediaProgressController {
 
     private final MediaProgressService service;
+    private final SharedMediaService sharedMediaService;
 
     @Operation(summary = "获取所有进度")
     @GetMapping("/shared-media/{mediaId}/progress")
@@ -34,5 +37,14 @@ public class MediaProgressController {
             @PathVariable String mediaId,
             @Valid @RequestBody MediaProgressUpdateReq req) {
         return ApiResponse.ok(service.update(user, mediaId, req));
+    }
+
+    @Operation(summary = "获取进度变更时间轴")
+    @GetMapping("/shared-media/{mediaId}/progress-events")
+    public ApiResponse<List<MediaProgressEventResp>> listEvents(
+            @CurrentUser UserDO user,
+            @PathVariable String mediaId) {
+        sharedMediaService.getById(user, mediaId);
+        return ApiResponse.ok(service.listEvents(mediaId));
     }
 }

@@ -225,6 +225,10 @@ function goBack() {
   router.back()
 }
 
+function goTimeline() {
+  router.push(`/share/media/${mediaId.value}/timeline`)
+}
+
 onMounted(() => {
   loadData()
 })
@@ -276,6 +280,13 @@ watch(mediaId, (id, prev) => {
         </div>
       </div>
     </div>
+
+    <van-cell
+      v-if="media"
+      title="进度时间轴"
+      is-link
+      @click="goTimeline"
+    />
 
     <!-- Chat Messages -->
     <div v-if="!loading" ref="chatContainer" class="chat-container">
