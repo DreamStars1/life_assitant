@@ -24,7 +24,22 @@
 - 自定义分类共享给对方；进度以外的审计日志。
 - 未绑定伴侣也可用记录模块。
 - 私密的服务端强隔离（本次仅藏 UI；仍依赖现有伴侣绑定限制）。
-- MCP / 文档大同步（除非实现时顺手修坏掉的引用）。
+- **不要求** MCP 新增私密 / 自定义分类 / 进度时间轴 action；只保证现有能力不坏。
+
+## MCP 兼容（硬约束）
+
+现有 Agent 域工具 `media`（`list` / `get` / `create` / `update`）必须在本次改动后**无需改调用方**仍可用。
+
+| 约束 | 说明 |
+|------|------|
+| REST 前缀 | 保持 `/shared-media`（及现有 `{id}` 详情 / multipart create·update） |
+| 入参 | 继续接受现有字段：`title`、`media_type`（`movie`/`book`/`tv`）、`description`、`last_watched_at`、`is_finished`、list 的 `media_type`/`status`/分页 |
+| 默认值 | 新字段对旧客户端透明：未传 `is_private` → `false`；未传自定义分类 → 仍用默认 `media_type` |
+| 响应 | 可**增量**加字段（如 `isPrivate`、`mediaTypeLabel`）；不得删除或改义现有字段 |
+| 行为 | `list`/`get`/`create`/`update` 语义与现网一致；排序变更可接受；不强制 Agent 改代码 |
+| 进度 | MCP 本就不覆盖 progress；时间轴表不影响现有 media 工具 |
+
+验收：跑现有 `python/agent` 中 media 相关单测（如 `test_schedule_media_http`）及一次真实 `media list/create` 冒烟通过。
 
 ---
 
@@ -217,6 +232,7 @@ ORDER BY COALESCE(last_watched_at, DATE(update_time)) DESC, update_time DESC
 3. 可设私密；对方 UI 看不到；列表时间文案符合 §4（不要求 API 级隔离）。
 4. 可增删自定义分类；删后变「未分类」；与 movie/book/tv 并列且用户隔离；响应有 `mediaTypeLabel`。
 5. 更新进度后，从详情进入时间轴独立页能看到追加记录；当前进度同步更新。
+6. 现有 MCP `media` 工具（list/get/create/update）无需改 Agent 代码仍可用；相关单测 / 冒烟通过。
 
 ## 10. 实现时拆分建议
 
@@ -240,3 +256,4 @@ ORDER BY COALESCE(last_watched_at, DATE(update_time)) DESC, update_time DESC
 | 删分类 | 允许；回落 `uncategorized` |
 | 时间轴 | 只记进度；追加历史；独立页可进入 |
 | 排序 | COALESCE(last_watched_at, DATE(update_time)) DESC |
+| MCP | 现有 `media` list/get/create/update 保持可用；不强制扩展新能力 |
