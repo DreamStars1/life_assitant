@@ -116,6 +116,9 @@ public class SharedMediaService {
             media.setFinishedAt(isFinished ? LocalDateTime.now() : null);
         }
         if (req.getIsPrivate() != null) {
+            if (!user.getId().equals(media.getCreatedBy())) {
+                throw new BadRequestException("仅创建者可修改私密设置");
+            }
             media.setIsPrivate(req.getIsPrivate());
         }
 
