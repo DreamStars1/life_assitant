@@ -3,6 +3,8 @@ import { showConfirmDialog, showToast } from 'vant'
 import { useUserStore } from '@/stores'
 import { createSharedMedia, deleteSharedMedia, fetchSharedMediaList, updateSharedMedia } from '@/api/modules/shared-media'
 import type { SharedMediaItem } from '@/api/modules/shared-media'
+import { createCategory, deleteCategory, fetchCategories, updateCategory } from '@/api/modules/media-category'
+import type { MediaCategory } from '@/api/modules/media-category'
 import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
@@ -23,6 +25,7 @@ const mediaPage = ref(1)
 const mediaTotalPages = ref(0)
 const mediaTypeFilter = ref('')
 const mediaStatusFilter = ref('')
+const categories = ref<MediaCategory[]>([])
 
 const showAddMedia = ref(false)
 const addMediaForm = reactive({ title: '', mediaType: 'movie', description: '', lastWatchedAt: '', isPrivate: false })
@@ -35,11 +38,32 @@ const showEditLastWatchedCalendar = ref(false)
 const editMediaCoverList = ref<{ file?: File }[]>([])
 const showMediaTypePicker = ref(false)
 const showEditMediaTypePicker = ref(false)
-const mediaTypeColumns = [
+
+const showCategoryManager = ref(false)
+const newCategoryName = ref('')
+const editingCategoryId = ref('')
+const editingCategoryName = ref('')
+const showRenameCategory = ref(false)
+
+const defaultTypeFilters = [
+  { label: '全部', value: '' },
+  { label: '电影', value: 'movie' },
+  { label: '书籍', value: 'book' },
+  { label: '漫剧', value: 'tv' },
+]
+
+const typeFilterChips = computed(() => [
+  ...defaultTypeFilters,
+  ...categories.value.map(c => ({ label: c.name, value: c.id })),
+  { label: '未分类', value: 'uncategorized' },
+])
+
+const mediaTypeColumns = computed(() => [
   { text: '电影', value: 'movie' },
   { text: '书籍', value: 'book' },
   { text: '漫剧', value: 'tv' },
-]
+  ...categories.value.map(c => ({ text: c.name, value: c.id })),
+])
 
 const visibleMedia = computed(() =>
   mediaRecords.value.filter(
@@ -56,6 +80,16 @@ function formatMediaTimeLine(item: SharedMediaItem): string {
   if (item.lastWatchedAt)
     return `上次一起看：${item.lastWatchedAt.slice(0, 10)}`
   return ''
+}
+
+async function loadCategories() {
+  try {
+    const res = await fetchCategories()
+    categories.value = res.data ?? []
+  }
+  catch {
+    showToast('加载分类失败')
+  }
 }
 
 async function loadMedia() {
@@ -194,9 +228,77 @@ function goToMediaPage(page: number) {
   loadMedia()
 }
 
-function formatMediaType(t: string): string {
-  const map: Record<string, string> = { movie: '电影', book: '书籍', tv: '漫剧' }
-  return map[t] || t
+function formatMediaType(t: string, label?: string): string {
+  if (label)
+    return label
+  const col = mediaTypeColumns.value.find(c => c.value === t)
+  if (col)
+    return col.text
+  if (t === 'uncategorized')
+    return '未分类'
+  return t
+}
+
+async function onAddCategory() {
+  const name = newCategoryName.value.trim()
+  if (!name) {
+    showToast('请输入分类名')
+    return
+  }
+  try {
+    await createCategory(name)
+    showToast('已添加')
+    newCategoryName.value = ''
+    await loadCategories()
+  }
+  catch {
+    showToast('添加失败')
+  }
+}
+
+function openRenameCategory(cat: MediaCategory) {
+  editingCategoryId.value = cat.id
+  editingCategoryName.value = cat.name
+  showRenameCategory.value = true
+}
+
+async function onRenameCategory() {
+  const name = editingCategoryName.value.trim()
+  if (!name) {
+    showToast('请输入分类名')
+    return
+  }
+  try {
+    await updateCategory(editingCategoryId.value, name)
+    showToast('已更新')
+    showRenameCategory.value = false
+    await loadCategories()
+    await loadMedia()
+  }
+  catch {
+    showToast('更新失败')
+  }
+}
+
+async function onDeleteCategory(cat: MediaCategory) {
+  try {
+    await showConfirmDialog({
+      title: '删除分类',
+      message: `删除「${cat.name}」后，相关记录将变为未分类，确定吗？`,
+    })
+  }
+  catch {
+    return
+  }
+  try {
+    await deleteCategory(cat.id)
+    showToast('已删除')
+    await loadCategories()
+    await loadMedia()
+  }
+  catch {
+    showToast('删除失败')
+  }
 }
 
 function formatFinishedDate(iso: string | null): string {
@@ -218,13 +320,15 @@ function mediaCoverUrl(path: string | null): string {
 
 onMounted(async () => {
   await userStore.info()
-  if (partnerId.value)
-    await loadMedia()
+  if (partnerId.value) {
+    await Promise.all([loadCategories(), loadMedia()])
+  }
 })
 
 watch(partnerId, async (val) => {
-  if (val)
-    await loadMedia()
+  if (val) {
+    await Promise.all([loadCategories(), loadMedia()])
+  }
 })
 </script>
 
@@ -233,10 +337,10 @@ watch(partnerId, async (val) => {
     <van-empty v-if="!partnerId" description="请先在「伴侣」页绑定伴侣后使用记录" />
 
     <template v-else>
-      <div class="px-4 pt-3 flex flex-wrap gap-2">
+      <div class="px-4 pt-3 flex flex-wrap gap-2 items-center">
         <van-tag
-          v-for="t in [{ label: '全部', value: '' }, { label: '电影', value: 'movie' }, { label: '书籍', value: 'book' }, { label: '漫剧', value: 'tv' }]"
-          :key="t.value"
+          v-for="t in typeFilterChips"
+          :key="t.value || 'all'"
           :type="mediaTypeFilter === t.value ? 'primary' : 'default'"
           size="medium"
           round
@@ -244,6 +348,9 @@ watch(partnerId, async (val) => {
         >
           {{ t.label }}
         </van-tag>
+        <van-button size="mini" plain type="primary" @click="showCategoryManager = true">
+          管理分类
+        </van-button>
       </div>
       <div class="px-4 pt-2 flex flex-wrap gap-2">
         <van-tag
@@ -280,7 +387,7 @@ watch(partnerId, async (val) => {
                 {{ item.title }}
               </div>
               <div class="text-xs text-gray-500 mt-1">
-                {{ formatMediaType(item.mediaType) }}
+                {{ formatMediaType(item.mediaType, item.mediaTypeLabel) }}
               </div>
               <div class="text-xs mt-1">
                 <van-tag :type="item.isFinished ? 'success' : 'warning'">
@@ -427,6 +534,36 @@ watch(partnerId, async (val) => {
           @cancel="showEditMediaTypePicker = false"
         />
       </van-popup>
+
+      <van-popup v-model:show="showCategoryManager" position="bottom" round :style="{ maxHeight: '70%' }">
+        <div class="px-4 py-4">
+          <div class="text-base font-medium mb-3">
+            管理分类
+          </div>
+          <div class="flex gap-2 mb-3">
+            <van-field v-model="newCategoryName" placeholder="新分类名" clearable class="flex-1" />
+            <van-button type="primary" size="small" @click="onAddCategory">
+              添加
+            </van-button>
+          </div>
+          <van-empty v-if="categories.length === 0" description="还没有自定义分类" />
+          <van-swipe-cell v-for="cat in categories" :key="cat.id">
+            <van-cell :title="cat.name" is-link @click="openRenameCategory(cat)" />
+            <template #right>
+              <van-button square type="danger" text="删除" @click="onDeleteCategory(cat)" />
+            </template>
+          </van-swipe-cell>
+        </div>
+      </van-popup>
+
+      <van-dialog
+        v-model:show="showRenameCategory"
+        title="重命名分类"
+        show-cancel-button
+        @confirm="onRenameCategory"
+      >
+        <van-field v-model="editingCategoryName" placeholder="分类名" clearable class="px-4 py-3" />
+      </van-dialog>
     </template>
   </div>
 </template>

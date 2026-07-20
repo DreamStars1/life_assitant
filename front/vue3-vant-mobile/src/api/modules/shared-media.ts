@@ -6,6 +6,7 @@ export interface SharedMediaItem {
   createdBy: string
   title: string
   mediaType: string
+  mediaTypeLabel: string
   coverPath: string | null
   description: string | null
   isFinished: boolean

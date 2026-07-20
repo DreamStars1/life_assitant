@@ -19,6 +19,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +28,7 @@ public class SharedMediaService {
 
     private final SharedMediaMapper mapper;
     private final OwnerValidator ownerValidator;
+    private final MediaTypeLabels mediaTypeLabels;
 
     private void requirePartner(UserDO user) {
         if (user.getPartnerId() == null) {
@@ -57,7 +60,7 @@ public class SharedMediaService {
         }
         media.setIsPrivate(req.getIsPrivate() != null ? req.getIsPrivate() : false);
         mapper.insert(media);
-        return SharedMediaResp.from(media);
+        return mediaTypeLabels.enrich(media);
     }
 
     public PageResult<SharedMediaResp> list(UserDO user, SharedMediaPageQuery query) {
@@ -79,8 +82,12 @@ public class SharedMediaService {
         wrapper.last("ORDER BY COALESCE(last_watched_at, DATE(update_time)) DESC, update_time DESC");
 
         Page<SharedMediaDO> result = mapper.selectPage(page, wrapper);
+        Map<String, String> labelMap = mediaTypeLabels.batchResolve(
+            result.getRecords().stream().map(SharedMediaDO::getMediaType).collect(Collectors.toSet()));
         Page<SharedMediaResp> respPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
-        respPage.setRecords(result.getRecords().stream().map(SharedMediaResp::from).toList());
+        respPage.setRecords(result.getRecords().stream()
+            .map(media -> mediaTypeLabels.enrich(media, labelMap))
+            .toList());
         return PageResult.of(respPage);
     }
 
@@ -90,7 +97,7 @@ public class SharedMediaService {
             () -> mapper.selectById(id), "媒体不存在",
             m -> user.getId().equals(m.getCreatedBy()) || user.getPartnerId().equals(m.getCreatedBy())
         );
-        return SharedMediaResp.from(media);
+        return mediaTypeLabels.enrich(media);
     }
 
     public SharedMediaResp update(UserDO user, String id, SharedMediaUpdateReq req, String coverPath, Boolean isFinished) {
@@ -125,7 +132,7 @@ public class SharedMediaService {
         }
 
         mapper.updateById(media);
-        return SharedMediaResp.from(mapper.selectById(id));
+        return mediaTypeLabels.enrich(mapper.selectById(id));
     }
 
     public void delete(UserDO user, String id) {

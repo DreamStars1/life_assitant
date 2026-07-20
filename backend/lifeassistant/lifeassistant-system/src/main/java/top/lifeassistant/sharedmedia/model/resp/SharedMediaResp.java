@@ -16,6 +16,7 @@ public class SharedMediaResp {
     private String createdBy;
     private String title;
     private String mediaType;
+    private String mediaTypeLabel;
     private String coverPath;
     private String description;
     private Boolean isFinished;
