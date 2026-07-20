@@ -25,12 +25,12 @@ const mediaTypeFilter = ref('')
 const mediaStatusFilter = ref('')
 
 const showAddMedia = ref(false)
-const addMediaForm = reactive({ title: '', mediaType: 'movie', description: '', lastWatchedAt: '' })
+const addMediaForm = reactive({ title: '', mediaType: 'movie', description: '', lastWatchedAt: '', isPrivate: false })
 const addMediaCoverList = ref<{ file?: File }[]>([])
 const showAddLastWatchedCalendar = ref(false)
 const showEditMedia = ref(false)
 const editingMediaId = ref('')
-const editMediaForm = reactive({ title: '', mediaType: 'movie', description: '', lastWatchedAt: '' })
+const editMediaForm = reactive({ title: '', mediaType: 'movie', description: '', lastWatchedAt: '', isPrivate: false })
 const showEditLastWatchedCalendar = ref(false)
 const editMediaCoverList = ref<{ file?: File }[]>([])
 const showMediaTypePicker = ref(false)
@@ -40,6 +40,23 @@ const mediaTypeColumns = [
   { text: '书籍', value: 'book' },
   { text: '漫剧', value: 'tv' },
 ]
+
+const visibleMedia = computed(() =>
+  mediaRecords.value.filter(
+    item => !(item.isPrivate && item.createdBy !== userStore.userInfo.id),
+  ),
+)
+
+function formatMediaTimeLine(item: SharedMediaItem): string {
+  if (item.isPrivate) {
+    if (item.lastWatchedAt)
+      return `上次观看：${item.lastWatchedAt.slice(0, 10)}`
+    return `更新于：${item.updateTime.slice(0, 10)}`
+  }
+  if (item.lastWatchedAt)
+    return `上次一起看：${item.lastWatchedAt.slice(0, 10)}`
+  return ''
+}
 
 async function loadMedia() {
   try {
@@ -86,6 +103,7 @@ async function onAddMedia() {
     if (addMediaCoverList.value[0]?.file)
       fd.append('cover', addMediaCoverList.value[0].file)
     fd.append('lastWatchedAt', addMediaForm.lastWatchedAt || '')
+    fd.append('isPrivate', String(addMediaForm.isPrivate))
     await createSharedMedia(fd)
     showToast('已添加')
     showAddMedia.value = false
@@ -93,6 +111,7 @@ async function onAddMedia() {
     addMediaForm.mediaType = 'movie'
     addMediaForm.description = ''
     addMediaForm.lastWatchedAt = toLocalDateStr(new Date())
+    addMediaForm.isPrivate = false
     addMediaCoverList.value = []
     mediaPage.value = 1
     await loadMedia()
@@ -123,6 +142,7 @@ function openEditMedia(item: SharedMediaItem) {
   editMediaForm.mediaType = item.mediaType
   editMediaForm.description = item.description || ''
   editMediaForm.lastWatchedAt = item.lastWatchedAt ? item.lastWatchedAt.slice(0, 10) : ''
+  editMediaForm.isPrivate = item.isPrivate
   editMediaCoverList.value = []
   showEditMedia.value = true
 }
@@ -140,6 +160,7 @@ async function onEditMedia() {
     if (editMediaCoverList.value[0]?.file)
       fd.append('cover', editMediaCoverList.value[0].file)
     fd.append('lastWatchedAt', editMediaForm.lastWatchedAt || '')
+    fd.append('isPrivate', String(editMediaForm.isPrivate))
     await updateSharedMedia(editingMediaId.value, fd)
     showToast('已更新')
     showEditMedia.value = false
@@ -185,12 +206,6 @@ function formatFinishedDate(iso: string | null): string {
   if (Number.isNaN(d.getTime()))
     return ''
   return d.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
-}
-
-function formatLastWatchedDate(iso: string | null): string {
-  if (!iso)
-    return ''
-  return iso.slice(0, 10)
 }
 
 function mediaCoverUrl(path: string | null): string {
@@ -245,8 +260,8 @@ watch(partnerId, async (val) => {
       </div>
 
       <div class="px-4 pt-3">
-        <van-empty v-if="mediaRecords.length === 0" description="还没有一起看过的内容，点右下角 + 添加吧" />
-        <van-swipe-cell v-for="item in mediaRecords" :key="item.id">
+        <van-empty v-if="visibleMedia.length === 0" description="还没有一起看过的内容，点右下角 + 添加吧" />
+        <van-swipe-cell v-for="item in visibleMedia" :key="item.id">
           <div
             class="media-card mb-2 p-3 rounded-lg bg-white flex items-center"
             @click="router.push(`/share/media/${item.id}`)"
@@ -275,8 +290,8 @@ watch(partnerId, async (val) => {
                   {{ formatFinishedDate(item.finishedAt) }}
                 </span>
               </div>
-              <div v-if="item.lastWatchedAt" class="text-xs text-gray-400 mt-1">
-                上次一起看：{{ formatLastWatchedDate(item.lastWatchedAt) }}
+              <div v-if="formatMediaTimeLine(item)" class="text-xs text-gray-400 mt-1">
+                {{ formatMediaTimeLine(item) }}
               </div>
             </div>
             <van-icon
@@ -341,6 +356,11 @@ watch(partnerId, async (val) => {
             :min-date="new Date('2020-01-01')"
             @confirm="onAddLastWatchedConfirm"
           />
+          <van-field label="仅自己可见">
+            <template #input>
+              <van-switch v-model="addMediaForm.isPrivate" size="20" />
+            </template>
+          </van-field>
           <div class="text-sm text-gray-500 mb-1">
             封面图
           </div>
@@ -388,6 +408,11 @@ watch(partnerId, async (val) => {
             :min-date="new Date('2020-01-01')"
             @confirm="onEditLastWatchedConfirm"
           />
+          <van-field label="仅自己可见">
+            <template #input>
+              <van-switch v-model="editMediaForm.isPrivate" size="20" />
+            </template>
+          </van-field>
           <div class="text-sm text-gray-500 mb-1">
             封面图（不选则保留原图）
           </div>

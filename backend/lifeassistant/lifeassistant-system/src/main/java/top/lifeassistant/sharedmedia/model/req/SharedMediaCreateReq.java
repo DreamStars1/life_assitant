@@ -14,4 +14,6 @@ public class SharedMediaCreateReq {
     private String description;
     @Schema(description = "上次一起看日期 yyyy-MM-dd，可空")
     private String lastWatchedAt;
+    @Schema(description = "是否仅自己可见，默认 false")
+    private Boolean isPrivate;
 }

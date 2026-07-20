@@ -21,6 +21,7 @@ public class SharedMediaResp {
     private Boolean isFinished;
     private LocalDateTime finishedAt;
     private LocalDate lastWatchedAt;
+    private Boolean isPrivate;
     private LocalDateTime createdAt;
     private LocalDateTime updateTime;
 
@@ -35,6 +36,7 @@ public class SharedMediaResp {
             .isFinished(media.getIsFinished())
             .finishedAt(media.getFinishedAt())
             .lastWatchedAt(media.getLastWatchedAt())
+            .isPrivate(Boolean.TRUE.equals(media.getIsPrivate()))
             .createdAt(media.getCreatedAt())
             .updateTime(media.getUpdateTime())
             .build();

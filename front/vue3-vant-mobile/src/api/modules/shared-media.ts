@@ -13,6 +13,7 @@ export interface SharedMediaItem {
   createdAt: string
   updateTime: string
   lastWatchedAt: string | null
+  isPrivate: boolean
 }
 
 export interface MediaComment {

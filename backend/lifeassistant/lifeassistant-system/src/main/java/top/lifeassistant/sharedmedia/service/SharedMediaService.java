@@ -55,6 +55,7 @@ public class SharedMediaService {
         } else {
             media.setLastWatchedAt(parseLastWatchedAt(req.getLastWatchedAt()));
         }
+        media.setIsPrivate(req.getIsPrivate() != null ? req.getIsPrivate() : false);
         mapper.insert(media);
         return SharedMediaResp.from(media);
     }
@@ -106,6 +107,9 @@ public class SharedMediaService {
         if (isFinished != null) {
             media.setIsFinished(isFinished);
             media.setFinishedAt(isFinished ? LocalDateTime.now() : null);
+        }
+        if (req.getIsPrivate() != null) {
+            media.setIsPrivate(req.getIsPrivate());
         }
 
         String lw = req.getLastWatchedAt();

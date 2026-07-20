@@ -42,6 +42,9 @@ public class SharedMediaDO extends BaseDO implements OwnedEntity {
     /** 上次一起看日期 */
     private LocalDate lastWatchedAt;
 
+    /** 是否仅自己可见 */
+    private Boolean isPrivate;
+
     @Override
     public String getOwnerId() {
         return createdBy;
