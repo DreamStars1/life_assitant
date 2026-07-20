@@ -26,6 +26,12 @@ const show = computed(() => {
         <van-icon name="like-o" />
       </template>
     </van-tabbar-item>
+    <van-tabbar-item replace to="/records">
+      记录
+      <template #icon>
+        <van-icon name="bookmark-o" />
+      </template>
+    </van-tabbar-item>
     <van-tabbar-item replace to="/partner/dashboard">
       {{ $t('tabbar.dashboard') }}
       <template #icon>

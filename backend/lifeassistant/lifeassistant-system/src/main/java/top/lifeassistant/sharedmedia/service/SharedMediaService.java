@@ -75,7 +75,7 @@ public class SharedMediaService {
             wrapper.eq(SharedMediaDO::getIsFinished, false);
         }
 
-        wrapper.orderByDesc(SharedMediaDO::getUpdateTime);
+        wrapper.last("ORDER BY COALESCE(last_watched_at, DATE(update_time)) DESC, update_time DESC");
 
         Page<SharedMediaDO> result = mapper.selectPage(page, wrapper);
         Page<SharedMediaResp> respPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());

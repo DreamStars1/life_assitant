@@ -11,6 +11,6 @@ import java.util.List;
 @Mapper
 public interface SharedMediaMapper extends BaseMapper<SharedMediaDO> {
 
-    @Select("SELECT * FROM shared_media WHERE created_by IN (#{userId}, #{partnerId}) ORDER BY update_time DESC")
+    @Select("SELECT * FROM shared_media WHERE created_by IN (#{userId}, #{partnerId}) ORDER BY COALESCE(last_watched_at, DATE(update_time)) DESC, update_time DESC")
     List<SharedMediaDO> listByPartners(@Param("userId") String userId, @Param("partnerId") String partnerId);
 }
