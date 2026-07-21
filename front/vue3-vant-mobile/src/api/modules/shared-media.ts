@@ -21,7 +21,8 @@ export interface MediaComment {
   id: string
   mediaId: string
   userId: string
-  content: string
+  content: string | null
+  imageUrls: string[]
   createdAt: string
 }
 
@@ -76,7 +77,21 @@ export function fetchComments(mediaId: string) {
   return request.get<ApiResponse<MediaComment[]>>(`/shared-media/${mediaId}/comments`)
 }
 
-export function createComment(mediaId: string, data: { content: string }) {
+export function uploadCommentImages(mediaId: string, files: File[]) {
+  const formData = new FormData()
+  for (const file of files)
+    formData.append('files', file)
+  return request.post<ApiResponse<{ urls: string[] }>>(
+    `/shared-media/${mediaId}/comment-images`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  )
+}
+
+export function createComment(
+  mediaId: string,
+  data: { content?: string, imageUrls?: string[] },
+) {
   return request.post<ApiResponse<MediaComment>>(`/shared-media/${mediaId}/comments`, data)
 }
 
