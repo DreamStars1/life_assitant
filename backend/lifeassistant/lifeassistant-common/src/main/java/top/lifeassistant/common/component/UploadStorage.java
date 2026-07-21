@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 public class UploadStorage {
 
     private static final String SHARED_MEDIA_SUBDIR = "shared-media";
+    private static final String MEDIA_COMMENTS_SUBDIR = "media-comments";
 
     private final Path root;
 
@@ -26,6 +27,14 @@ public class UploadStorage {
 
     public String sharedMediaUrl(String filename) {
         return "/uploads/" + SHARED_MEDIA_SUBDIR + "/" + filename;
+    }
+
+    public Path mediaCommentsDir() {
+        return root.resolve(MEDIA_COMMENTS_SUBDIR);
+    }
+
+    public String mediaCommentUrl(String filename) {
+        return "/uploads/" + MEDIA_COMMENTS_SUBDIR + "/" + filename;
     }
 
     public String resourceLocation() {

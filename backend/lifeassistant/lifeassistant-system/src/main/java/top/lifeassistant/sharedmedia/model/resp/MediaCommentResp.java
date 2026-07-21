@@ -40,7 +40,8 @@ public class MediaCommentResp {
             return List.of();
         }
         try {
-            return MAPPER.readValue(imageUrlsJson, new TypeReference<List<String>>() {});
+            List<String> urls = MAPPER.readValue(imageUrlsJson, new TypeReference<List<String>>() {});
+            return urls == null ? List.of() : urls;
         } catch (JsonProcessingException e) {
             return List.of();
         }
