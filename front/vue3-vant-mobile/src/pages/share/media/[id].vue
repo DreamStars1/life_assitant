@@ -156,12 +156,15 @@ function beforeReadImage(file: File | File[]) {
   return true
 }
 
-function removePendingImage(index: number) {
-  pendingFileList.value = pendingFileList.value.filter((_, i) => i !== index)
-}
-
-function pendingPreviewUrl(item: UploaderFileListItem): string {
-  return item.objectUrl || item.content || item.url || ''
+// ponytail: 多选时 after-read 可能逐张回调，合并到下一 macrotask 再发
+let imageSendTimer: ReturnType<typeof setTimeout> | null = null
+function afterReadImage(_file: UploaderFileListItem | UploaderFileListItem[]) {
+  if (imageSendTimer)
+    clearTimeout(imageSendTimer)
+  imageSendTimer = setTimeout(() => {
+    imageSendTimer = null
+    void sendImages()
+  }, 0)
 }
 
 function imageGridClass(count: number): string {
@@ -189,7 +192,6 @@ async function sendImages() {
   }
 
   sending.value = true
-  const draft = [...pendingFileList.value]
   pendingFileList.value = []
   const previous = comments.value
   try {
@@ -203,7 +205,6 @@ async function sendImages() {
       comments.value = [...previous, created.data]
   }
   catch {
-    pendingFileList.value = draft
     showToast('发送失败')
   }
   finally {
@@ -420,36 +421,15 @@ watch(mediaId, (id, prev) => {
 
     <!-- Input Bar -->
     <div class="input-bar">
-      <div v-if="pendingFileList.length" class="pending-images">
-        <div
-          v-for="(item, index) in pendingFileList"
-          :key="index"
-          class="pending-thumb"
-        >
-          <img :src="pendingPreviewUrl(item)" alt="">
-          <van-icon
-            name="cross"
-            class="pending-remove"
-            @click="removePendingImage(index)"
-          />
-        </div>
-        <van-button
-          size="small"
-          type="primary"
-          :loading="sending"
-          :disabled="sending"
-          @click="sendImages"
-        >
-          发送图片
-        </van-button>
-      </div>
       <div class="input-row">
         <van-uploader
           v-model="pendingFileList"
           :max-count="MAX_COMMENT_IMAGES"
           :preview-image="false"
+          multiple
           accept="image/*"
           :before-read="beforeReadImage"
+          :after-read="afterReadImage"
           :disabled="sending || loading"
           class="image-uploader"
         >
@@ -779,38 +759,6 @@ watch(mediaId, (id, prev) => {
 .input-field {
   flex: 1;
   padding: 0;
-}
-
-.pending-images {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  padding-bottom: 8px;
-}
-
-.pending-thumb {
-  position: relative;
-  width: 56px;
-  height: 56px;
-}
-
-.pending-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.pending-remove {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  font-size: 12px;
-  padding: 2px;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.55);
-  border-radius: 50%;
 }
 
 .progress-form {
