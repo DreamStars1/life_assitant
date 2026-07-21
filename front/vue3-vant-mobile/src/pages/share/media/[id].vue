@@ -176,7 +176,16 @@ function imageGridClass(count: number): string {
 }
 
 function previewCommentImages(imageUrls: string[], startPosition: number) {
-  showImagePreview({ images: imageUrls, startPosition })
+  const images = imageUrls.filter(Boolean)
+  if (!images.length)
+    return
+  showImagePreview({
+    images: [...images],
+    startPosition,
+    showIndicators: images.length > 1,
+    closeable: true,
+    teleport: 'body',
+  })
 }
 
 async function sendImages() {
