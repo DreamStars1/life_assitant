@@ -15,6 +15,7 @@ import type { MediaComment, MediaProgress, SharedMediaItem } from '@/api/modules
 
 const MAX_COMMENT_IMAGES = 9
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
+const ALLOWED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif'])
 
 const route = useRoute()
 const router = useRouter()
@@ -141,6 +142,12 @@ function beforeReadImage(file: File | File[]) {
     return false
   }
   for (const f of files) {
+    const dot = f.name.lastIndexOf('.')
+    const ext = dot >= 0 ? f.name.slice(dot + 1).toLowerCase() : ''
+    if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
+      showToast('仅支持 jpg/png/webp/gif')
+      return false
+    }
     if (f.size > MAX_IMAGE_SIZE) {
       showToast('单张图片不能超过 5MB')
       return false
