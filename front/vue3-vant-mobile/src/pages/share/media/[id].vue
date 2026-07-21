@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { showConfirmDialog, showToast } from 'vant'
+import { showConfirmDialog, showImagePreview, showToast } from 'vant'
+import type { UploaderFileListItem } from 'vant'
 import { useUserStore } from '@/stores'
 import {
   createComment,
@@ -8,8 +9,12 @@ import {
   getSharedMediaDetail,
   updateProgress,
   updateSharedMedia,
+  uploadCommentImages,
 } from '@/api/modules/shared-media'
 import type { MediaComment, MediaProgress, SharedMediaItem } from '@/api/modules/shared-media'
+
+const MAX_COMMENT_IMAGES = 9
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
 const route = useRoute()
 const router = useRouter()
@@ -26,6 +31,7 @@ const progressList = ref<MediaProgress[]>([])
 const loading = ref(true)
 const messageText = ref('')
 const sending = ref(false)
+const pendingFileList = ref<UploaderFileListItem[]>([])
 const chatContainer = ref<HTMLElement | null>(null)
 let loadSeq = 0
 
@@ -126,6 +132,76 @@ function scrollChatToBottom() {
 
 function isOwnComment(comment: MediaComment): boolean {
   return myId.value !== undefined && comment.userId === myId.value
+}
+
+function beforeReadImage(file: File | File[]) {
+  const files = Array.isArray(file) ? file : [file]
+  if (pendingFileList.value.length + files.length > MAX_COMMENT_IMAGES) {
+    showToast(`最多选择 ${MAX_COMMENT_IMAGES} 张图片`)
+    return false
+  }
+  for (const f of files) {
+    if (f.size > MAX_IMAGE_SIZE) {
+      showToast('单张图片不能超过 5MB')
+      return false
+    }
+  }
+  return true
+}
+
+function removePendingImage(index: number) {
+  pendingFileList.value = pendingFileList.value.filter((_, i) => i !== index)
+}
+
+function pendingPreviewUrl(item: UploaderFileListItem): string {
+  return item.objectUrl || item.content || item.url || ''
+}
+
+function imageGridClass(count: number): string {
+  if (count === 1)
+    return 'image-grid-1'
+  if (count === 2)
+    return 'image-grid-2'
+  return 'image-grid-3'
+}
+
+function previewCommentImages(imageUrls: string[], startPosition: number) {
+  showImagePreview({ images: imageUrls, startPosition })
+}
+
+async function sendImages() {
+  const files = pendingFileList.value
+    .map(item => item.file)
+    .filter((f): f is File => !!f)
+  if (!files.length || sending.value)
+    return
+  const id = mediaId.value
+  if (!id) {
+    showToast('页面未就绪，请稍后重试')
+    return
+  }
+
+  sending.value = true
+  const draft = [...pendingFileList.value]
+  pendingFileList.value = []
+  const previous = comments.value
+  try {
+    const up = await uploadCommentImages(id, files)
+    const urls = up.data?.urls ?? []
+    if (!urls.length)
+      throw new Error('upload empty')
+    const created = await createComment(id, { imageUrls: urls })
+    const list = await reloadComments()
+    if (!list?.length && created.data)
+      comments.value = [...previous, created.data]
+  }
+  catch {
+    pendingFileList.value = draft
+    showToast('发送失败')
+  }
+  finally {
+    sending.value = false
+  }
 }
 
 async function sendMessage() {
@@ -300,8 +376,25 @@ watch(mediaId, (id, prev) => {
         class="message-row"
         :class="{ 'message-own': isOwnComment(comment), 'message-partner': !isOwnComment(comment) }"
       >
-        <div class="message-bubble" @longpress="confirmDeleteComment(comment.id)">
-          <div class="message-content">
+        <div
+          class="message-bubble"
+          :class="{ 'has-images': comment.imageUrls?.length }"
+          @longpress="confirmDeleteComment(comment.id)"
+        >
+          <div
+            v-if="comment.imageUrls?.length"
+            class="image-grid"
+            :class="imageGridClass(comment.imageUrls.length)"
+          >
+            <img
+              v-for="(url, imgIndex) in comment.imageUrls"
+              :key="`${comment.id}-${imgIndex}`"
+              :src="url"
+              class="comment-image"
+              @click.stop="previewCommentImages(comment.imageUrls, imgIndex)"
+            >
+          </div>
+          <div v-else-if="comment.content" class="message-content">
             {{ comment.content }}
           </div>
           <div class="message-time">
@@ -317,25 +410,62 @@ watch(mediaId, (id, prev) => {
 
     <!-- Input Bar -->
     <div class="input-bar">
-      <van-field
-        v-model="messageText"
-        placeholder="输入留言..."
-        :disabled="sending || loading"
-        clearable
-        @keydown.enter.prevent="sendMessage"
-      >
-        <template #button>
-          <van-button
-            size="small"
-            type="primary"
-            :loading="sending"
-            :disabled="!messageText.trim()"
-            @click="sendMessage"
-          >
-            发送
-          </van-button>
-        </template>
-      </van-field>
+      <div v-if="pendingFileList.length" class="pending-images">
+        <div
+          v-for="(item, index) in pendingFileList"
+          :key="index"
+          class="pending-thumb"
+        >
+          <img :src="pendingPreviewUrl(item)" alt="">
+          <van-icon
+            name="cross"
+            class="pending-remove"
+            @click="removePendingImage(index)"
+          />
+        </div>
+        <van-button
+          size="small"
+          type="primary"
+          :loading="sending"
+          :disabled="sending"
+          @click="sendImages"
+        >
+          发送图片
+        </van-button>
+      </div>
+      <div class="input-row">
+        <van-uploader
+          v-model="pendingFileList"
+          :max-count="MAX_COMMENT_IMAGES"
+          :preview-image="false"
+          accept="image/*"
+          :before-read="beforeReadImage"
+          :disabled="sending || loading"
+          class="photo-upload"
+        >
+          <van-icon name="photo-o" size="22" color="var(--van-gray-6)" />
+        </van-uploader>
+        <van-field
+          v-model="messageText"
+          class="input-field"
+          placeholder="输入留言..."
+          :disabled="sending || loading"
+          clearable
+          @keydown.enter.prevent="sendMessage"
+        >
+          <template #button>
+            <van-button
+              size="small"
+              type="primary"
+              :loading="sending"
+              :disabled="!messageText.trim() || sending"
+              @click="sendMessage"
+            >
+              发送
+            </van-button>
+          </template>
+        </van-field>
+      </div>
     </div>
 
     <!-- Progress Update Dialog -->
@@ -458,6 +588,16 @@ watch(mediaId, (id, prev) => {
   position: relative;
 }
 
+.message-bubble.has-images {
+  padding: 4px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.message-own .message-bubble.has-images {
+  background: transparent;
+}
+
 .message-own .message-bubble {
   background: #1989fa;
   color: #fff;
@@ -484,6 +624,45 @@ watch(mediaId, (id, prev) => {
   text-align: right;
 }
 
+.has-images .message-time {
+  padding: 0 6px 2px;
+  color: var(--van-text-color-3);
+  opacity: 1;
+}
+
+.image-grid {
+  display: grid;
+  gap: 4px;
+}
+
+.image-grid-1 {
+  grid-template-columns: 1fr;
+}
+
+.image-grid-1 .comment-image {
+  max-width: 200px;
+  aspect-ratio: auto;
+  max-height: 240px;
+}
+
+.image-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 200px;
+}
+
+.image-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 240px;
+}
+
+.comment-image {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
 .loading-state {
   flex: 1;
   min-height: 0;
@@ -498,6 +677,53 @@ watch(mediaId, (id, prev) => {
   border-top: 1px solid var(--van-border-color);
   padding: 6px 12px;
   padding-bottom: calc(6px + env(safe-area-inset-bottom));
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.photo-upload {
+  flex-shrink: 0;
+}
+
+.input-field {
+  flex: 1;
+  padding: 0;
+}
+
+.pending-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding-bottom: 8px;
+}
+
+.pending-thumb {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+
+.pending-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.pending-remove {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 12px;
+  padding: 2px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 50%;
 }
 
 .progress-form {
