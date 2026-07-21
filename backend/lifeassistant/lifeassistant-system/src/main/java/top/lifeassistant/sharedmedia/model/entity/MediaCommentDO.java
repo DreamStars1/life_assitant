@@ -29,8 +29,12 @@ public class MediaCommentDO implements Serializable {
     /** 评论人用户 ID */
     private String userId;
 
-    /** 评论内容 */
+    /** 评论内容（纯图消息可空） */
     private String content;
+
+    /** 图片相对路径 JSON 数组文本，如 ["/uploads/media-comments/a.jpg"] */
+    @TableField("image_urls")
+    private String imageUrls;
 
     /** 创建时间 */
     @TableField("created_at")
