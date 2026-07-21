@@ -309,7 +309,13 @@ function goBack() {
 }
 
 function goTimeline() {
-  router.push(`/share/media/${mediaId.value}/timeline`)
+  const id = mediaId.value
+  if (!id) {
+    showToast('记录未加载')
+    return
+  }
+  // ponytail: 不能用 /share/media/:id/timeline —— 父页无 router-view
+  router.push(`/share/media-timeline/${id}`)
 }
 
 onMounted(() => {
@@ -324,13 +330,17 @@ watch(mediaId, (id, prev) => {
 
 <template>
   <div class="media-detail-page">
-    <van-nav-bar
-      :title="media?.title || '加载中...'"
-      left-arrow
-      @click-left="goBack"
-    >
+    <van-nav-bar :title="media?.title || '加载中...'">
+      <template #left>
+        <div class="nav-side nav-side-left">
+          <van-icon name="arrow-left" size="18" class="nav-back" @click="goBack" />
+        </div>
+      </template>
       <template #right>
-        <van-icon name="notes-o" size="20" @click="openProgressUpdate" />
+        <div class="nav-side nav-side-right">
+          <span class="nav-action-btn" role="button" @click="goTimeline">时间轴</span>
+          <van-icon name="notes-o" size="20" @click="openProgressUpdate" />
+        </div>
       </template>
     </van-nav-bar>
 
@@ -363,13 +373,6 @@ watch(mediaId, (id, prev) => {
         </div>
       </div>
     </div>
-
-    <van-cell
-      v-if="media"
-      title="进度时间轴"
-      is-link
-      @click="goTimeline"
-    />
 
     <!-- Chat Messages -->
     <div v-if="!loading" ref="chatContainer" class="chat-container">
@@ -448,9 +451,16 @@ watch(mediaId, (id, prev) => {
           accept="image/*"
           :before-read="beforeReadImage"
           :disabled="sending || loading"
-          class="photo-upload"
+          class="image-uploader"
         >
-          <van-icon name="photo-o" size="22" color="var(--van-gray-6)" />
+          <button
+            type="button"
+            class="image-btn"
+            :disabled="sending || loading"
+            aria-label="选择图片"
+          >
+            <van-icon name="photo-o" size="22" />
+          </button>
         </van-uploader>
         <van-field
           v-model="messageText"
@@ -515,6 +525,50 @@ watch(mediaId, (id, prev) => {
   min-height: 100dvh;
   margin-bottom: -16px;
   background: var(--van-background);
+}
+
+/* 左右等宽，标题视觉居中；右侧「时间轴」不再把标题挤偏 */
+.nav-side {
+  display: flex;
+  align-items: center;
+  min-width: 88px;
+  box-sizing: border-box;
+}
+
+.nav-side-left {
+  justify-content: flex-start;
+}
+
+.nav-side-right {
+  justify-content: flex-end;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.nav-back {
+  padding: 4px;
+  color: var(--van-nav-bar-icon-color, var(--van-text-color));
+}
+
+.nav-action-btn {
+  font-size: 14px;
+  color: var(--van-primary-color);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:deep(.van-nav-bar__left),
+:deep(.van-nav-bar__right) {
+  position: relative;
+  z-index: 2;
+}
+
+:deep(.van-nav-bar__title) {
+  max-width: 50%;
 }
 
 .progress-bar {
@@ -692,8 +746,34 @@ watch(mediaId, (id, prev) => {
   gap: 8px;
 }
 
-.photo-upload {
+.image-uploader {
   flex-shrink: 0;
+}
+
+.image-uploader :deep(.van-uploader__wrapper),
+.image-uploader :deep(.van-uploader__input-wrapper) {
+  display: block;
+}
+
+.image-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--van-border-color);
+  border-radius: 8px;
+  background: var(--van-background-2);
+  color: var(--van-text-color-2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.image-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .input-field {
