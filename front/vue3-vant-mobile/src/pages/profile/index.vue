@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import doctorAvatar from '@/assets/health/doctor-avatar.svg'
 import router from '@/router'
 import { useUserStore } from '@/stores'
 import request from '@/utils/request'
@@ -74,12 +75,43 @@ function login() {
         </template>
       </van-cell>
     </VanCellGroup>
+
+    <div v-if="isLogin" class="health-fab" @click="router.push({ name: 'Health' })">
+      <img class="health-fab__avatar" :src="doctorAvatar" alt="">
+      <span class="health-fab__label">健康管家</span>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .icon {
   margin-right: 6px;
+}
+
+.health-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 80px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.health-fab__avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  box-shadow: 0 6px 16px rgba(32, 53, 39, 0.18);
+  background: #dceaa3;
+}
+
+.health-fab__label {
+  font-size: 11px;
+  color: #315d43;
+  font-weight: 600;
 }
 </style>
 
