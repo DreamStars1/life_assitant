@@ -82,23 +82,41 @@ public class HealthService {
             row.setId(UUID.randomUUID().toString());
             row.setUserId(userId);
             row.setCreatedAt(now);
-            applyProfileFields(row, req);
+            applyProfileFields(row, req, true);
             row.setUpdatedAt(now);
             profileMapper.insert(row);
         } else {
-            applyProfileFields(row, req);
+            applyProfileFields(row, req, false);
             row.setUpdatedAt(now);
             profileMapper.updateById(row);
         }
         return HealthProfileResp.from(row);
     }
 
-    private static void applyProfileFields(HealthProfileDO row, HealthProfileUpsertReq req) {
-        row.setDisplayName(req.getDisplayName());
-        row.setMotto(req.getMotto());
-        row.setHeightCm(req.getHeightCm());
-        row.setTargetKg(req.getTargetKg());
-        row.setRestingKcal(req.getRestingKcal());
+    private static void applyProfileFields(HealthProfileDO row, HealthProfileUpsertReq req, boolean isNew) {
+        if (isNew) {
+            row.setDisplayName(req.getDisplayName());
+            row.setMotto(req.getMotto());
+            row.setHeightCm(req.getHeightCm());
+            row.setTargetKg(req.getTargetKg());
+            row.setRestingKcal(req.getRestingKcal());
+            return;
+        }
+        if (req.getDisplayName() != null) {
+            row.setDisplayName(req.getDisplayName());
+        }
+        if (req.getMotto() != null) {
+            row.setMotto(req.getMotto());
+        }
+        if (req.getHeightCm() != null) {
+            row.setHeightCm(req.getHeightCm());
+        }
+        if (req.isTargetKgPresent()) {
+            row.setTargetKg(req.getTargetKg());
+        }
+        if (req.getRestingKcal() != null) {
+            row.setRestingKcal(req.getRestingKcal());
+        }
     }
 
     public List<HealthMealResp> listMeals(String userId, LocalDate date) {
@@ -170,10 +188,25 @@ public class HealthService {
             row.setDailyDate(req.getDate());
             row.setCreatedAt(now);
         }
-        row.setStomachStatus(req.getStomachStatus());
-        row.setStomachNote(req.getStomachNote());
-        row.setCyclePhase(req.getCyclePhase());
-        row.setCycleDay(req.getCycleDay());
+        if (isNew) {
+            row.setStomachStatus(req.getStomachStatus());
+            row.setStomachNote(req.getStomachNote());
+            row.setCyclePhase(req.getCyclePhase());
+            row.setCycleDay(req.getCycleDay());
+        } else {
+            if (req.getStomachStatus() != null) {
+                row.setStomachStatus(req.getStomachStatus());
+            }
+            if (req.getStomachNote() != null) {
+                row.setStomachNote(req.getStomachNote());
+            }
+            if (req.getCyclePhase() != null) {
+                row.setCyclePhase(req.getCyclePhase());
+            }
+            if (req.getCycleDay() != null) {
+                row.setCycleDay(req.getCycleDay());
+            }
+        }
         row.setUpdatedAt(now);
         if (isNew) {
             dailyMapper.insert(row);
@@ -394,7 +427,7 @@ public class HealthService {
             .eq(HealthWeightDO::getStandard, true)
             .ge(HealthWeightDO::getWeightDate, sevenDaysAgo)
             .le(HealthWeightDO::getWeightDate, today));
-        BigDecimal avg7MorningKg = averageKg(standardMorning);
+        BigDecimal avg7MorningKg = averageDailyMorningKg(standardMorning);
 
         BigDecimal gapToTargetKg = null;
         if (latestMorningKg != null && targetKg != null) {
@@ -417,14 +450,26 @@ public class HealthService {
             .build();
     }
 
-    private static BigDecimal averageKg(List<HealthWeightDO> rows) {
+    private static BigDecimal averageDailyMorningKg(List<HealthWeightDO> rows) {
         if (rows.isEmpty()) {
             return null;
         }
-        BigDecimal sum = rows.stream()
+        Map<LocalDate, HealthWeightDO> latestPerDay = new HashMap<>();
+        for (HealthWeightDO row : rows) {
+            latestPerDay.merge(row.getWeightDate(), row, (a, b) -> {
+                if (a.getCreatedAt() == null) {
+                    return b;
+                }
+                if (b.getCreatedAt() == null) {
+                    return a;
+                }
+                return a.getCreatedAt().isAfter(b.getCreatedAt()) ? a : b;
+            });
+        }
+        BigDecimal sum = latestPerDay.values().stream()
             .map(HealthWeightDO::getKg)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-        return sum.divide(BigDecimal.valueOf(rows.size()), 2, RoundingMode.HALF_UP);
+        return sum.divide(BigDecimal.valueOf(latestPerDay.size()), 2, RoundingMode.HALF_UP);
     }
 
     private static BigDecimal averageDailyProtein(List<HealthMealDO> meals) {
