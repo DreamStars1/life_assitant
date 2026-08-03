@@ -20,7 +20,8 @@
     "Undefined": "Undefined title",
     "PartnerDashboard": "Dashboard",
     "PartnerDashboardPoints": "Points",
-    "PartnerDashboardSleep": "Sleep Check-in"
+    "PartnerDashboardSleep": "Sleep Check-in",
+    "Health": "Health"
   },
 
   "tabbar": {

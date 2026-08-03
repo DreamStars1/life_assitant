@@ -22,7 +22,8 @@
     "Undefined": "未定义标题",
     "PartnerDashboard": "看板",
     "PartnerDashboardPoints": "积分详情",
-    "PartnerDashboardSleep": "作息打卡"
+    "PartnerDashboardSleep": "作息打卡",
+    "Health": "健康管家"
   },
 
   "tabbar": {
