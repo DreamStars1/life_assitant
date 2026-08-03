@@ -350,11 +350,13 @@ function openWeight(): void {
   showWeightDialog.value = true
 }
 
-async function onWeight(): Promise<void> {
+async function onWeightBeforeClose(action: string): Promise<boolean> {
+  if (action !== 'confirm')
+    return true
   const kgVal = Number(weightForm.kg)
   if (!weightForm.kg || Number.isNaN(kgVal)) {
     showToast('请输入体重')
-    return
+    return false
   }
   try {
     await createHealthWeight({
@@ -363,11 +365,13 @@ async function onWeight(): Promise<void> {
       kg: kgVal,
       standard: weightForm.weightType === '晨重',
     })
-    showWeightDialog.value = false
     showToast('已保存')
     await Promise.all([loadWeights(), loadSummary()])
+    return true
   }
-  catch { /* notify handled by interceptor */ }
+  catch {
+    return false
+  }
 }
 
 async function onWeightDelete(id: string): Promise<void> {
@@ -729,7 +733,7 @@ onMounted(() => {
             <span class="meal-body">
               <strong>{{ m.type }}</strong>
               <small>{{ mealRow(m.type)?.food || '点击记录' }}</small>
-              <small v-if="mealRow(m.type) && mealRow(m.type)?.proteinG != null">蛋白 {{ mealRow(m.type)?.proteinG }} g</small>
+              <small v-if="mealRow(m.type)">{{ mealRow(m.type)?.proteinG != null ? `蛋白 ${mealRow(m.type)?.proteinG} g` : '蛋白：待填' }}</small>
               <small v-if="mealRow(m.type)">{{ mealRow(m.type)?.feedback ? `反馈：${mealRow(m.type)?.feedback}` : '反馈：待补充' }}</small>
             </span>
             <span class="state">{{ mealRow(m.type) ? (mealRow(m.type)?.feedback ? '已记录' : '待反馈') : '待记录' }} ›</span>
@@ -1014,7 +1018,12 @@ onMounted(() => {
     </van-dialog>
 
     <!-- ===== Weight form ===== -->
-    <van-dialog v-model:show="showWeightDialog" title="记体重" show-cancel-button @confirm="onWeight">
+    <van-dialog
+      v-model:show="showWeightDialog"
+      :title="`记体重 · ${dateShort(selectedDate)}`"
+      show-cancel-button
+      :before-close="onWeightBeforeClose"
+    >
       <div class="dialog-form">
         <van-field
           :model-value="weightForm.weightType"
