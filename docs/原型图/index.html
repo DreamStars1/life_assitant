@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>小满 · AI健康管家</title>
+  <style>
+    :root { --ink:#243126; --muted:#7a877d; --line:#e5e9e3; --paper:#fcfdf9; --green:#315d43; --lime:#cfe681; --soft:#edf4ea; --shadow:0 10px 35px rgba(32,53,39,.08); }
+    *{box-sizing:border-box}
+    body{margin:0;background:#f0f3ed;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+    .phone{max-width:460px;min-height:100vh;margin:auto;background:var(--paper);position:relative;padding:20px 18px 96px}
+    .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .home-top{justify-content:flex-start;gap:13px}
+    .brand{font-weight:750;font-size:20px}
+    .brand b{display:inline-grid;place-items:center;width:26px;height:26px;background:var(--lime);border-radius:9px;margin-right:7px;font-size:15px}
+    .back{border:1px solid #dce5d6;background:#fff;color:#315d43;border-radius:18px;padding:8px 12px;font-size:13px}
+    .today{background:linear-gradient(135deg,#355f45,#1e4330);color:#fff;padding:18px;border-radius:22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+    .today:after{content:"";width:115px;height:115px;border:1px solid rgba(255,255,255,.18);border-radius:50%;position:absolute;right:-35px;top:-55px}
+    .today .date{font-size:12px;color:#c8d9ca;margin-bottom:13px}
+    .metrics{display:flex;gap:12px}
+    .metric{flex:1;min-width:0}
+    .metric span{display:block;color:#cad8cc;font-size:11px;margin-bottom:4px}
+    .metric strong{font-size:17px}
+    .metric em{font-style:normal;font-size:11px;color:#d9e9a3}
+    .gap-btn{display:block;border:0;background:transparent;padding:0;margin-top:2px;font-style:normal;font-size:11px;color:#d9e9a3;cursor:pointer;text-align:left}
+    .metric-btn{border:0;background:transparent;padding:0;text-align:left;color:inherit;cursor:pointer;flex:1;min-width:0}
+    .today-records{padding:16px 0 8px}
+    .today-records-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin:0 2px 10px}
+    .today-records-head .date-switch{justify-self:center}
+    .today-records-head .add-btn{justify-self:end}
+    .date-switch{display:flex;align-items:center;gap:10px}
+    .date-switch button,.pager button,.icon-btn{border:0;background:transparent;color:var(--green);font-size:20px;line-height:1;padding:2px 4px;cursor:pointer}
+    .date-switch .chosen-date{font-size:14px;font-weight:700;min-width:84px;text-align:center}
+    .calendar-input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+    .meal-list{display:grid;gap:8px}
+    .meal-card{border:1px solid #dce5d6;background:#fff;border-radius:15px;padding:12px 13px;text-align:left;color:var(--ink);display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;width:100%;cursor:pointer}
+    .meal-card.done{background:#f4f8ec;border-color:#d7e5c5}
+    .meal-card .meal-icon{font-size:20px}
+    .meal-card strong{font-size:13px}
+    .meal-card small{display:block;margin-top:3px;color:var(--muted);font-size:11px}
+    .meal-card .state{font-size:11px;color:#6b8572}
+    .section-head{display:flex;justify-content:space-between;align-items:center;margin:12px 2px;gap:8px}
+    .section-head h2{font-size:16px;margin:0}
+    .section-actions{display:flex;align-items:center;gap:4px}
+    .add-btn{border:0;background:var(--green);color:#fff;border-radius:12px;padding:5px 10px;font-size:12px;cursor:pointer}
+    .pager{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+    .pager span{min-width:42px;text-align:center}
+    .pager button:disabled{opacity:.3;cursor:default}
+    .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(460px,100%);height:68px;background:rgba(252,253,249,.96);border-top:1px solid var(--line);display:flex;justify-content:space-around;z-index:4}
+    .nav button{border:0;background:transparent;color:#879287;font-size:11px;min-width:75px;padding:8px 0 5px;cursor:pointer}
+    .nav i{font-style:normal;display:block;font-size:20px;line-height:25px}
+    .nav .active{color:var(--green);font-weight:700}
+    .page{display:none}.page.active{display:block}
+    .profile-card,.trend-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:17px;margin-bottom:13px}
+    .person{display:flex;gap:12px;align-items:center}
+    .person .big-avatar{width:47px;height:47px;border-radius:16px;background:#dceaa3;display:grid;place-items:center;font-size:24px}
+    .person h2{margin:0;font-size:18px}
+    .person p{margin:4px 0 0;color:var(--muted);font-size:12px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);margin-top:15px;padding-top:14px}
+    .stats div{font-size:12px;color:var(--muted)}
+    .stats b{display:block;font-size:16px;color:var(--ink);margin-top:4px}
+    .memory{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #edf0ec;font-size:13px}
+    .memory:last-child{border:0}
+    .memory b{color:var(--green);min-width:22px}
+    .tag{display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:5px 8px;background:var(--soft);color:#54725c;font-size:12px;margin:5px 4px 0 0}
+    .tag .x{border:0;background:transparent;color:#9aa49b;cursor:pointer;padding:0;font-size:12px}
+    .chart{height:160px;position:relative;border-bottom:1px solid #dce4d8;border-left:1px solid #dce4d8;margin:19px 8px 8px 18px}
+    .chart svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+    .axis{position:absolute;left:-32px;font-size:10px;color:#9aa49b}
+    .axis.a1{top:-5px}.axis.a2{top:66px}.axis.a3{bottom:-6px}
+    .days{display:flex;justify-content:space-between;font-size:10px;color:#9aa49b;margin:0 8px 0 18px}
+    .pill-tabs{display:flex;gap:7px}
+    .pill-tabs button{border:0;border-radius:15px;padding:6px 10px;background:#edf2eb;color:#6d796f;font-size:11px;cursor:pointer}
+    .pill-tabs .on{background:var(--green);color:#fff}
+    .trend-highlight{font-size:24px;margin:4px 0;color:var(--green)}
+    .trend-note{color:var(--muted);font-size:12px}
+    .risk{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center;padding:10px 0;border-bottom:1px solid #edf0ec;font-size:13px}
+    .risk:last-child{border:0}
+    .risk small{color:var(--muted)}
+    .stars{color:#d48c4c;letter-spacing:1px}
+    .empty{color:var(--muted);font-size:12px;text-align:center;padding:16px 0}
+    @media(min-width:600px){.phone{box-shadow:0 0 0 1px #e1e6dd,0 20px 50px rgba(39,62,46,.12)}}
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <section class="page active" id="chat-page">
+      <div class="top home-top">
+        <button class="back" id="back-button">← 返回</button>
+        <div class="brand"><b>满</b>小满 · 健康管家</div>
+      </div>
+      <section class="today">
+        <div class="date" id="today-date-label">7月28日 · 星期二</div>
+        <div class="metrics">
+          <div class="metric"><span>晨重</span><strong id="today-weight">61.9 kg</strong><button class="gap-btn" id="today-gap" type="button">距目标 4.9 kg</button></div>
+          <button class="metric metric-btn" id="edit-stomach" type="button"><span>胃状态</span><strong id="stomach-status">正常</strong><em id="stomach-note">无反流</em></button>
+          <button class="metric metric-btn" id="edit-cycle" type="button"><span>周期</span><strong id="cycle-phase">卵泡期</strong><em id="cycle-day">第 7 天</em></button>
+        </div>
+      </section>
+      <div class="today-records">
+        <div class="today-records-head">
+          <span></span>
+          <div class="date-switch">
+            <button id="previous-day" aria-label="前一天">‹</button>
+            <button class="chosen-date" id="chosen-date">今天</button>
+            <button id="next-day" aria-label="后一天">›</button>
+            <input class="calendar-input" type="date" id="calendar-input" />
+          </div>
+          <button class="add-btn" id="add-meal-today">记饮食</button>
+        </div>
+        <div class="meal-list" id="today-meals"></div>
+      </div>
+    </section>
+
+    <section class="page" id="profile-page">
+      <div class="top"><div class="brand"><b>满</b>身体档案</div><button class="add-btn" id="edit-profile">编辑</button></div>
+      <div class="profile-card">
+        <div class="person">
+          <div class="big-avatar">🌿</div>
+          <div><h2 id="profile-name">小满</h2><p id="profile-motto">慢慢来，身体会给你反馈</p></div>
+        </div>
+        <div class="stats">
+          <div>身高<b id="stat-height">175.5 cm</b></div>
+          <div>目标体重<b id="stat-target">57 kg</b></div>
+          <div>静息代谢<b id="stat-kcal">1584 kcal</b></div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>个人健康规律</h2>
+        <div class="section-actions">
+          <div class="pager" id="memory-pager"></div>
+          <button class="add-btn" id="add-memory">添加</button>
+        </div>
+      </div>
+      <div class="profile-card" id="memory-list"></div>
+
+      <div class="section-head">
+        <h2>常见耐受</h2>
+        <div class="section-actions">
+          <div class="pager" id="tolerance-pager"></div>
+          <button class="add-btn" id="add-tolerance">添加</button>
+        </div>
+      </div>
+      <div class="profile-card" id="tolerance-list"></div>
+
+      <div class="section-head">
+        <h2>胃部触发因素</h2>
+        <div class="section-actions">
+          <div class="pager" id="trigger-pager"></div>
+          <button class="add-btn" id="add-trigger">添加</button>
+        </div>
+      </div>
+      <div class="profile-card" id="trigger-list"></div>
+    </section>
+
+    <section class="page" id="trend-page">
+      <div class="top"><div class="brand"><b>满</b>数据趋势</div><button class="add-btn" id="add-weight">记体重</button></div>
+      <div class="trend-card">
+        <div class="section-head" style="margin-top:0">
+          <h2>体重趋势</h2>
+          <div class="pill-tabs">
+            <button class="on" data-weight-filter="morning">晨重</button>
+            <button data-weight-filter="evening">晚重</button>
+            <button data-weight-filter="all">全部</button>
+          </div>
+        </div>
+        <div class="trend-highlight" id="trend-weight">61.9 kg</div>
+        <div class="trend-note" id="trend-note">7日平均 61.7 kg · 距目标 4.9 kg</div>
+        <div class="chart">
+          <span class="axis a1">62.2</span><span class="axis a2">61.7</span><span class="axis a3">61.2</span>
+          <svg viewBox="0 0 300 150" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="days"></div>
+      </div>
+      <div class="trend-card">
+        <div class="section-head" style="margin-top:0"><h2>体重明细</h2><span id="weight-count"></span></div>
+        <div id="weight-list"></div>
+      </div>
+      <div class="trend-card">
+        <div class="section-head" style="margin-top:0"><h2>近30天饮食</h2></div>
+        <div class="stats" style="border-top:0;margin-top:0;padding-top:0">
+          <div>平均摄入<b>1450 kcal</b></div>
+          <div>日均蛋白<b id="avg-protein">—</b></div>
+          <div>最舒适<b>午餐</b></div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="nav">
+      <button class="active" data-page="chat-page"><i>◉</i>今日情况</button>
+      <button data-page="profile-page"><i>♙</i>身体档案</button>
+      <button data-page="trend-page"><i>⌁</i>趋势</button>
+    </nav>
+  </main>
+
+  <script>
+    const KEY = 'xiaoman-health-data-v2';
+    const todayStr = () => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    const APP_DATE = todayStr();
+    const PAGE = { memory: 5, tolerance: 4, trigger: 3 };
+    const MAX_MEMORY = 100;
+    let selectedDate = APP_DATE;
+    let pageState = { memory: 1, tolerance: 1, trigger: 1 };
+    let weightFilter = 'morning';
+
+    const seed = {
+      profile: { name: '小满', heightCm: 175.5, targetKg: 57, restingKcal: 1584 },
+      meals: [
+        { date: APP_DATE, mealType: '早餐', food: '鸡蛋 1 个', proteinG: 7, feedback: '' },
+        { date: '2026-07-25', mealType: '午餐', food: '一荤两素', proteinG: 35, feedback: '耐受' }
+      ],
+      stomach: [
+        { date: APP_DATE, status: '正常', note: '无反流' }
+      ],
+      cycle: [
+        { date: APP_DATE, phase: '卵泡期', day: 7 }
+      ],
+      memories: [
+        { title: '体重稳定型', detail: '长期停留在 61–62 kg' },
+        { title: '早餐容量较小', detail: '鸡蛋 2 个最舒适' },
+        { title: '午餐耐受最好', detail: '无需缩减午餐补偿热量' },
+        { title: '晚餐对油脂敏感', detail: '高脂加久坐反流风险升高' },
+        { title: '低摄入防反弹', detail: '不建议长期低于 1300 kcal' },
+        { title: '舞蹈依从性好', detail: '单次约 1 小时，每周 2–3 次' }
+      ],
+      tolerances: [
+        { name: '鸡蛋', level: '舒适' },
+        { name: '鱼肉', level: '低风险' },
+        { name: '晚间油炸', level: '高风险' },
+        { name: '睡前水果', level: '谨慎' },
+        { name: '苏打饼干', level: '谨慎' }
+      ],
+      triggers: [
+        { name: '晚餐油炸', note: '晚间 + 久坐', stars: 5 },
+        { name: '睡前水果', note: '小份量可接受', stars: 3 },
+        { name: '鸡蛋 / 鱼肉', note: '低风险', stars: 1 },
+        { name: '临睡大份量', note: '易顶胀', stars: 4 }
+      ],
+      weights: [
+        { date: '2026-07-20', time: '21:00', kg: 62.1, type: '晚重', standard: false },
+        { date: '2026-07-21', time: '21:00', kg: 61.9, type: '晚重', standard: false },
+        { date: '2026-07-22', time: '晨起', kg: 61.4, type: '晨重', standard: true },
+        { date: '2026-07-22', time: '晚上', kg: 62.1, type: '晚重', standard: false },
+        { date: '2026-07-23', time: '晨起', kg: 61.4, type: '晨重', standard: true },
+        { date: '2026-07-23', time: '晚上', kg: 61.9, type: '晚重', standard: false },
+        { date: '2026-07-24', time: '晨起', kg: 61.2, type: '晨重', standard: true },
+        { date: '2026-07-25', time: '晚上', kg: 61.9, type: '晚重', standard: false },
+        { date: APP_DATE, time: '晨起', kg: 61.9, type: '晨重', standard: true }
+      ]
+    };
+
+    const stored = JSON.parse(localStorage.getItem(KEY) || 'null');
+    let data = stored ? {
+      profile: { ...seed.profile, ...stored.profile },
+      meals: stored.meals || seed.meals,
+      stomach: stored.stomach || seed.stomach || [],
+      cycle: stored.cycle || seed.cycle || [],
+      memories: stored.memories || seed.memories,
+      tolerances: stored.tolerances || seed.tolerances,
+      triggers: stored.triggers || seed.triggers,
+      weights: stored.weights || seed.weights
+    } : JSON.parse(JSON.stringify(seed));
+
+    const save = () => localStorage.setItem(KEY, JSON.stringify(data));
+    const kg = (v) => Number(v).toFixed(1);
+    const starText = (n) => '★'.repeat(Math.max(1, Math.min(5, n || 1)));
+
+    function dateText(value) {
+      const d = new Date(value + 'T12:00:00');
+      const weeks = ['日', '一', '二', '三', '四', '五', '六'];
+      return `${d.getMonth() + 1}月${d.getDate()}日 · 星期${weeks[d.getDay()]}`;
+    }
+
+    function shiftDate(offset) {
+      const d = new Date(selectedDate + 'T12:00:00');
+      d.setDate(d.getDate() + offset);
+      selectedDate = d.toISOString().slice(0, 10);
+      refresh();
+    }
+
+    function pageSlice(list, key) {
+      const size = PAGE[key];
+      const totalPages = Math.max(1, Math.ceil(list.length / size));
+      if (pageState[key] > totalPages) pageState[key] = totalPages;
+      const start = (pageState[key] - 1) * size;
+      return { items: list.slice(start, start + size), totalPages, page: pageState[key], total: list.length };
+    }
+
+    function renderPager(el, key, totalPages, page) {
+      el.innerHTML = `
+        <button data-pager="${key}" data-dir="-1" ${page <= 1 ? 'disabled' : ''}>‹</button>
+        <span>${page}/${totalPages}</span>
+        <button data-pager="${key}" data-dir="1" ${page >= totalPages ? 'disabled' : ''}>›</button>`;
+      el.querySelectorAll('button').forEach((btn) => {
+        btn.onclick = () => {
+          pageState[key] += Number(btn.dataset.dir);
+          refreshProfileLists();
+        };
+      });
+    }
+
+    function renderProfile() {
+      document.querySelector('#profile-name').textContent = data.profile.name;
+      document.querySelector('#stat-height').textContent = data.profile.heightCm + ' cm';
+      document.querySelector('#stat-target').textContent = (data.profile.targetKg == null || data.profile.targetKg === '') ? '待设置' : (data.profile.targetKg + ' kg');
+      document.querySelector('#stat-kcal').textContent = data.profile.restingKcal + ' kcal';
+      refreshProfileLists();
+    }
+
+    function refreshProfileLists() {
+      const mem = pageSlice(data.memories, 'memory');
+      renderPager(document.querySelector('#memory-pager'), 'memory', mem.totalPages, mem.page);
+      document.querySelector('#memory-list').innerHTML = mem.items.length
+        ? mem.items.map((m, i) => {
+            const idx = (mem.page - 1) * PAGE.memory + i + 1;
+            return `<div class="memory"><b>${String(idx).padStart(2, '0')}</b><span><strong>${m.title}</strong><br>${m.detail || ''}</span></div>`;
+          }).join('')
+        : '<div class="empty">暂无规律，点击添加</div>';
+
+      const tol = pageSlice(data.tolerances, 'tolerance');
+      renderPager(document.querySelector('#tolerance-pager'), 'tolerance', tol.totalPages, tol.page);
+      document.querySelector('#tolerance-list').innerHTML = tol.items.length
+        ? tol.items.map((t) => `<span class="tag">${t.name} · ${t.level}</span>`).join('')
+        : '<div class="empty">暂无耐受记录</div>';
+
+      const trig = pageSlice(data.triggers, 'trigger');
+      renderPager(document.querySelector('#trigger-pager'), 'trigger', trig.totalPages, trig.page);
+      document.querySelector('#trigger-list').innerHTML = trig.items.length
+        ? trig.items.map((t) => `<div class="risk"><span>${t.name}<br><small>${t.note || ''}</small></span><b class="stars" style="${t.stars <= 1 ? 'color:#7fa46d' : ''}">${starText(t.stars)}</b></div>`).join('')
+        : '<div class="empty">暂无触发因素</div>';
+    }
+
+    function renderToday() {
+      const picker = document.querySelector('#calendar-input');
+      const weight = data.weights.filter((x) => x.date === selectedDate && x.type.includes('晨')).at(-1);
+      picker.value = selectedDate;
+      document.querySelector('#chosen-date').textContent = dateText(selectedDate).replace(/ · 星期.*/, '');
+      document.querySelector('#today-date-label').textContent = dateText(selectedDate);
+      document.querySelector('#today-weight').textContent = weight ? kg(weight.kg) + ' kg' : '—';
+      const target = data.profile.targetKg;
+      const gapEl = document.querySelector('#today-gap');
+      if (target == null || target === '') {
+        gapEl.textContent = '待设置';
+      } else if (weight) {
+        gapEl.textContent = '距目标 ' + kg(weight.kg - Number(target)) + ' kg';
+      } else {
+        gapEl.textContent = '目标 ' + kg(target) + ' kg';
+      }
+
+      const stomach = data.stomach.find((x) => x.date === selectedDate);
+      document.querySelector('#stomach-status').textContent = stomach?.status || '未记录';
+      document.querySelector('#stomach-note').textContent = stomach?.note || '点击记录';
+
+      const cycle = data.cycle.find((x) => x.date === selectedDate);
+      document.querySelector('#cycle-phase').textContent = cycle?.phase || '未记录';
+      document.querySelector('#cycle-day').textContent = cycle ? ('第 ' + cycle.day + ' 天') : '点击记录';
+
+      const meals = [['早餐', '🥚'], ['午餐', '🍱'], ['晚餐', '🥣']];
+      document.querySelector('#today-meals').innerHTML = meals.map(([meal, icon]) => {
+        const row = data.meals.find((x) => x.date === selectedDate && x.mealType === meal);
+        const status = row ? (row.feedback ? '已记录' : '待反馈') : '待记录';
+        const food = row?.food || '点击记录';
+        const protein = row && row.proteinG != null ? `蛋白 ${row.proteinG} g` : (row ? '蛋白：待填' : '');
+        const fb = row ? (row.feedback ? '反馈：' + row.feedback : '反馈：待补充') : '';
+        return `<button class="meal-card ${row ? 'done' : ''}" data-meal="${meal}">
+          <span class="meal-icon">${icon}</span>
+          <span><strong>${meal}</strong><small>${food}</small>${protein ? `<small>${protein}</small>` : ''}${fb ? `<small>${fb}</small>` : ''}</span>
+          <span class="state">${status} ›</span>
+        </button>`;
+      }).join('');
+
+      document.querySelectorAll('#today-meals [data-meal]').forEach((btn) => {
+        btn.onclick = () => editMeal(btn.dataset.meal);
+      });
+    }
+
+    function askProtein(defaultVal) {
+      const raw = prompt('蛋白质 g（可空）', defaultVal == null ? '' : String(defaultVal));
+      if (raw == null) return undefined;
+      if (!String(raw).trim()) return null;
+      const n = Number(raw);
+      return Number.isNaN(n) ? undefined : n;
+    }
+
+    function editMeal(meal) {
+      const row = data.meals.find((x) => x.date === selectedDate && x.mealType === meal);
+      if (!row) {
+        const food = prompt(`记录${meal}吃了什么：`);
+        if (!food?.trim()) return;
+        const proteinG = askProtein(null);
+        if (proteinG === undefined) return;
+        data.meals.push({ date: selectedDate, mealType: meal, food: food.trim(), proteinG, feedback: '' });
+      } else if (row.proteinG == null) {
+        const proteinG = askProtein(null);
+        if (proteinG === undefined) return;
+        row.proteinG = proteinG;
+      } else if (!row.feedback) {
+        const fb = prompt(`记录${meal}后的感受：`);
+        if (!fb?.trim()) return;
+        row.feedback = fb.trim();
+      } else {
+        const food = prompt(`修改${meal}内容：`, row.food);
+        if (food == null) return;
+        if (!food.trim()) {
+          data.meals = data.meals.filter((x) => !(x.date === selectedDate && x.mealType === meal));
+        } else {
+          row.food = food.trim();
+          const proteinG = askProtein(row.proteinG);
+          if (proteinG !== undefined) row.proteinG = proteinG;
+          const fb = prompt(`修改反馈（可空）：`, row.feedback);
+          if (fb != null) row.feedback = fb.trim();
+        }
+      }
+      save();
+      refresh();
+    }
+
+    function promptWeight() {
+      const type = prompt('类型：晨重 / 晚重', '晨重');
+      if (!type?.trim()) return;
+      const value = prompt('体重（kg）');
+      if (!value || Number.isNaN(Number(value))) return;
+      data.weights.push({
+        date: selectedDate,
+        time: type.includes('晨') ? '晨起' : '晚上',
+        kg: Number(value),
+        type: type.includes('晚') ? '晚重' : '晨重',
+        standard: type.includes('晨')
+      });
+      save();
+      refresh();
+    }
+
+    function filteredWeights() {
+      return [...data.weights]
+        .filter((x) => weightFilter === 'all' || (weightFilter === 'morning' ? x.type.includes('晨') : x.type.includes('晚')))
+        .sort((a, b) => a.date.localeCompare(b.date) || String(a.time).localeCompare(String(b.time)));
+    }
+
+    function renderWeightChart() {
+      const rows = filteredWeights();
+      const svg = document.querySelector('.chart svg');
+      const days = document.querySelector('.chart + .days');
+      if (!rows.length) {
+        svg.innerHTML = '';
+        days.innerHTML = '<span>暂无记录</span>';
+        return;
+      }
+      const vals = rows.map((x) => x.kg);
+      const low = Math.min(...vals);
+      const high = Math.max(...vals);
+      const pad = Math.max(0.15, (high - low) * 0.25);
+      const min = low - pad;
+      const max = high + pad;
+      const span = max - min || 1;
+      const w = 300, h = 150;
+      const pts = rows.map((x, i) => ({
+        x: rows.length === 1 ? w / 2 : i * w / (rows.length - 1),
+        y: h - ((x.kg - min) / span) * h
+      }));
+      const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+      const area = `${line} L${pts.at(-1).x.toFixed(1)} ${h} L${pts[0].x.toFixed(1)} ${h} Z`;
+      svg.innerHTML = `<defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#cfe681" stop-opacity=".55"/><stop offset="1" stop-color="#cfe681" stop-opacity=".03"/></linearGradient></defs><path d="${area}" fill="url(#area)"/><path d="${line}" fill="none" stroke="#315d43" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${pts.map((p, i) => `<circle cx="${p.x}" cy="${p.y}" r="${i === pts.length - 1 ? 5 : 3.5}" fill="#fff" stroke="#315d43" stroke-width="2.5"/>`).join('')}`;
+      document.querySelector('.axis.a1').textContent = kg(max);
+      document.querySelector('.axis.a2').textContent = kg((max + min) / 2);
+      document.querySelector('.axis.a3').textContent = kg(min);
+      const labels = rows.length <= 4 ? rows : [rows[0], rows[Math.floor((rows.length - 1) / 2)], rows.at(-1)];
+      days.innerHTML = labels.map((x) => `<span>${x.date.slice(5).replace('-', '/')}<br>${x.type.includes('晚') ? '晚' : '晨'}</span>`).join('');
+    }
+
+    function renderTrend() {
+      const standard = data.weights.filter((x) => x.standard).sort((a, b) => a.date.localeCompare(b.date));
+      const last = standard.at(-1);
+      const list = standard.slice(-7);
+      const avg = list.length ? list.reduce((s, x) => s + x.kg, 0) / list.length : 0;
+      document.querySelector('#trend-weight').textContent = last ? kg(last.kg) + ' kg' : '—';
+      const t = data.profile.targetKg;
+      document.querySelector('#trend-note').textContent = last
+        ? (t == null || t === ''
+          ? `7日平均 ${kg(avg)} kg · 目标待设置`
+          : `7日平均 ${kg(avg)} kg · 距目标 ${kg(last.kg - Number(t))} kg`)
+        : '暂无标准晨重';
+      const rows = [...filteredWeights()].reverse();
+      document.querySelector('#weight-count').textContent = '共 ' + rows.length + ' 条';
+      document.querySelector('#weight-list').innerHTML = rows.length
+        ? rows.map((x) => `<div class="risk"><span>${x.date.slice(5).replace('-', '/')} · ${x.time}<br><small>${x.type}${x.standard ? ' · 趋势' : ''}</small></span><b>${kg(x.kg)} kg</b></div>`).join('')
+        : '<div class="empty">暂无记录</div>';
+
+      const cutoff = new Date(APP_DATE + 'T12:00:00');
+      cutoff.setDate(cutoff.getDate() - 29);
+      const from = cutoff.toISOString().slice(0, 10);
+      const recent = data.meals.filter((x) => x.date >= from && x.proteinG != null);
+      const byDay = {};
+      recent.forEach((x) => { byDay[x.date] = (byDay[x.date] || 0) + Number(x.proteinG); });
+      const days = Object.keys(byDay);
+      const avgP = days.length ? days.reduce((s, d) => s + byDay[d], 0) / days.length : null;
+      const avgEl = document.querySelector('#avg-protein');
+      if (avgEl) avgEl.textContent = avgP == null ? '—' : (Math.round(avgP) + ' g');
+      renderWeightChart();
+    }
+
+    function refresh() {
+      renderToday();
+      renderProfile();
+      renderTrend();
+    }
+
+    document.querySelector('#back-button').onclick = () => history.back();
+    document.querySelector('#previous-day').onclick = () => shiftDate(-1);
+    document.querySelector('#next-day').onclick = () => shiftDate(1);
+    document.querySelector('#chosen-date').onclick = () => {
+      const picker = document.querySelector('#calendar-input');
+      try { picker.showPicker(); } catch { picker.click(); }
+    };
+    document.querySelector('#calendar-input').onchange = (e) => {
+      if (e.target.value) {
+        selectedDate = e.target.value;
+        refresh();
+      }
+    };
+        document.querySelector('#today-gap').onclick = () => {
+      const cur = data.profile.targetKg;
+      const raw = prompt('目标体重 kg（清空则取消目标）', cur == null ? '' : String(cur));
+      if (raw == null) return;
+      if (!raw.trim()) {
+        data.profile.targetKg = null;
+      } else if (!Number.isNaN(Number(raw))) {
+        data.profile.targetKg = Number(raw);
+      } else {
+        return;
+      }
+      save();
+      refresh();
+    };
+    document.querySelector('#add-meal-today').onclick = () => {
+      const meal = prompt('餐次：早餐 / 午餐 / 晚餐', '早餐');
+      if (!meal?.trim()) return;
+      const name = meal.includes('晚') ? '晚餐' : meal.includes('午') ? '午餐' : '早餐';
+      editMeal(name);
+    };
+    document.querySelector('#edit-stomach').onclick = () => {
+      const cur = data.stomach.find((x) => x.date === selectedDate);
+      const status = prompt('胃状态：正常 / 不适 / 反流', cur?.status || '正常');
+      if (!status?.trim()) return;
+      const note = prompt('备注', cur?.note || '') || '';
+      if (cur) {
+        cur.status = status.trim();
+        cur.note = note.trim();
+      } else {
+        data.stomach.push({ date: selectedDate, status: status.trim(), note: note.trim() });
+      }
+      save();
+      refresh();
+    };
+    document.querySelector('#edit-cycle').onclick = () => {
+      const cur = data.cycle.find((x) => x.date === selectedDate);
+      const phase = prompt('周期阶段：月经期 / 卵泡期 / 排卵期 / 黄体期', cur?.phase || '卵泡期');
+      if (!phase?.trim()) return;
+      const dayRaw = prompt('第几天', cur?.day != null ? String(cur.day) : '1');
+      if (dayRaw == null || Number.isNaN(Number(dayRaw))) return;
+      const day = Math.max(1, Number(dayRaw));
+      if (cur) {
+        cur.phase = phase.trim();
+        cur.day = day;
+      } else {
+        data.cycle.push({ date: selectedDate, phase: phase.trim(), day });
+      }
+      save();
+      refresh();
+    };
+    document.querySelector('#add-weight').onclick = promptWeight;
+
+    document.querySelector('#edit-profile').onclick = () => {
+      const name = prompt('昵称', data.profile.name);
+      if (name == null) return;
+      const heightCm = prompt('身高 cm', data.profile.heightCm);
+      const targetKg = prompt('目标体重 kg（清空则取消）', data.profile.targetKg == null ? '' : data.profile.targetKg);
+      const restingKcal = prompt('静息代谢 kcal', data.profile.restingKcal);
+      if (name.trim()) data.profile.name = name.trim();
+      if (heightCm && !Number.isNaN(Number(heightCm))) data.profile.heightCm = Number(heightCm);
+      if (targetKg == null) { /* cancel whole edit already handled */ }
+      else if (!String(targetKg).trim()) data.profile.targetKg = null;
+      else if (!Number.isNaN(Number(targetKg))) data.profile.targetKg = Number(targetKg);
+      if (restingKcal && !Number.isNaN(Number(restingKcal))) data.profile.restingKcal = Number(restingKcal);
+      save();
+      refresh();
+    };
+
+    document.querySelector('#add-memory').onclick = () => {
+      if (data.memories.length >= MAX_MEMORY) return alert(`最多 ${MAX_MEMORY} 条`);
+      const title = prompt('规律标题');
+      if (!title?.trim()) return;
+      const detail = prompt('补充说明') || '';
+      data.memories.push({ title: title.trim(), detail: detail.trim() });
+      pageState.memory = Math.ceil(data.memories.length / PAGE.memory);
+      save();
+      refreshProfileLists();
+    };
+
+    document.querySelector('#add-tolerance').onclick = () => {
+      const name = prompt('食物 / 场景');
+      if (!name?.trim()) return;
+      const level = prompt('等级：舒适 / 低风险 / 谨慎 / 高风险', '舒适') || '舒适';
+      data.tolerances.push({ name: name.trim(), level: level.trim() });
+      pageState.tolerance = Math.ceil(data.tolerances.length / PAGE.tolerance);
+      save();
+      refreshProfileLists();
+    };
+
+    document.querySelector('#add-trigger').onclick = () => {
+      const name = prompt('触发因素');
+      if (!name?.trim()) return;
+      const note = prompt('备注') || '';
+      const stars = Number(prompt('星级 1–5', '3') || 3);
+      data.triggers.push({ name: name.trim(), note: note.trim(), stars: Math.max(1, Math.min(5, stars)) });
+      pageState.trigger = Math.ceil(data.triggers.length / PAGE.trigger);
+      save();
+      refreshProfileLists();
+    };
+
+    document.querySelectorAll('.nav button').forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelectorAll('.nav button').forEach((x) => x.classList.remove('active'));
+        document.querySelectorAll('.page').forEach((x) => x.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.page).classList.add('active');
+        window.scrollTo(0, 0);
+      };
+    });
+
+    document.querySelectorAll('[data-weight-filter]').forEach((btn) => {
+      btn.onclick = () => {
+        weightFilter = btn.dataset.weightFilter;
+        document.querySelectorAll('[data-weight-filter]').forEach((x) => x.classList.toggle('on', x === btn));
+        renderTrend();
+      };
+    });
+
+    refresh();
+    save();
+  </script>
+</body>
+</html>
