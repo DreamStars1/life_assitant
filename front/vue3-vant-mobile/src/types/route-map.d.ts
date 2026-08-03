@@ -59,6 +59,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'Health': RouteRecordInfo<
+      'Health',
+      '/health',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     'LifeLog': RouteRecordInfo<
       'LifeLog',
       '/lifelog',
@@ -115,6 +122,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'Records': RouteRecordInfo<
+      'Records',
+      '/records',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     'Settings': RouteRecordInfo<
       'Settings',
       '/settings',
@@ -132,6 +146,13 @@ declare module 'vue-router/auto-routes' {
     'MediaDetail': RouteRecordInfo<
       'MediaDetail',
       '/share/media/:id',
+      { id: ParamValue<true> },
+      { id: ParamValue<false> },
+      | 'MediaProgressTimeline'
+    >,
+    'MediaProgressTimeline': RouteRecordInfo<
+      'MediaProgressTimeline',
+      '/share/media/:id/timeline',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
       | never
@@ -183,6 +204,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/forgot-password/index.vue': {
       routes:
         | 'ForgotPassword'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/health/index.vue': {
+      routes:
+        | 'Health'
       views:
         | never
       pathParamNames:
@@ -252,6 +281,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/records/index.vue': {
+      routes:
+        | 'Records'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/settings/index.vue': {
       routes:
         | 'Settings'
@@ -271,10 +308,19 @@ declare module 'vue-router/auto-routes' {
     'src/pages/share/media/[id].vue': {
       routes:
         | 'MediaDetail'
+        | 'MediaProgressTimeline'
+      views:
+        | 'default'
+      pathParamNames:
+        | 'id'
+    }
+    'src/pages/share/media/[id]/timeline.vue': {
+      routes:
+        | 'MediaProgressTimeline'
       views:
         | never
       pathParamNames:
-        | 'id'
+        | never
     }
     'src/pages/todos/index.vue': {
       routes:

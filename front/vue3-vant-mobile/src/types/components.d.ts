@@ -12,14 +12,15 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Chart: typeof import('./../components/Chart/index.vue')['default']
+    DayTimeline: typeof import('./../components/schedule/DayTimeline.vue')['default']
     DayView: typeof import('./../components/calendar/DayView.vue')['default']
     EventDetailSheet: typeof import('./../components/calendar/EventDetailSheet.vue')['default']
     GhostButton: typeof import('./../components/GhostButton.vue')['default']
     MonthGrid: typeof import('./../components/calendar/MonthGrid.vue')['default']
     NavBar: typeof import('./../components/NavBar.vue')['default']
-    PrototypeSwitcher: typeof import('./../components/PrototypeSwitcher.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    ScheduleEventForm: typeof import('./../components/schedule/ScheduleEventForm.vue')['default']
     TabBar: typeof import('./../components/TabBar.vue')['default']
     TodoForm: typeof import('./../components/TodoForm.vue')['default']
     VanActionSheet: typeof import('vant/es')['ActionSheet']
@@ -34,6 +35,7 @@ declare module 'vue' {
     VanForm: typeof import('vant/es')['Form']
     VanIcon: typeof import('vant/es')['Icon']
     VanImage: typeof import('vant/es')['Image']
+    VanList: typeof import('vant/es')['List']
     VanLoading: typeof import('vant/es')['Loading']
     VanNavBar: typeof import('vant/es')['NavBar']
     VanPicker: typeof import('vant/es')['Picker']
@@ -49,6 +51,7 @@ declare module 'vue' {
     VanTabs: typeof import('vant/es')['Tabs']
     VanTag: typeof import('vant/es')['Tag']
     VanUploader: typeof import('vant/es')['Uploader']
+    WeekDualTrack: typeof import('./../components/schedule/WeekDualTrack.vue')['default']
     WeekView: typeof import('./../components/calendar/WeekView.vue')['default']
   }
 }
