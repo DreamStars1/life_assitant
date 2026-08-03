@@ -36,7 +36,8 @@ description: 通过 Life Assistant MCP health 域记录/查询健康管家数据
 
 ## 5. 设目标体重
 
-- `action=profile_update`，参数 `target_kg`（数字；若需清空，按 REST 约定传 null——若 MCP 无法传 null，则文档写明用 App 清空）
+- `action=profile_update`，参数 `target_kg`（数字）
+- 清空目标请在 App 操作（MCP 省略字段不会清空已有目标）
 
 ## 6. 胃状态 / 周期
 
@@ -45,8 +46,8 @@ description: 通过 Life Assistant MCP health 域记录/查询健康管家数据
 
 ## 7. 耐受 / 触发（翻页）
 
-- `tolerance_list` / `tolerance_add`（`name`,`level`）
-- `trigger_list` / `trigger_add`（`name`,`stars` 1–5，`note` 可选）
+- `action=tolerance_list`（可选 `page`、`page_size`）/ `action=tolerance_add`（`name`、`level`）
+- `action=trigger_list`（可选 `page`、`page_size`）/ `action=trigger_add`（`name`、`stars` 1–5，`note` 可选）
 
 ## 8. 趋势摘要
 

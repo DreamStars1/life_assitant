@@ -146,11 +146,7 @@ public class HealthController {
     @Operation(summary = "分页查询耐受记录")
     @GetMapping("/tolerances")
     public ApiResponse<PageResult<HealthToleranceResp>> listTolerances(@CurrentUser UserDO user,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(name = "pageSize", defaultValue = "4") int pageSize) {
-        HealthPageQuery query = new HealthPageQuery();
-        query.setPage(page);
-        query.setPageSize(pageSize);
+            @Valid HealthPageQuery query) {
         return ApiResponse.ok(healthService.listTolerances(user.getId(), query));
     }
 
@@ -178,11 +174,7 @@ public class HealthController {
     @Operation(summary = "分页查询触发因素")
     @GetMapping("/triggers")
     public ApiResponse<PageResult<HealthTriggerResp>> listTriggers(@CurrentUser UserDO user,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(name = "pageSize", defaultValue = "3") int pageSize) {
-        HealthPageQuery query = new HealthPageQuery();
-        query.setPage(page);
-        query.setPageSize(pageSize);
+            @Valid HealthPageQuery query) {
         return ApiResponse.ok(healthService.listTriggers(user.getId(), query));
     }
 

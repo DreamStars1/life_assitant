@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import top.continew.starter.core.exception.BusinessException;
 import top.lifeassistant.common.base.model.query.PageResult;
 import top.lifeassistant.health.mapper.HealthDailyMapper;
@@ -44,6 +45,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +56,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class HealthService {
 
-    private static final Set<String> MEAL_TYPES = Set.of("早餐", "午餐", "晚餐");
+    private static final List<String> MEAL_ORDER = List.of("早餐", "午餐", "晚餐");
+    private static final Set<String> MEAL_TYPES = Set.copyOf(MEAL_ORDER);
     private static final Set<String> WEIGHT_TYPES = Set.of("晨重", "晚重");
     private static final Set<String> TOLERANCE_LEVELS = Set.of("舒适", "低风险", "谨慎", "高风险");
     private static final int MEMORY_MAX = 100;
@@ -122,9 +125,12 @@ public class HealthService {
     public List<HealthMealResp> listMeals(String userId, LocalDate date) {
         return mealMapper.selectList(new LambdaQueryWrapper<HealthMealDO>()
                 .eq(HealthMealDO::getUserId, userId)
-                .eq(HealthMealDO::getMealDate, date)
-                .orderByAsc(HealthMealDO::getMealType))
+                .eq(HealthMealDO::getMealDate, date))
             .stream()
+            .sorted(Comparator.comparingInt(m -> {
+                int i = MEAL_ORDER.indexOf(m.getMealType());
+                return i < 0 ? Integer.MAX_VALUE : i;
+            }))
             .map(HealthMealResp::from)
             .toList();
     }
@@ -172,7 +178,7 @@ public class HealthService {
         HealthDailyDO row = dailyMapper.selectOne(new LambdaQueryWrapper<HealthDailyDO>()
             .eq(HealthDailyDO::getUserId, userId)
             .eq(HealthDailyDO::getDailyDate, date));
-        return HealthDailyResp.from(row);
+        return HealthDailyResp.from(row, date);
     }
 
     public HealthDailyResp upsertDaily(String userId, HealthDailyUpsertReq req) {
@@ -269,7 +275,24 @@ public class HealthService {
             HealthMemoryResp::from);
     }
 
+    @Transactional
     public HealthMemoryResp createMemory(String userId, HealthMemoryCreateReq req) {
+        // serialize per-user creates via profile row lock (create stub if needed)
+        HealthProfileDO profile = profileMapper.selectOne(new LambdaQueryWrapper<HealthProfileDO>()
+            .eq(HealthProfileDO::getUserId, userId)
+            .last("FOR UPDATE"));
+        if (profile == null) {
+            LocalDateTime now = LocalDateTime.now();
+            profile = new HealthProfileDO();
+            profile.setId(UUID.randomUUID().toString());
+            profile.setUserId(userId);
+            profile.setCreatedAt(now);
+            profile.setUpdatedAt(now);
+            profileMapper.insert(profile);
+            profileMapper.selectOne(new LambdaQueryWrapper<HealthProfileDO>()
+                .eq(HealthProfileDO::getUserId, userId)
+                .last("FOR UPDATE"));
+        }
         Long cnt = memoryMapper.selectCount(new LambdaQueryWrapper<HealthMemoryDO>()
             .eq(HealthMemoryDO::getUserId, userId));
         if (cnt >= MEMORY_MAX) {

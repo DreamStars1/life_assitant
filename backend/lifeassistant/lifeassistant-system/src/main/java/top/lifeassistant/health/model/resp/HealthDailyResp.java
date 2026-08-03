@@ -23,11 +23,15 @@ public class HealthDailyResp {
     private Integer cycleDay;
 
     public static HealthDailyResp from(HealthDailyDO row) {
+        return from(row, row != null ? row.getDailyDate() : null);
+    }
+
+    public static HealthDailyResp from(HealthDailyDO row, LocalDate date) {
         if (row == null) {
-            return new HealthDailyResp();
+            return HealthDailyResp.builder().date(date).build();
         }
         return HealthDailyResp.builder()
-            .date(row.getDailyDate())
+            .date(row.getDailyDate() != null ? row.getDailyDate() : date)
             .stomachStatus(row.getStomachStatus())
             .stomachNote(row.getStomachNote())
             .cyclePhase(row.getCyclePhase())

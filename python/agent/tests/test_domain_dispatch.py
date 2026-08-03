@@ -73,7 +73,17 @@ class DomainDispatchTest(unittest.IsolatedAsyncioTestCase):
             c, "meal_upsert",
             date="2026-08-03", meal_type="早餐", food="鸡蛋", protein_g=7,
         )
-        c.put.assert_awaited()
+        c.put.assert_awaited_with(
+            "/health/meals",
+            {"date": "2026-08-03", "mealType": "早餐", "food": "鸡蛋", "proteinG": 7},
+        )
+
+    async def test_health_invalid_action(self):
+        from life_assistant_agent.tools import health as health_tools
+        c = _client()
+        out = await health_tools.dispatch(c, "nope")
+        self.assertEqual(out["error"], "invalid_action")
+        self.assertIn("meal_upsert", out["allowed"])
 
 
 if __name__ == "__main__":
