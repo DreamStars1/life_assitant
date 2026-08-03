@@ -1,0 +1,45 @@
+package top.lifeassistant.health.model.entity;
+
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+
+import java.io.Serial;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Data
+@TableName("health_profile")
+public class HealthProfileDO implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    @TableId
+    private String id;
+
+    @TableField("user_id")
+    private String userId;
+
+    @TableField("display_name")
+    private String displayName;
+
+    private String motto;
+
+    @TableField("height_cm")
+    private BigDecimal heightCm;
+
+    @TableField("target_kg")
+    private BigDecimal targetKg;
+
+    @TableField("resting_kcal")
+    private Integer restingKcal;
+
+    @TableField("created_at")
+    private LocalDateTime createdAt;
+
+    @TableField("updated_at")
+    private LocalDateTime updatedAt;
+}
