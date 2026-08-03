@@ -41,6 +41,11 @@ class JavaClient:
         resp.raise_for_status()
         return self._unwrap(resp.json())
 
+    async def delete(self, path: str) -> Any:
+        resp = await self._client.delete(path)
+        resp.raise_for_status()
+        return self._unwrap(resp.json())
+
     @staticmethod
     def _form_data(data: dict[str, Any]) -> dict[str, str]:
         out: dict[str, str] = {}

@@ -16,6 +16,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from .client import JavaClient
 from .tools import checkin as checkin_tools
+from .tools import health as health_tools
 from .tools import media as media_tools
 from .tools import points as points_tools
 from .tools import record as record_tools
@@ -181,6 +182,74 @@ async def checkin(
     checkin_type: str | None = None,
 ) -> str:
     return await _run(checkin_tools.dispatch, action, checkin_type=checkin_type)
+
+
+@mcp.tool(description="健康管家：action=profile_get|profile_update|meal_list|meal_upsert|meal_delete|weight_list|weight_add|daily_get|daily_update|memory_list|memory_add|tolerance_list|tolerance_add|trigger_list|trigger_add|summary")
+async def health(
+    action: str,
+    date: str | None = None,
+    meal_type: str | None = None,
+    food: str | None = None,
+    protein_g: float | None = None,
+    feedback: str | None = None,
+    id: str | None = None,
+    weight_type: str | None = None,
+    kg: float | None = None,
+    standard: bool | None = None,
+    title: str | None = None,
+    detail: str | None = None,
+    name: str | None = None,
+    level: str | None = None,
+    note: str | None = None,
+    stars: int | None = None,
+    page: int | None = None,
+    page_size: int | None = None,
+    target_kg: float | None = None,
+    height_cm: float | None = None,
+    resting_kcal: int | None = None,
+    display_name: str | None = None,
+    motto: str | None = None,
+    stomach_status: str | None = None,
+    stomach_note: str | None = None,
+    cycle_phase: str | None = None,
+    cycle_day: int | None = None,
+    from_: str | None = None,
+    to: str | None = None,
+    type_: str | None = None,
+) -> str:
+    return await _run(
+        health_tools.dispatch,
+        action,
+        date=date,
+        meal_type=meal_type,
+        food=food,
+        protein_g=protein_g,
+        feedback=feedback,
+        id=id,
+        weight_type=weight_type,
+        kg=kg,
+        standard=standard,
+        title=title,
+        detail=detail,
+        name=name,
+        level=level,
+        note=note,
+        stars=stars,
+        page=page,
+        page_size=page_size,
+        target_kg=target_kg,
+        height_cm=height_cm,
+        resting_kcal=resting_kcal,
+        display_name=display_name,
+        motto=motto,
+        stomach_status=stomach_status,
+        stomach_note=stomach_note,
+        cycle_phase=cycle_phase,
+        cycle_day=cycle_day,
+        from_=from_,
+        to=to,
+        type_=type_,
+    )
 
 
 # ── ASGI Auth wrapper (preserves lifespan) ────────────────────────────
