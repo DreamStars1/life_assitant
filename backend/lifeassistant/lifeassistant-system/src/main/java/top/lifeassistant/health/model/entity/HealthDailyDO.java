@@ -1,5 +1,6 @@
 package top.lifeassistant.health.model.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -37,6 +38,9 @@ public class HealthDailyDO implements Serializable {
 
     @TableField("cycle_day")
     private Integer cycleDay;
+
+    @TableField(value = "burn_kcal", updateStrategy = FieldStrategy.ALWAYS)
+    private Integer burnKcal;
 
     @TableField("created_at")
     private LocalDateTime createdAt;

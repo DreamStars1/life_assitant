@@ -1,5 +1,6 @@
 package top.lifeassistant.health.model.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -34,6 +35,9 @@ public class HealthMealDO implements Serializable {
 
     @TableField("protein_g")
     private BigDecimal proteinG;
+
+    @TableField(value = "kcal", updateStrategy = FieldStrategy.ALWAYS)
+    private Integer kcal;
 
     private String feedback;
 
