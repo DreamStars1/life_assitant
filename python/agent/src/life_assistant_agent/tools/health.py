@@ -49,8 +49,10 @@ def _daily_body(fields: dict[str, Any]) -> dict[str, Any]:
     ):
         if fields.get(src) is not None:
             body[dst] = fields[src]
-    if "burn_kcal" in fields:
+    if fields.get("burn_kcal") is not None:
         body["burnKcal"] = fields["burn_kcal"]
+    elif fields.get("clear_burn_kcal"):
+        body["burnKcal"] = None
     return body
 
 

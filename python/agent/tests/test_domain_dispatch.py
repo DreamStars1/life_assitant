@@ -101,7 +101,7 @@ class DomainDispatchTest(unittest.IsolatedAsyncioTestCase):
         c = _client()
         await health_tools.dispatch(
             c, "daily_update",
-            date="2026-08-06", burn_kcal=None,
+            date="2026-08-06", clear_burn_kcal=True,
         )
         c.put.assert_awaited_with(
             "/health/daily",
