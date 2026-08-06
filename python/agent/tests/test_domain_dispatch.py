@@ -71,11 +71,41 @@ class DomainDispatchTest(unittest.IsolatedAsyncioTestCase):
         c = _client()
         await health_tools.dispatch(
             c, "meal_upsert",
-            date="2026-08-03", meal_type="早餐", food="鸡蛋", protein_g=7,
+            date="2026-08-03", meal_type="早餐", food="鸡蛋", protein_g=7, kcal=150,
         )
         c.put.assert_awaited_with(
             "/health/meals",
-            {"date": "2026-08-03", "mealType": "早餐", "food": "鸡蛋", "proteinG": 7},
+            {
+                "date": "2026-08-03",
+                "mealType": "早餐",
+                "food": "鸡蛋",
+                "proteinG": 7,
+                "kcal": 150,
+            },
+        )
+
+    async def test_health_daily_update_burn_kcal(self):
+        from life_assistant_agent.tools import health as health_tools
+        c = _client()
+        await health_tools.dispatch(
+            c, "daily_update",
+            date="2026-08-06", burn_kcal=1800,
+        )
+        c.put.assert_awaited_with(
+            "/health/daily",
+            {"date": "2026-08-06", "burnKcal": 1800},
+        )
+
+    async def test_health_daily_update_clear_burn_kcal(self):
+        from life_assistant_agent.tools import health as health_tools
+        c = _client()
+        await health_tools.dispatch(
+            c, "daily_update",
+            date="2026-08-06", burn_kcal=None,
+        )
+        c.put.assert_awaited_with(
+            "/health/daily",
+            {"date": "2026-08-06", "burnKcal": None},
         )
 
     async def test_health_invalid_action(self):

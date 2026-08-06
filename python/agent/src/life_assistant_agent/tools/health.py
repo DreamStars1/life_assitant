@@ -49,6 +49,8 @@ def _daily_body(fields: dict[str, Any]) -> dict[str, Any]:
     ):
         if fields.get(src) is not None:
             body[dst] = fields[src]
+    if "burn_kcal" in fields:
+        body["burnKcal"] = fields["burn_kcal"]
     return body
 
 
@@ -86,6 +88,8 @@ async def dispatch(client: JavaClient, action: str, **fields: Any) -> Any:
         }
         if fields.get("protein_g") is not None:
             body["proteinG"] = fields["protein_g"]
+        if fields.get("kcal") is not None:
+            body["kcal"] = fields["kcal"]
         if fields.get("feedback") is not None:
             body["feedback"] = fields["feedback"]
         return await client.put("/health/meals", body)
