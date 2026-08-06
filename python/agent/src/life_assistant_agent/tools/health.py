@@ -49,9 +49,16 @@ def _daily_body(fields: dict[str, Any]) -> dict[str, Any]:
     ):
         if fields.get(src) is not None:
             body[dst] = fields[src]
-    if fields.get("burn_kcal") is not None:
-        body["burnKcal"] = fields["burn_kcal"]
-    elif fields.get("clear_burn_kcal"):
+    burn_kcal = fields.get("burn_kcal")
+    clear_burn = fields.get("clear_burn_kcal")
+    if burn_kcal is not None and clear_burn:
+        return {
+            "error": "invalid_combination",
+            "message": "burn_kcal and clear_burn_kcal cannot both be set",
+        }
+    if burn_kcal is not None:
+        body["burnKcal"] = burn_kcal
+    elif clear_burn:
         body["burnKcal"] = None
     return body
 
@@ -129,7 +136,12 @@ async def dispatch(client: JavaClient, action: str, **fields: Any) -> Any:
 
     if action == "daily_update":
         err = require(fields, "date")
-        return err or await client.put("/health/daily", _daily_body(fields))
+        if err:
+            return err
+        body = _daily_body(fields)
+        if body.get("error"):
+            return body
+        return await client.put("/health/daily", body)
 
     if action == "memory_list":
         return await client.get("/health/memories", _page_params(fields) or None)

@@ -206,10 +206,6 @@ public class HealthService {
             row.setStomachNote(req.getStomachNote());
             row.setCyclePhase(req.getCyclePhase());
             row.setCycleDay(req.getCycleDay());
-            if (req.isBurnKcalPresent()) {
-                HealthEnergyRules.validateKcal(req.getBurnKcal(), "burnKcal");
-                row.setBurnKcal(req.getBurnKcal());
-            }
         } else {
             if (req.getStomachStatus() != null) {
                 row.setStomachStatus(req.getStomachStatus());
@@ -223,10 +219,10 @@ public class HealthService {
             if (req.getCycleDay() != null) {
                 row.setCycleDay(req.getCycleDay());
             }
-            if (req.isBurnKcalPresent()) {
-                HealthEnergyRules.validateKcal(req.getBurnKcal(), "burnKcal");
-                row.setBurnKcal(req.getBurnKcal());
-            }
+        }
+        if (req.isBurnKcalPresent()) {
+            HealthEnergyRules.validateKcal(req.getBurnKcal(), "burnKcal");
+            row.setBurnKcal(req.getBurnKcal());
         }
         row.setUpdatedAt(now);
         if (isNew) {

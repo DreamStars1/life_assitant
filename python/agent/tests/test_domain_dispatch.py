@@ -108,6 +108,16 @@ class DomainDispatchTest(unittest.IsolatedAsyncioTestCase):
             {"date": "2026-08-06", "burnKcal": None},
         )
 
+    async def test_health_daily_update_burn_and_clear_rejected(self):
+        from life_assistant_agent.tools import health as health_tools
+        c = _client()
+        out = await health_tools.dispatch(
+            c, "daily_update",
+            date="2026-08-06", burn_kcal=1800, clear_burn_kcal=True,
+        )
+        self.assertEqual(out["error"], "invalid_combination")
+        c.put.assert_not_awaited()
+
     async def test_health_invalid_action(self):
         from life_assistant_agent.tools import health as health_tools
         c = _client()
