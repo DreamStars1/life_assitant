@@ -15,13 +15,14 @@ description: 通过 Life Assistant MCP health 域记录/查询健康管家数据
    - `meal_type`（必填）
    - `food`（必填，吃了什么）
    - `protein_g`（可选，数字）
+   - `kcal`（可选，整数，该餐热量）
    - `feedback`（可选，饭后感受）
 3. 同日同餐次再次 upsert 即覆盖。
 
 ## 2. 查询饮食
 
 - `action=meal_list`，参数 `date`
-- 返回该日各餐 food / protein_g / feedback
+- 返回该日各餐 food / protein_g / kcal / feedback
 
 ## 3. 记体重
 
@@ -39,10 +40,17 @@ description: 通过 Life Assistant MCP health 域记录/查询健康管家数据
 - `action=profile_update`，参数 `target_kg`（数字）
 - 清空目标请在 App 操作（MCP 省略字段不会清空已有目标）
 
-## 6. 胃状态 / 周期
+## 6. 日况（胃 / 周期 / 消耗）
 
 - `action=daily_update`
-- 参数：`date`，以及 `stomach_status`/`stomach_note`/`cycle_phase`/`cycle_day` 中需要的字段
+- 参数：`date`，以及需要的：
+  - `stomach_status` / `stomach_note`
+  - `cycle_phase` / `cycle_day`
+  - 当日消耗覆盖（三选一，勿混用）：
+    - 设置覆盖：`burn_kcal=<int>`
+    - 清除覆盖：`clear_burn_kcal=true`（当日消耗回退档案 `resting_kcal`）
+    - 两者均省略：当日消耗不变
+- 展示用今日消耗 = `burn_kcal` ?? 档案 `resting_kcal`
 
 ## 7. 耐受 / 触发（翻页）
 
@@ -51,4 +59,4 @@ description: 通过 Life Assistant MCP health 域记录/查询健康管家数据
 
 ## 8. 趋势摘要
 
-- `action=summary` → 7 日均晨重、目标缺口、近 30 日均蛋白
+- `action=summary` → 7 日均晨重、目标缺口、近 30 日均蛋白、近 30 日均摄入 kcal
