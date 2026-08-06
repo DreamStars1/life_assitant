@@ -21,6 +21,7 @@ public class HealthDailyResp {
     private String stomachNote;
     private String cyclePhase;
     private Integer cycleDay;
+    private Integer burnKcal;
 
     public static HealthDailyResp from(HealthDailyDO row) {
         return from(row, row != null ? row.getDailyDate() : null);
@@ -36,6 +37,7 @@ public class HealthDailyResp {
             .stomachNote(row.getStomachNote())
             .cyclePhase(row.getCyclePhase())
             .cycleDay(row.getCycleDay())
+            .burnKcal(row.getBurnKcal())
             .build();
     }
 }

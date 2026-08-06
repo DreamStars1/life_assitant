@@ -102,6 +102,9 @@ public class HealthService {
             row.setMotto(req.getMotto());
             row.setHeightCm(req.getHeightCm());
             row.setTargetKg(req.getTargetKg());
+            if (req.getRestingKcal() != null) {
+                HealthEnergyRules.validateKcal(req.getRestingKcal(), "restingKcal");
+            }
             row.setRestingKcal(req.getRestingKcal());
             return;
         }
@@ -118,6 +121,7 @@ public class HealthService {
             row.setTargetKg(req.getTargetKg());
         }
         if (req.getRestingKcal() != null) {
+            HealthEnergyRules.validateKcal(req.getRestingKcal(), "restingKcal");
             row.setRestingKcal(req.getRestingKcal());
         }
     }
@@ -139,6 +143,7 @@ public class HealthService {
         if (!MEAL_TYPES.contains(req.getMealType())) {
             throw new BusinessException("mealType must be 早餐/午餐/晚餐");
         }
+        HealthEnergyRules.validateKcal(req.getKcal(), "kcal");
         LocalDateTime now = LocalDateTime.now();
         HealthMealDO row = mealMapper.selectOne(new LambdaQueryWrapper<HealthMealDO>()
             .eq(HealthMealDO::getUserId, userId)
@@ -153,12 +158,14 @@ public class HealthService {
             row.setCreatedAt(now);
             row.setFood(req.getFood());
             row.setProteinG(req.getProteinG());
+            row.setKcal(req.getKcal());
             row.setFeedback(req.getFeedback());
             row.setUpdatedAt(now);
             mealMapper.insert(row);
         } else {
             row.setFood(req.getFood());
             row.setProteinG(req.getProteinG());
+            row.setKcal(req.getKcal());
             row.setFeedback(req.getFeedback());
             row.setUpdatedAt(now);
             mealMapper.updateById(row);
@@ -199,6 +206,10 @@ public class HealthService {
             row.setStomachNote(req.getStomachNote());
             row.setCyclePhase(req.getCyclePhase());
             row.setCycleDay(req.getCycleDay());
+            if (req.isBurnKcalPresent()) {
+                HealthEnergyRules.validateKcal(req.getBurnKcal(), "burnKcal");
+                row.setBurnKcal(req.getBurnKcal());
+            }
         } else {
             if (req.getStomachStatus() != null) {
                 row.setStomachStatus(req.getStomachStatus());
@@ -211,6 +222,10 @@ public class HealthService {
             }
             if (req.getCycleDay() != null) {
                 row.setCycleDay(req.getCycleDay());
+            }
+            if (req.isBurnKcalPresent()) {
+                HealthEnergyRules.validateKcal(req.getBurnKcal(), "burnKcal");
+                row.setBurnKcal(req.getBurnKcal());
             }
         }
         row.setUpdatedAt(now);
@@ -464,12 +479,20 @@ public class HealthService {
             .isNotNull(HealthMealDO::getProteinG));
         BigDecimal avg30ProteinG = averageDailyProtein(proteinMeals);
 
+        List<HealthMealDO> kcalMeals = mealMapper.selectList(new LambdaQueryWrapper<HealthMealDO>()
+            .eq(HealthMealDO::getUserId, userId)
+            .ge(HealthMealDO::getMealDate, thirtyDaysAgo)
+            .le(HealthMealDO::getMealDate, today)
+            .isNotNull(HealthMealDO::getKcal));
+        BigDecimal avg30IntakeKcal = HealthEnergyRules.averageDailyIntakeKcal(kcalMeals);
+
         return HealthSummaryResp.builder()
             .latestMorningKg(latestMorningKg)
             .avg7MorningKg(avg7MorningKg)
             .targetKg(targetKg)
             .gapToTargetKg(gapToTargetKg)
             .avg30ProteinG(avg30ProteinG)
+            .avg30IntakeKcal(avg30IntakeKcal)
             .build();
     }
 

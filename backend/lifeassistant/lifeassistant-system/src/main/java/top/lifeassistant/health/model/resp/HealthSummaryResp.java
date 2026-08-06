@@ -25,4 +25,7 @@ public class HealthSummaryResp {
 
     @Schema(description = "近 30 日日均蛋白 g，无蛋白天则为 null")
     private BigDecimal avg30ProteinG;
+
+    @Schema(description = "近 30 日日均摄入 kcal，无热量天则为 null")
+    private BigDecimal avg30IntakeKcal;
 }

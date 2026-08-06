@@ -18,6 +18,7 @@ public class HealthMealResp {
     private String mealType;
     private String food;
     private BigDecimal proteinG;
+    private Integer kcal;
     private String feedback;
 
     public static HealthMealResp from(HealthMealDO row) {
@@ -27,6 +28,7 @@ public class HealthMealResp {
             .mealType(row.getMealType())
             .food(row.getFood())
             .proteinG(row.getProteinG())
+            .kcal(row.getKcal())
             .feedback(row.getFeedback())
             .build();
     }

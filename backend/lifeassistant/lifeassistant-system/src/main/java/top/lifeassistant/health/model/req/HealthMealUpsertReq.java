@@ -27,6 +27,9 @@ public class HealthMealUpsertReq {
     @Schema(description = "蛋白质 g，可空")
     private BigDecimal proteinG;
 
+    @Schema(description = "热量 kcal，可空")
+    private Integer kcal;
+
     @Schema(description = "反馈，可空")
     private String feedback;
 }
