@@ -15,6 +15,7 @@ export interface HealthMeal {
   mealType: '早餐' | '午餐' | '晚餐'
   food: string
   proteinG?: number | null
+  kcal?: number | null
   feedback?: string | null
 }
 
@@ -24,6 +25,7 @@ export interface HealthDaily {
   stomachNote?: string | null
   cyclePhase?: string | null
   cycleDay?: number | null
+  burnKcal?: number | null
 }
 
 export interface HealthWeight {
@@ -40,6 +42,7 @@ export interface HealthSummary {
   targetKg?: number | null
   gapToTargetKg?: number | null
   avg30ProteinG?: number | null
+  avg30IntakeKcal?: number | null
 }
 
 export interface HealthMemory {

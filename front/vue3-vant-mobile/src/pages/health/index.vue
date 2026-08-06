@@ -189,6 +189,31 @@ async function onCycle(): Promise<void> {
   catch { /* notify handled by interceptor */ }
 }
 
+const showBurnDialog = ref(false)
+const burnForm = reactive({ burnKcal: '' })
+
+function openBurn(): void {
+  burnForm.burnKcal = daily.value.burnKcal != null
+    ? String(daily.value.burnKcal)
+    : (profile.value.restingKcal != null ? String(profile.value.restingKcal) : '')
+  showBurnDialog.value = true
+}
+
+async function onBurn(): Promise<void> {
+  const raw = burnForm.burnKcal.trim()
+  try {
+    const res = await putHealthDaily({
+      date: selectedDate.value,
+      burnKcal: raw === '' ? null : Number(raw),
+    })
+    daily.value = res.data ?? daily.value
+    showBurnDialog.value = false
+    showToast('已保存')
+    await loadDaily()
+  }
+  catch { /* notify handled by interceptor */ }
+}
+
 // ---------- Target weight ----------
 const showTargetDialog = ref(false)
 const targetForm = reactive({ targetKg: '' })
@@ -235,11 +260,25 @@ function mealRow(type: MealType): HealthMeal | undefined {
   return meals.value.find(m => m.mealType === type)
 }
 
+const intakeTotal = computed(() => {
+  const vals = meals.value.map(m => m.kcal).filter((k): k is number => k != null)
+  if (!vals.length)
+    return null
+  return vals.reduce((a, b) => a + b, 0)
+})
+
+const effectiveBurn = computed(() => {
+  if (daily.value.burnKcal != null)
+    return daily.value.burnKcal
+  return profile.value.restingKcal ?? null
+})
+
 const showMealDialog = ref(false)
-const mealForm = reactive<{ id?: string, mealType: MealType, food: string, proteinG: string, feedback: string }>({
+const mealForm = reactive<{ id?: string, mealType: MealType, food: string, proteinG: string, kcal: string, feedback: string }>({
   mealType: '早餐',
   food: '',
   proteinG: '',
+  kcal: '',
   feedback: '',
 })
 
@@ -249,6 +288,7 @@ function openMeal(type: MealType): void {
   mealForm.mealType = type
   mealForm.food = row?.food ?? ''
   mealForm.proteinG = row?.proteinG == null ? '' : String(row.proteinG)
+  mealForm.kcal = row?.kcal == null ? '' : String(row.kcal)
   mealForm.feedback = row?.feedback ?? ''
   showMealDialog.value = true
 }
@@ -281,6 +321,7 @@ async function onMeal(): Promise<void> {
       mealType: mealForm.mealType,
       food: mealForm.food.trim(),
       proteinG: mealForm.proteinG === '' ? null : Number(mealForm.proteinG),
+      kcal: mealForm.kcal === '' ? null : Number(mealForm.kcal),
       feedback: mealForm.feedback.trim() || null,
     })
     showMealDialog.value = false
@@ -700,6 +741,17 @@ onMounted(() => {
             <em>{{ daily.cycleDay != null ? `第 ${daily.cycleDay} 天` : '点击记录' }}</em>
           </button>
         </div>
+        <div class="metrics energy-metrics">
+          <div class="metric">
+            <span>已摄入</span>
+            <strong>{{ intakeTotal != null ? `${intakeTotal} kcal` : '—' }}</strong>
+          </div>
+          <button type="button" class="metric metric-btn" @click="openBurn">
+            <span>今日消耗</span>
+            <strong>{{ effectiveBurn != null ? `${effectiveBurn} kcal` : '—' }}</strong>
+            <em>{{ daily.burnKcal != null ? '已覆盖' : (profile.restingKcal != null ? '默认静息' : '点击设置') }}</em>
+          </button>
+        </div>
       </div>
 
       <div class="today-records">
@@ -734,6 +786,7 @@ onMounted(() => {
               <strong>{{ m.type }}</strong>
               <small>{{ mealRow(m.type)?.food || '点击记录' }}</small>
               <small v-if="mealRow(m.type)">{{ mealRow(m.type)?.proteinG != null ? `蛋白 ${mealRow(m.type)?.proteinG} g` : '蛋白：待填' }}</small>
+              <small v-if="mealRow(m.type)">{{ mealRow(m.type)?.kcal != null ? `热量 ${mealRow(m.type)?.kcal} kcal` : '热量：待填' }}</small>
               <small v-if="mealRow(m.type)">{{ mealRow(m.type)?.feedback ? `反馈：${mealRow(m.type)?.feedback}` : '反馈：待补充' }}</small>
             </span>
             <span class="state">{{ mealRow(m.type) ? (mealRow(m.type)?.feedback ? '已记录' : '待反馈') : '待记录' }} ›</span>
@@ -932,7 +985,7 @@ onMounted(() => {
           <h2>近30天饮食</h2>
         </div>
         <div class="stats" style="border-top:0;margin-top:0;padding-top:0">
-          <div>平均摄入<b>—</b></div>
+          <div>平均摄入<b>{{ summary.avg30IntakeKcal != null ? `${Math.round(Number(summary.avg30IntakeKcal))} kcal` : '—' }}</b></div>
           <div>日均蛋白<b>{{ summary.avg30ProteinG != null ? `${Math.round(summary.avg30ProteinG)} g` : '—' }}</b></div>
           <div>最舒适<b>—</b></div>
         </div>
@@ -994,6 +1047,13 @@ onMounted(() => {
       </div>
     </van-dialog>
 
+    <!-- ===== Burn ===== -->
+    <van-dialog v-model:show="showBurnDialog" title="今日消耗" show-cancel-button @confirm="onBurn">
+      <div class="dialog-form">
+        <van-field v-model="burnForm.burnKcal" type="digit" placeholder="kcal（清空则回退静息）" clearable />
+      </div>
+    </van-dialog>
+
     <!-- ===== Meal type picker ===== -->
     <van-popup v-model:show="showMealTypePicker" position="bottom">
       <van-picker
@@ -1008,6 +1068,7 @@ onMounted(() => {
       <div class="dialog-form">
         <van-field v-model="mealForm.food" placeholder="食物（如：鸡蛋 1 个）" clearable />
         <van-field v-model="mealForm.proteinG" type="number" placeholder="蛋白质 g（可空）" clearable />
+        <van-field v-model="mealForm.kcal" type="digit" placeholder="热量 kcal（可空）" clearable />
         <van-field v-model="mealForm.feedback" placeholder="反馈感受（可空）" clearable />
       </div>
       <div v-if="mealForm.id" class="dialog-delete">
@@ -1134,6 +1195,9 @@ onMounted(() => {
 .metrics {
   display: flex;
   gap: 12px;
+}
+.energy-metrics {
+  margin-top: 12px;
 }
 .metric {
   flex: 1;
