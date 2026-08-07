@@ -196,99 +196,131 @@ function cssVar(name: string, fallback: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
 }
 
-let chart: echarts.ECharts | null = null
+let wakeChart: echarts.ECharts | null = null
+let sleepChart: echarts.ECharts | null = null
 
-function initChart() {
+function initOneChart(
+  elId: string,
+  existing: echarts.ECharts | null,
+  opts: {
+    mineLabel: string
+    partnerLabel: string
+    mineData: (number | null)[]
+    partnerData: (number | null)[]
+    mineColor: string
+    partnerColor: string
+    yMin: number
+    yMax: number
+    tooltipMine: (d: SleepDay) => string
+    tooltipPartner: (d: SleepDay) => string
+  },
+): echarts.ECharts | null {
+  const el = document.getElementById(elId)
+  if (!el)
+    return null
+  existing?.dispose()
+  const chart = echarts.init(el)
+  const dates = sleepData.value.map(d => d.date)
+  const text2 = cssVar('--van-text-color-2', '#8b7a6b')
+
+  const series: echarts.SeriesOption[] = [
+    {
+      name: opts.mineLabel,
+      type: 'line',
+      data: opts.mineData,
+      smooth: true,
+      symbol: 'circle',
+      symbolSize: 4,
+      lineStyle: { color: opts.mineColor, width: 1.5 },
+      itemStyle: { color: opts.mineColor },
+    },
+  ]
+  if (partnerUserId.value) {
+    series.push({
+      name: opts.partnerLabel,
+      type: 'line',
+      data: opts.partnerData,
+      smooth: true,
+      symbol: 'circle',
+      symbolSize: 4,
+      lineStyle: { color: opts.partnerColor, width: 1.5 },
+      itemStyle: { color: opts.partnerColor },
+    })
+  }
+
+  chart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: unknown) => {
+        const list = params as Array<{ dataIndex?: number }>
+        const i = list[0]?.dataIndex
+        if (i == null)
+          return ''
+        const d = sleepData.value[i]
+        if (!d)
+          return ''
+        const lines = [d.date, opts.tooltipMine(d)]
+        if (partnerUserId.value)
+          lines.push(opts.tooltipPartner(d))
+        return lines.join('<br/>')
+      },
+    },
+    grid: { left: 12, right: 12, top: 8, bottom: 20 },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      axisLabel: { fontSize: 9, color: text2, interval: 0, rotate: 20 },
+      axisLine: { show: false },
+      axisTick: { show: false },
+    },
+    yAxis: {
+      type: 'value',
+      min: opts.yMin,
+      max: opts.yMax,
+      show: false,
+      splitLine: { show: false },
+    },
+    series,
+    animation: false,
+  })
+  return chart
+}
+
+function initCharts() {
   nextTick(() => {
-    const el = document.getElementById('dashboard-sleep-chart')
-    if (!el)
-      return
-    chart?.dispose()
-    chart = echarts.init(el)
-    const dates = sleepData.value.map(d => d.date)
     const primary = cssVar('--van-primary-color', '#e8905e')
     const danger = cssVar('--van-tag-danger-color', '#d97a6e')
     const success = cssVar('--van-tag-success-color', '#7ec8a0')
     const warning = cssVar('--van-tag-warning-color', '#e8b05e')
-    const text2 = cssVar('--van-text-color-2', '#8b7a6b')
+    const mineWake = `我·${t('dashboard.wakeUp')}`
+    const partnerWake = `${partnerName.value}·${t('dashboard.wakeUp')}`
+    const mineSleep = `我·${t('dashboard.goToSleep')}`
+    const partnerSleep = `${partnerName.value}·${t('dashboard.goToSleep')}`
 
-    chart.setOption({
-      tooltip: {
-        trigger: 'axis',
-        formatter: (params: any) => {
-          const i = params[0]?.dataIndex
-          if (i == null)
-            return ''
-          const d = sleepData.value[i!]
-          if (!d)
-            return ''
-          return [
-            d.date,
-            `我·${t('dashboard.wakeUp')}: ${d.wake ?? '-'}`,
-            `我·${t('dashboard.goToSleep')}: ${d.sleep ?? '-'}`,
-            `${partnerName.value}·${t('dashboard.wakeUp')}: ${d.partnerWake ?? '-'}`,
-            `${partnerName.value}·${t('dashboard.goToSleep')}: ${d.partnerSleep ?? '-'}`,
-          ].join('<br/>')
-        },
-      },
-      grid: { left: 42, right: 12, top: 8, bottom: 20 },
-      xAxis: {
-        type: 'category',
-        data: dates,
-        axisLabel: { fontSize: 9, color: text2, interval: 0, rotate: 20 },
-        axisLine: { show: false },
-        axisTick: { show: false },
-      },
-      yAxis: {
-        type: 'value',
-        min: 300,
-        max: 1620,
-        show: false,
-        splitLine: { show: false },
-      },
-      series: [
-        {
-          name: `我·${t('dashboard.wakeUp')}`,
-          type: 'line',
-          data: sleepData.value.map(d => toMinutes(d.wake, 'wake')),
-          smooth: true,
-          symbol: 'circle',
-          symbolSize: 4,
-          lineStyle: { color: primary, width: 1.5 },
-          itemStyle: { color: primary },
-        },
-        {
-          name: `我·${t('dashboard.goToSleep')}`,
-          type: 'line',
-          data: sleepData.value.map(d => toMinutes(d.sleep, 'sleep')),
-          smooth: true,
-          symbol: 'circle',
-          symbolSize: 4,
-          lineStyle: { color: danger, width: 1.5, type: 'dashed' },
-          itemStyle: { color: danger },
-        },
-        {
-          name: `${partnerName.value}·${t('dashboard.wakeUp')}`,
-          type: 'line',
-          data: sleepData.value.map(d => toMinutes(d.partnerWake, 'wake')),
-          smooth: true,
-          symbol: 'circle',
-          symbolSize: 4,
-          lineStyle: { color: success, width: 1.5 },
-          itemStyle: { color: success },
-        },
-        {
-          name: `${partnerName.value}·${t('dashboard.goToSleep')}`,
-          type: 'line',
-          data: sleepData.value.map(d => toMinutes(d.partnerSleep, 'sleep')),
-          smooth: true,
-          symbol: 'circle',
-          symbolSize: 4,
-          lineStyle: { color: warning, width: 1.5, type: 'dashed' },
-          itemStyle: { color: warning },
-        },
-      ],
-      animation: false,
+    wakeChart = initOneChart('dashboard-wake-chart', wakeChart, {
+      mineLabel: mineWake,
+      partnerLabel: partnerWake,
+      mineData: sleepData.value.map(d => toMinutes(d.wake, 'wake')),
+      partnerData: sleepData.value.map(d => toMinutes(d.partnerWake, 'wake')),
+      mineColor: primary,
+      partnerColor: success,
+      yMin: 300,
+      yMax: 720,
+      tooltipMine: d => `${mineWake}: ${d.wake ?? '-'}`,
+      tooltipPartner: d => `${partnerWake}: ${d.partnerWake ?? '-'}`,
+    })
+
+    sleepChart = initOneChart('dashboard-sleep-trend-chart', sleepChart, {
+      mineLabel: mineSleep,
+      partnerLabel: partnerSleep,
+      mineData: sleepData.value.map(d => toMinutes(d.sleep, 'sleep')),
+      partnerData: sleepData.value.map(d => toMinutes(d.partnerSleep, 'sleep')),
+      mineColor: danger,
+      partnerColor: warning,
+      yMin: 1080,
+      yMax: 1620,
+      tooltipMine: d => `${mineSleep}: ${d.sleep ?? '-'}`,
+      tooltipPartner: d => `${partnerSleep}: ${d.partnerSleep ?? '-'}`,
     })
   })
 }
@@ -348,7 +380,7 @@ async function loadData() {
     mediaFinishedCount.value = 0
   }
 
-  initChart()
+  initCharts()
 }
 
 function openAdd() {
@@ -385,7 +417,7 @@ async function confirmSub() {
   catch { /* notify handled by interceptor */ }
 }
 
-onMounted(() => {
+onMounted(async () => {
   sleepData.value = buildDateLabels().map(date => ({
     date,
     wake: null,
@@ -393,10 +425,14 @@ onMounted(() => {
     partnerWake: null,
     partnerSleep: null,
   }))
+  await userStore.info()
   loadData()
 })
 
-onUnmounted(() => chart?.dispose())
+onUnmounted(() => {
+  wakeChart?.dispose()
+  sleepChart?.dispose()
+})
 </script>
 
 <template>
@@ -518,13 +554,20 @@ onUnmounted(() => chart?.dispose())
         </div>
       </div>
 
-      <!-- Row 4: 近7天作息折线图 (full width) -->
+      <!-- Row 4: 近7天起床 / 睡觉走势（分图） -->
       <div class="card card-wide" @click="router.push('/partner/dashboard/sleep')">
         <div class="wide-header">
-          <span>{{ $t('dashboard.sleepTrend') }}</span>
+          <span>{{ $t('dashboard.wakeTrend') }}</span>
           <van-icon name="arrow" color="#ccc" />
         </div>
-        <div id="dashboard-sleep-chart" class="sleep-chart" />
+        <div id="dashboard-wake-chart" class="sleep-chart" />
+      </div>
+      <div class="card card-wide" @click="router.push('/partner/dashboard/sleep')">
+        <div class="wide-header">
+          <span>{{ $t('dashboard.sleepTrendDetail') }}</span>
+          <van-icon name="arrow" color="#ccc" />
+        </div>
+        <div id="dashboard-sleep-trend-chart" class="sleep-chart" />
       </div>
 
       <!-- 加分弹窗 -->

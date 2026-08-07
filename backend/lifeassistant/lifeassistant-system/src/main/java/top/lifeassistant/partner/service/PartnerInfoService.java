@@ -61,7 +61,7 @@ public class PartnerInfoService {
     public void addPointsBalance(String userId, String partnerId, int delta) {
         PartnerInfoDO info = requireByUser(userId, partnerId);
         // ponytail: 无并发锁，两人 App 可接受
-        info.setPointsBalance(info.getPointsBalance() + delta);
+        info.setPointsBalance((info.getPointsBalance() != null ? info.getPointsBalance() : 0) + delta);
         info.setUpdateTime(LocalDateTime.now());
         mapper.updateById(info);
     }
