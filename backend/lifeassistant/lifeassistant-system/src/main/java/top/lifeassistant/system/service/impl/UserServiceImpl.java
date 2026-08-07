@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.lifeassistant.partner.service.PartnerInfoService;
+import top.lifeassistant.partner.service.PartnerPointsService;
 import top.lifeassistant.sharedrecord.service.SharedRecordService;
 import top.lifeassistant.system.mapper.user.UserMapper;
 import top.lifeassistant.system.model.entity.user.UserDO;
@@ -18,6 +20,8 @@ import java.time.LocalDateTime;
 public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final SharedRecordService sharedRecordService;
+    private final PartnerInfoService partnerInfoService;
+    private final PartnerPointsService partnerPointsService;
 
     @Override
     public UserDO getByEmail(String email) { return userMapper.selectByEmail(email); }
@@ -41,6 +45,8 @@ public class UserServiceImpl implements UserService {
         UserDO user = getById(id);
         if (user.getPartnerId() != null) {
             UserDO partner = getById(user.getPartnerId());
+            partnerInfoService.deleteForPair(user.getId(), partner.getId());
+            partnerPointsService.deleteByUsers(user.getId(), partner.getId());
             partner.setPartnerId(null);
             userMapper.updateById(partner);
         }
@@ -60,7 +66,8 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("尚未绑定伴侣");
         }
         UserDO partner = getById(me.getPartnerId());
-        // 删除双方共享记录
+        partnerInfoService.deleteForPair(me.getId(), partner.getId());
+        partnerPointsService.deleteByUsers(me.getId(), partner.getId());
         sharedRecordService.deleteByCreatedBy(me.getId(), partner.getId());
         // 双向解除
         me.setPartnerId(null);

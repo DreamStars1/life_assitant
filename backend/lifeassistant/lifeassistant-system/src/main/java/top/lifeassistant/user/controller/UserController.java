@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import top.lifeassistant.common.annotation.CurrentUser;
 import top.lifeassistant.common.base.model.resp.ApiResponse;
+import top.lifeassistant.partner.service.PartnerInfoService;
 import top.lifeassistant.system.model.entity.user.UserDO;
 import top.lifeassistant.system.service.UserService;
 import top.lifeassistant.user.model.req.UserPasswordUpdateReq;
@@ -19,6 +20,7 @@ import top.lifeassistant.user.model.resp.UserPublicResp;
 import top.continew.starter.core.exception.BadRequestException;
 import top.continew.starter.core.exception.BusinessException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Tag(name = "用户 API")
@@ -28,6 +30,7 @@ import java.time.LocalDateTime;
 public class UserController {
 
     private final UserService userService;
+    private final PartnerInfoService partnerInfoService;
 
     @SaIgnore
     @Operation(summary = "用户注册")
@@ -53,7 +56,7 @@ public class UserController {
     @Operation(summary = "获取当前用户")
     @GetMapping("/users/me")
     public ApiResponse<UserPublicResp> me(@CurrentUser UserDO user) {
-        return ApiResponse.ok(UserPublicResp.from(user));
+        return ApiResponse.ok(toPublicResp(user));
     }
 
     @Operation(summary = "获取指定用户（公开信息）")
@@ -73,7 +76,18 @@ public class UserController {
             user.setEmail(req.getEmail());
         }
         userService.update(user);
-        return ApiResponse.ok(UserPublicResp.from(user));
+        return ApiResponse.ok(toPublicResp(user));
+    }
+
+    private UserPublicResp toPublicResp(UserDO user) {
+        LocalDate since = null;
+        if (user.getPartnerId() != null) {
+            var info = partnerInfoService.findByUser(user.getId(), user.getPartnerId());
+            if (info != null) {
+                since = info.getPartnerSince();
+            }
+        }
+        return UserPublicResp.from(user, since);
     }
 
     @Operation(summary = "修改密码")

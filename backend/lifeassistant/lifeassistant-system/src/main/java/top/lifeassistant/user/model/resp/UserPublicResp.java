@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -29,6 +30,9 @@ public class UserPublicResp {
     @Schema(description = "伴侣 ID")
     private String partnerId;
 
+    @Schema(description = "相识日期")
+    private LocalDate partnerSince;
+
     @Schema(description = "创建时间")
     private LocalDateTime createdAt;
 
@@ -42,5 +46,11 @@ public class UserPublicResp {
             .partnerId(user.getPartnerId())
             .createdAt(user.getCreatedAt())
             .build();
+    }
+
+    public static UserPublicResp from(top.lifeassistant.system.model.entity.user.UserDO user, LocalDate partnerSince) {
+        UserPublicResp r = from(user);
+        r.setPartnerSince(partnerSince);
+        return r;
     }
 }
