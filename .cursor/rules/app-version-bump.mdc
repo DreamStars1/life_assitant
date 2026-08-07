@@ -1,0 +1,28 @@
+---
+description: 有用户可见新功能时必须 bump 应用版本并写 CHANGELOG
+alwaysApply: true
+---
+
+# 版本号与更新日志
+
+每次交付**用户可见的新功能或行为变更**（合并到主干前或刚合并后）必须更新版本，不要只写代码不 bump。
+
+## 要改哪些文件
+
+| 位置 | 规则 |
+|------|------|
+| `front/vue3-vant-mobile/package.json` → `version` | 产品/设置页展示的版本；**minor** `x.Y.0` 用于新功能，patch `x.y.Z` 用于小修复 |
+| `backend/.../config/application.yml` → `application.version` | 后端应用版本，与前端同一次发版对齐 bump（当前习惯带 `-SNAPSHOT`） |
+| 根目录 `CHANGELOG.md` | 顶部新增一节 `## vX.Y.Z (YYYY-MM-DD)`，按现有格式写新特性 / 后端 / 前端 |
+
+不要改 `backend/lifeassistant/pom.xml` 的 `4.3.0-SNAPSHOT`（那是 ContiNew 框架父版本，不是产品版本）。
+不要改 `backend/lifeassistant/CHANGELOG.md`（上游框架日志）。
+
+## 何时 bump
+
+- **要**：新页面/新 API 能力、伴侣/健康等产品功能、用户能感知的行为修正且值得记一笔
+- **不要**：纯文档、纯 refactor、仅改 Cursor rule/skill、未合并的实验分支
+
+## 写法
+
+对照最近一节（如 `v1.6.0`）抄结构：日期用当天；版本号写清「旧 → 新」。
