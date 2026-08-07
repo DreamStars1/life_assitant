@@ -28,6 +28,12 @@ export interface UserState {
   is_superuser?: boolean
   createdAt?: string
   created_at?: string
+  partnerSince?: string | null
+  partner_since?: string | null
+}
+
+export function updatePartnerSince(partnerSince: string) {
+  return request.put<ApiResponse<UserState>>('/identity/partner-since', { partnerSince })
 }
 
 export function login(data: LoginData) {

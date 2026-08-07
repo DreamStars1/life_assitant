@@ -11,6 +11,7 @@ export interface UserState {
   isActive?: boolean
   isSuperuser?: boolean
   createdAt?: string
+  partnerSince?: string | null
   pushEnabled?: boolean
 }
 
@@ -40,6 +41,7 @@ export const useUserStore = defineStore('user', () => {
       isActive: (raw.isActive ?? raw.is_active) as boolean | undefined,
       isSuperuser: (raw.isSuperuser ?? raw.is_superuser) as boolean | undefined,
       createdAt: (raw.createdAt || raw.created_at) as string | undefined,
+      partnerSince: (raw.partnerSince || raw.partner_since) as string | null | undefined,
       pushEnabled: (raw.pushEnabled ?? raw.push_enabled) as boolean | undefined,
     }
     if (pid)

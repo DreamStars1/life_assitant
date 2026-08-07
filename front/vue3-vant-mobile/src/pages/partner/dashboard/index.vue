@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { showNotify } from 'vant'
 import { useUserStore } from '@/stores'
+import { updatePartnerSince } from '@/api/user'
 import * as echarts from 'echarts'
 import { addPoints, getPointsBalance, getPointsHistory } from '@/api/modules/partner-points'
 import type { PointsRecord } from '@/api/modules/partner-points'
@@ -20,12 +22,44 @@ const myId = computed(() => userStore.userInfo?.id || '')
 const partnerUserId = computed(() => userStore.userInfo?.partnerId || '')
 
 const daysTogether = computed(() => {
-  if (!userStore.userInfo.createdAt)
+  const since = userStore.userInfo.partnerSince
+  if (!since)
     return 0
-  const created = new Date(userStore.userInfo.createdAt)
+  const start = new Date(`${since.slice(0, 10)}T00:00:00`)
   const now = new Date()
-  return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24))
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const diff = Math.floor((today.getTime() - start.getTime()) / 86400000)
+  return diff < 0 ? 0 : diff + 1
 })
+
+const showSinceCalendar = ref(false)
+const sinceCalendarMaxDate = new Date()
+
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+const partnerSinceDefaultDate = computed(() => {
+  const since = userStore.userInfo.partnerSince
+  if (since)
+    return new Date(`${since.slice(0, 10)}T12:00:00`)
+  return new Date()
+})
+
+async function onPartnerSinceConfirm(d: Date) {
+  showSinceCalendar.value = false
+  try {
+    await updatePartnerSince(toLocalDateStr(d))
+    showNotify({ type: 'success', message: '已更新在一起日期' })
+    await userStore.info()
+  }
+  catch {
+    // request 拦截器已提示错误
+  }
+}
 
 // Points
 const pointsBalance = ref(0)
@@ -382,7 +416,7 @@ onUnmounted(() => chart?.dispose())
       <!-- Row 1: 2-col grid -->
       <div class="card-grid">
         <!-- 纪念日 Card -->
-        <div class="card card-anniv" @click="router.push('/share')">
+        <div class="card card-anniv" @click="showSinceCalendar = true">
           <div class="card-icon">
             💕
           </div>
@@ -506,6 +540,14 @@ onUnmounted(() => chart?.dispose())
           </van-button>
         </div>
       </van-action-sheet>
+
+      <van-calendar
+        v-model:show="showSinceCalendar"
+        :min-date="new Date('2020-01-01')"
+        :max-date="sinceCalendarMaxDate"
+        :default-date="partnerSinceDefaultDate"
+        @confirm="onPartnerSinceConfirm"
+      />
 
       <!-- 扣分弹窗 -->
       <van-action-sheet v-model:show="showSubPopup" :title="$t('dashboard.subPoints')" :close-on-click-action="false">
