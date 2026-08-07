@@ -6,7 +6,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.continew.starter.core.exception.BadRequestException;
 import top.lifeassistant.partner.mapper.PartnerPointsMapper;
+import top.lifeassistant.partner.model.entity.PartnerInfoDO;
 import top.lifeassistant.partner.model.entity.PartnerPointsDO;
 import top.lifeassistant.system.model.entity.user.UserDO;
 import top.lifeassistant.system.service.UserService;
@@ -19,6 +21,7 @@ import java.util.UUID;
 public class PartnerPointsService {
     private final PartnerPointsMapper mapper;
     private final UserService userService;
+    private final PartnerInfoService partnerInfoService;
 
     private String getUserId() {
         return StpUtil.getLoginIdAsString();
@@ -27,14 +30,14 @@ public class PartnerPointsService {
     private String getPartnerId(String userId) {
         UserDO user = userService.getById(userId);
         if (user == null || user.getPartnerId() == null)
-            throw new RuntimeException("请先绑定伴侣");
+            throw new BadRequestException("请先绑定伴侣");
         return user.getPartnerId();
     }
 
     public Integer getBalance(String userId) {
         String partnerId = getPartnerId(userId);
-        Integer sum = mapper.sumPoints(userId, partnerId);
-        return sum != null ? sum : 0;
+        PartnerInfoDO info = partnerInfoService.requireByUser(userId, partnerId);
+        return info.getPointsBalance() != null ? info.getPointsBalance() : 0;
     }
 
     public Page<PartnerPointsDO> getHistory(String userId, int page, int size) {
@@ -47,6 +50,7 @@ public class PartnerPointsService {
 
     @Transactional
     public void addPoints(String userId, int pointsChange, String reason) {
+        String partnerId = getPartnerId(userId);
         PartnerPointsDO record = new PartnerPointsDO();
         record.setId(UUID.randomUUID().toString());
         record.setCreatedBy(userId);
@@ -54,6 +58,7 @@ public class PartnerPointsService {
         record.setReason(reason);
         record.setCreatedAt(LocalDateTime.now());
         mapper.insert(record);
+        partnerInfoService.addPointsBalance(userId, partnerId, pointsChange);
     }
 
     public void deleteByUsers(String userId1, String userId2) {
