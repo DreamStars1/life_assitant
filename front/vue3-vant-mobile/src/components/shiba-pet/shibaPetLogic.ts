@@ -67,7 +67,7 @@ export function afterHitFlash(state: ShibaPetLogicState): ShibaPetLogicState {
   }
 }
 
-export function clearBruise(state: ShibaPetLogicState): ShibaPetLogicState {
+export function clearBruise(_state: ShibaPetLogicState): ShibaPetLogicState {
   return { displayMood: 'normal', hitCount: 0, bruised: false }
 }
 
