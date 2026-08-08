@@ -33,3 +33,10 @@ html {
   transform: none;
   overflow: hidden;
 }
+
+/* ponytail: van-dialog 默认不限高；长表单（如简介 autosize）会撑出视口且无法滚动 */
+.van-dialog__content {
+  max-height: min(60vh, 480px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
