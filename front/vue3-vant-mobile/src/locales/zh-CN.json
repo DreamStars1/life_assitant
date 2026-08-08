@@ -260,6 +260,8 @@
     "todayCheckin": "今日打卡",
     "wakeTime": "起床时间",
     "sleepTime": "睡觉时间",
-    "notCheckedIn": "未打卡"
+    "notCheckedIn": "未打卡",
+    "recordDate": "记录日期",
+    "editRecordDate": "修改日期"
   }
 }

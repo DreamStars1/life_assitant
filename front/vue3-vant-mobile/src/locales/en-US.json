@@ -252,6 +252,8 @@
     "todayCheckin": "Today's Check-in",
     "wakeTime": "Wake Time",
     "sleepTime": "Sleep Time",
-    "notCheckedIn": "Not checked in"
+    "notCheckedIn": "Not checked in",
+    "recordDate": "Record date",
+    "editRecordDate": "Edit date"
   }
 }

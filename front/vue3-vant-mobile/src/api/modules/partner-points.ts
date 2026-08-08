@@ -19,6 +19,14 @@ export function getPointsHistory(page = 1, size = 20) {
   })
 }
 
-export function addPoints(pointsChange: number, reason: string) {
-  return request.post<ApiResponse<void>>('/partner/points', { pointsChange, reason })
+export function addPoints(pointsChange: number, reason: string, recordDate?: string) {
+  return request.post<ApiResponse<void>>('/partner/points', {
+    pointsChange,
+    reason,
+    ...(recordDate ? { recordDate } : {}),
+  })
+}
+
+export function updatePointsRecordDate(id: string, recordDate: string) {
+  return request.patch<ApiResponse<void>>(`/partner/points/${id}`, { recordDate })
 }

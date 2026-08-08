@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { showToast } from 'vant'
-import { addPoints, getPointsBalance, getPointsHistory } from '@/api/modules/partner-points'
+import { addPoints, getPointsBalance, getPointsHistory, updatePointsRecordDate } from '@/api/modules/partner-points'
 import type { PointsRecord } from '@/api/modules/partner-points'
 
 useI18n()
@@ -16,6 +16,56 @@ const total = ref(0)
 const page = ref(1)
 const loading = ref(false)
 const finished = ref(false)
+
+function formatYmd(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function formatDisplayDate(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleDateString('zh-CN')
+}
+
+const recordDate = ref(formatYmd(new Date()))
+const showCreateCalendar = ref(false)
+const calendarMaxDate = new Date()
+const createCalendarDefault = computed(() => {
+  const [y, m, d] = recordDate.value.split('-').map(Number)
+  return new Date(y, m - 1, d)
+})
+
+function onCreateDateConfirm(val: Date) {
+  recordDate.value = formatYmd(val)
+  showCreateCalendar.value = false
+}
+
+const showEditCalendar = ref(false)
+const editingId = ref<string | null>(null)
+const editCalendarDefault = ref(new Date())
+
+function openEditDate(item: PointsRecord) {
+  editingId.value = item.id
+  editCalendarDefault.value = new Date(item.createdAt)
+  showEditCalendar.value = true
+}
+
+async function onEditDateConfirm(val: Date) {
+  if (!editingId.value)
+    return
+  try {
+    await updatePointsRecordDate(editingId.value, formatYmd(val))
+    showToast('已更新日期')
+    showEditCalendar.value = false
+    editingId.value = null
+    page.value = 1
+    finished.value = false
+    await loadHistory()
+  }
+  catch { /* interceptor */ }
+}
 
 async function loadBalance() {
   try {
@@ -69,11 +119,12 @@ async function confirmPoints() {
   submitting.value = true
   try {
     const change = mode.value === 'add' ? amount.value : -amount.value
-    await addPoints(change, reason.value.trim())
+    await addPoints(change, reason.value.trim(), recordDate.value)
     showToast(mode.value === 'add' ? '已加分' : '已扣分')
     amount.value = 1
     reason.value = ''
     mode.value = 'add'
+    recordDate.value = formatYmd(new Date())
     page.value = 1
     finished.value = false
     await loadBalance()
@@ -136,6 +187,13 @@ onMounted(() => {
         <van-stepper v-model="amount" :min="1" :max="100" />
       </div>
       <van-field
+        :model-value="recordDate"
+        is-link
+        readonly
+        :label="$t('dashboard.recordDate')"
+        @click="showCreateCalendar = true"
+      />
+      <van-field
         v-model="reason"
         :placeholder="$t('dashboard.reasonPlaceholder')"
         clearable
@@ -171,13 +229,18 @@ onMounted(() => {
         finished-text=""
         @load="onLoad"
       >
-        <div v-for="item in history" :key="item.id" class="history-item">
+        <div
+          v-for="item in history"
+          :key="item.id"
+          class="history-item"
+          @click="openEditDate(item)"
+        >
           <div class="hi-left">
             <div class="hi-reason">
               {{ item.reason }}
             </div>
             <div class="hi-time">
-              {{ new Date(item.createdAt).toLocaleString('zh-CN') }}
+              {{ formatDisplayDate(item.createdAt) }}
             </div>
           </div>
           <div class="hi-change" :class="{ add: item.pointsChange > 0, sub: item.pointsChange < 0 }">
@@ -186,6 +249,22 @@ onMounted(() => {
         </div>
       </van-list>
     </div>
+
+    <van-calendar
+      v-model:show="showCreateCalendar"
+      :min-date="new Date('2020-01-01')"
+      :max-date="calendarMaxDate"
+      :default-date="createCalendarDefault"
+      @confirm="onCreateDateConfirm"
+    />
+
+    <van-calendar
+      v-model:show="showEditCalendar"
+      :min-date="new Date('2020-01-01')"
+      :max-date="calendarMaxDate"
+      :default-date="editCalendarDefault"
+      @confirm="onEditDateConfirm"
+    />
   </div>
 </template>
 
