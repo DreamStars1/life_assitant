@@ -34,7 +34,7 @@ public class PartnerCheckinService {
     private String getPartnerId(String userId) {
         UserDO user = userService.getById(userId);
         if (user == null || user.getPartnerId() == null)
-            throw new RuntimeException("请先绑定伴侣");
+            throw new BadRequestException("请先绑定伴侣");
         return user.getPartnerId();
     }
 
@@ -67,10 +67,12 @@ public class PartnerCheckinService {
         return mapper.findToday(userId, partnerId, businessDate(LocalDateTime.now()));
     }
 
-    public List<PartnerCheckinDO> getWeekly(String userId) {
+    public List<PartnerCheckinDO> getWeekly(String userId, int days) {
+        if (days != 7 && days != 30)
+            throw new BadRequestException("days 仅支持 7 或 30");
         String partnerId = getPartnerId(userId);
         LocalDate end = businessDate(LocalDateTime.now());
-        return mapper.findWeekly(userId, partnerId, end.minusDays(6));
+        return mapper.findWeekly(userId, partnerId, end.minusDays(days - 1L));
     }
 
     public void deleteByUsers(String userId1, String userId2) {

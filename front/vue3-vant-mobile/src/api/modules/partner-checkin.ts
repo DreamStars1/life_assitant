@@ -17,6 +17,8 @@ export function getTodayCheckin() {
   return request.get<ApiResponse<CheckinRecord[]>>('/partner/checkin/today')
 }
 
-export function getWeeklyCheckin() {
-  return request.get<ApiResponse<CheckinRecord[]>>('/partner/checkin/weekly')
+export function getWeeklyCheckin(days: 7 | 30 = 7) {
+  return request.get<ApiResponse<CheckinRecord[]>>('/partner/checkin/weekly', {
+    params: { days },
+  })
 }

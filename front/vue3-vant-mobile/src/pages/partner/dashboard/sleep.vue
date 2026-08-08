@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import { showToast } from 'vant'
 import { useUserStore } from '@/stores'
 import { doCheckin, getTodayCheckin, getWeeklyCheckin } from '@/api/modules/partner-checkin'
 import type { CheckinRecord } from '@/api/modules/partner-checkin'
+import { emitShibaGreet } from '@/components/shiba-pet/shibaPetLogic'
+
+type RangeDays = 7 | 30
 
 const { t } = useI18n()
 const userStore = useUserStore()
@@ -13,7 +16,7 @@ const partnerId = computed(() => userStore.userInfo?.partnerId || '')
 const partnerName = computed(() => userStore.partnerName || '对方')
 
 const todayCheckins = ref<CheckinRecord[]>([])
-const weeklyCheckins = ref<CheckinRecord[]>([])
+const rangeDays = ref<RangeDays>(7)
 
 const myToday = computed(() => todayCheckins.value.filter(c => c.userId === myId.value))
 const wakeRecord = computed(() => myToday.value.find(c => c.checkinType === 'wake'))
@@ -29,10 +32,10 @@ function businessNow(base = new Date()): Date {
   return d
 }
 
-function getDateLabels(): string[] {
+function getDateLabels(days: number): string[] {
   const labels: string[] = []
   const base = businessNow()
-  for (let i = 6; i >= 0; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const d = new Date(base)
     d.setDate(base.getDate() - i)
     labels.push(`${d.getMonth() + 1}/${d.getDate()}`)
@@ -40,16 +43,14 @@ function getDateLabels(): string[] {
   return labels
 }
 
-function dateKey(offset: number): string {
+function dateKey(offsetFromEnd: number, days: number): string {
   const d = businessNow()
-  d.setDate(d.getDate() - offset)
+  d.setDate(d.getDate() - (days - 1 - offsetFromEnd))
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
 }
-
-const dateLabels = ref(getDateLabels())
 
 interface SleepChartDay {
   date: string
@@ -59,15 +60,8 @@ interface SleepChartDay {
   partnerSleep: string | null
 }
 
-const sleepData = ref<SleepChartDay[]>(
-  dateLabels.value.map(date => ({
-    date,
-    wake: null,
-    sleep: null,
-    partnerWake: null,
-    partnerSleep: null,
-  })),
-)
+const dateLabels = ref(getDateLabels(7))
+const sleepData = ref<SleepChartDay[]>([])
 
 const labelMineWake = computed(() => `我·${t('dashboard.wakeUp')}`)
 const labelMineSleep = computed(() => `我·${t('dashboard.goToSleep')}`)
@@ -136,11 +130,23 @@ function groupByUser(checkins: CheckinRecord[], userId: string) {
   return grouped
 }
 
-function buildChartFromWeekly(checkins: CheckinRecord[]): SleepChartDay[] {
+function emptyDays(labels: string[]): SleepChartDay[] {
+  return labels.map(date => ({
+    date,
+    wake: null,
+    sleep: null,
+    partnerWake: null,
+    partnerSleep: null,
+  }))
+}
+
+function buildChartFromCheckins(checkins: CheckinRecord[], days: number): SleepChartDay[] {
+  const labels = getDateLabels(days)
+  dateLabels.value = labels
   const mine = groupByUser(checkins, myId.value)
   const partner = partnerId.value ? groupByUser(checkins, partnerId.value) : {}
-  return dateLabels.value.map((date, i) => {
-    const key = dateKey(6 - i)
+  return labels.map((date, i) => {
+    const key = dateKey(i, days)
     return {
       date,
       wake: mine[key]?.wake ?? null,
@@ -151,126 +157,176 @@ function buildChartFromWeekly(checkins: CheckinRecord[]): SleepChartDay[] {
   })
 }
 
-let chart: echarts.ECharts | null = null
+let wakeChart: echarts.ECharts | null = null
+let sleepChart: echarts.ECharts | null = null
 
 function cssVar(name: string, fallback: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
 }
 
-function initChart() {
-  nextTick(() => {
-    const el = document.getElementById('sleep-detail-chart')
-    if (!el)
-      return
-    chart?.dispose()
-    chart = echarts.init(el)
+function formatAxisTime(v: number): string {
+  const h = Math.floor(v / 60) % 24
+  const m = v % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
 
-    const dates = dateLabels.value
+function initOneChart(
+  elId: string,
+  existing: echarts.ECharts | null,
+  opts: {
+    mineLabel: string
+    partnerLabel: string
+    mineData: (number | null)[]
+    partnerData: (number | null)[]
+    mineColor: string
+    partnerColor: string
+    yMin: number
+    yMax: number
+    tooltipMine: (d: SleepChartDay) => string
+    tooltipPartner: (d: SleepChartDay) => string
+  },
+): echarts.ECharts | null {
+  const el = document.getElementById(elId)
+  if (!el)
+    return null
+  existing?.dispose()
+  const chart = echarts.init(el)
+
+  const dates = dateLabels.value
+  const text2 = cssVar('--van-text-color-2', '#8b7a6b')
+  const border = cssVar('--van-border-color', '#f0e6d8')
+  const days = rangeDays.value
+  // ponytail: 30 天标签抽稀，挤了再调 interval
+  const labelInterval = days > 7 ? Math.ceil(days / 8) - 1 : 0
+
+  const legend = [opts.mineLabel]
+  if (partnerId.value)
+    legend.push(opts.partnerLabel)
+
+  const series: echarts.SeriesOption[] = [
+    {
+      name: opts.mineLabel,
+      type: 'line',
+      data: opts.mineData,
+      smooth: true,
+      symbolSize: 6,
+      lineStyle: { color: opts.mineColor, width: 2 },
+      itemStyle: { color: opts.mineColor },
+    },
+  ]
+  if (partnerId.value) {
+    series.push({
+      name: opts.partnerLabel,
+      type: 'line',
+      data: opts.partnerData,
+      smooth: true,
+      symbolSize: 6,
+      lineStyle: { color: opts.partnerColor, width: 2 },
+      itemStyle: { color: opts.partnerColor },
+    })
+  }
+
+  chart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: unknown) => {
+        const list = params as Array<{ dataIndex?: number }>
+        if (!list?.length)
+          return ''
+        const i = list[0]?.dataIndex
+        if (i == null)
+          return ''
+        const self = sleepData.value[i]
+        if (!self)
+          return ''
+        const lines = [`<b>${dates[i]}</b>`, opts.tooltipMine(self)]
+        if (partnerId.value)
+          lines.push(opts.tooltipPartner(self))
+        return lines.join('<br/>')
+      },
+    },
+    legend: {
+      data: legend,
+      bottom: 0,
+      textStyle: { fontSize: 10, color: text2 },
+      itemWidth: 12,
+      itemHeight: 8,
+    },
+    grid: { left: 50, right: 16, top: 16, bottom: 48 },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      axisLabel: {
+        fontSize: 10,
+        color: text2,
+        interval: labelInterval,
+      },
+      axisLine: { show: false },
+    },
+    yAxis: {
+      type: 'value',
+      min: opts.yMin,
+      max: opts.yMax,
+      axisLabel: {
+        fontSize: 10,
+        color: text2,
+        formatter: formatAxisTime,
+      },
+      splitLine: { lineStyle: { color: border } },
+    },
+    series,
+    animation: false,
+  })
+  return chart
+}
+
+function initCharts() {
+  nextTick(() => {
     const primary = cssVar('--van-primary-color', '#e8905e')
     const danger = cssVar('--van-tag-danger-color', '#d97a6e')
     const success = cssVar('--van-tag-success-color', '#7ec8a0')
     const warning = cssVar('--van-tag-warning-color', '#e8b05e')
-    const text2 = cssVar('--van-text-color-2', '#8b7a6b')
-    const border = cssVar('--van-border-color', '#f0e6d8')
 
-    const legend = [
-      labelMineWake.value,
-      labelMineSleep.value,
-      labelPartnerWake.value,
-      labelPartnerSleep.value,
-    ]
+    wakeChart = initOneChart('wake-trend-chart', wakeChart, {
+      mineLabel: labelMineWake.value,
+      partnerLabel: labelPartnerWake.value,
+      mineData: sleepData.value.map(d => toMinutes(d.wake, 'wake')),
+      partnerData: sleepData.value.map(d => toMinutes(d.partnerWake, 'wake')),
+      mineColor: primary,
+      partnerColor: success,
+      yMin: 300,
+      yMax: 720,
+      tooltipMine: d => `${labelMineWake.value}: ${d.wake ?? '-'}`,
+      tooltipPartner: d => `${labelPartnerWake.value}: ${d.partnerWake ?? '-'}`,
+    })
 
-    chart.setOption({
-      tooltip: {
-        trigger: 'axis',
-        formatter: (params: any) => {
-          if (!params || params.length === 0)
-            return ''
-          const i = params[0]?.dataIndex
-          if (i == null)
-            return ''
-          const self = sleepData.value[i!]
-          if (!self)
-            return ''
-          return [
-            `<b>${dates[i!]}</b>`,
-            `${labelMineWake.value}: ${self.wake ?? '-'}`,
-            `${labelMineSleep.value}: ${self.sleep ?? '-'}`,
-            `${labelPartnerWake.value}: ${self.partnerWake ?? '-'}`,
-            `${labelPartnerSleep.value}: ${self.partnerSleep ?? '-'}`,
-          ].join('<br/>')
-        },
-      },
-      legend: {
-        data: legend,
-        bottom: 0,
-        textStyle: { fontSize: 10, color: text2 },
-        itemWidth: 12,
-        itemHeight: 8,
-      },
-      grid: { left: 50, right: 16, top: 16, bottom: 56 },
-      xAxis: {
-        type: 'category',
-        data: dates,
-        axisLabel: { fontSize: 10, color: text2 },
-        axisLine: { show: false },
-      },
-      yAxis: {
-        type: 'value',
-        min: 300,
-        max: 1620,
-        axisLabel: {
-          fontSize: 10,
-          color: text2,
-          formatter: (v: number) => {
-            const h = Math.floor(v / 60) % 24
-            const m = v % 60
-            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-          },
-        },
-        splitLine: { lineStyle: { color: border } },
-      },
-      series: [
-        {
-          name: labelMineWake.value,
-          type: 'line',
-          data: sleepData.value.map(d => toMinutes(d.wake, 'wake')),
-          smooth: true,
-          symbolSize: 6,
-          lineStyle: { color: primary, width: 2 },
-          itemStyle: { color: primary },
-        },
-        {
-          name: labelMineSleep.value,
-          type: 'line',
-          data: sleepData.value.map(d => toMinutes(d.sleep, 'sleep')),
-          smooth: true,
-          symbolSize: 6,
-          lineStyle: { color: danger, width: 2, type: 'dashed' },
-          itemStyle: { color: danger },
-        },
-        {
-          name: labelPartnerWake.value,
-          type: 'line',
-          data: sleepData.value.map(d => toMinutes(d.partnerWake, 'wake')),
-          smooth: true,
-          symbolSize: 6,
-          lineStyle: { color: success, width: 2 },
-          itemStyle: { color: success },
-        },
-        {
-          name: labelPartnerSleep.value,
-          type: 'line',
-          data: sleepData.value.map(d => toMinutes(d.partnerSleep, 'sleep')),
-          smooth: true,
-          symbolSize: 6,
-          lineStyle: { color: warning, width: 2, type: 'dashed' },
-          itemStyle: { color: warning },
-        },
-      ],
-      animation: false,
+    sleepChart = initOneChart('sleep-trend-chart', sleepChart, {
+      mineLabel: labelMineSleep.value,
+      partnerLabel: labelPartnerSleep.value,
+      mineData: sleepData.value.map(d => toMinutes(d.sleep, 'sleep')),
+      partnerData: sleepData.value.map(d => toMinutes(d.partnerSleep, 'sleep')),
+      mineColor: danger,
+      partnerColor: warning,
+      yMin: 1080,
+      yMax: 1620,
+      tooltipMine: d => `${labelMineSleep.value}: ${d.sleep ?? '-'}`,
+      tooltipPartner: d => `${labelPartnerSleep.value}: ${d.partnerSleep ?? '-'}`,
     })
   })
+}
+
+async function loadTrend() {
+  const days: RangeDays = Number(rangeDays.value) === 30 ? 30 : 7
+  try {
+    const res = await getWeeklyCheckin(days)
+    sleepData.value = buildChartFromCheckins(res.data ?? [], days)
+  }
+  catch {
+    const labels = getDateLabels(days)
+    dateLabels.value = labels
+    sleepData.value = emptyDays(labels)
+  }
+  initCharts()
 }
 
 async function loadData() {
@@ -281,29 +337,14 @@ async function loadData() {
   catch {
     todayCheckins.value = []
   }
-
-  try {
-    const res = await getWeeklyCheckin()
-    weeklyCheckins.value = res.data ?? []
-    sleepData.value = buildChartFromWeekly(weeklyCheckins.value)
-  }
-  catch {
-    sleepData.value = dateLabels.value.map(date => ({
-      date,
-      wake: null,
-      sleep: null,
-      partnerWake: null,
-      partnerSleep: null,
-    }))
-  }
-
-  initChart()
+  await loadTrend()
 }
 
 async function handleCheckin(type: 'wake' | 'sleep') {
   try {
     await doCheckin(type)
     showToast(type === 'wake' ? '已打卡起床' : '已打卡睡觉')
+    emitShibaGreet()
     await loadData()
   }
   catch { /* notify handled by interceptor */ }
@@ -313,8 +354,15 @@ function formatTime(value: string | number[]): string {
   return extractTime(value)
 }
 
+watch(rangeDays, () => {
+  loadTrend()
+})
+
 onMounted(loadData)
-onUnmounted(() => chart?.dispose())
+onUnmounted(() => {
+  wakeChart?.dispose()
+  sleepChart?.dispose()
+})
 </script>
 
 <template>
@@ -366,11 +414,23 @@ onUnmounted(() => chart?.dispose())
       </div>
     </div>
 
+    <van-tabs v-model:active="rangeDays" shrink class="range-tabs">
+      <van-tab :title="$t('dashboard.range7Days')" :name="7" />
+      <van-tab :title="$t('dashboard.range30Days')" :name="30" />
+    </van-tabs>
+
     <div class="chart-card">
       <div class="chart-title">
-        {{ $t('dashboard.sleepTrend') }}
+        {{ $t('dashboard.wakeTrend') }}
       </div>
-      <div id="sleep-detail-chart" class="sleep-chart" />
+      <div id="wake-trend-chart" class="sleep-chart" />
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">
+        {{ $t('dashboard.sleepTrendDetail') }}
+      </div>
+      <div id="sleep-trend-chart" class="sleep-chart" />
     </div>
   </div>
 </template>
@@ -431,11 +491,16 @@ onUnmounted(() => chart?.dispose())
   color: var(--van-tag-success-color);
 }
 
+.range-tabs {
+  margin-bottom: 12px;
+}
+
 .chart-card {
   background: var(--van-background-2);
   border-radius: 12px;
   padding: 16px;
   border: 1px solid var(--van-border-color);
+  margin-bottom: 12px;
 }
 
 .chart-title {
@@ -447,7 +512,7 @@ onUnmounted(() => chart?.dispose())
 
 .sleep-chart {
   width: 100%;
-  height: 260px;
+  height: 240px;
 }
 </style>
 

@@ -34,10 +34,13 @@ public class PartnerCheckinController {
         return ApiResponse.ok(service.getToday(user.getId()));
     }
 
-    @Operation(summary = "查询近7天打卡数据")
+    @Operation(summary = "查询近N天打卡数据（days=7|30，默认7）")
     @GetMapping("/partner/checkin/weekly")
-    public ApiResponse<List<PartnerCheckinDO>> getWeekly(@CurrentUser UserDO user) {
-        return ApiResponse.ok(service.getWeekly(user.getId()));
+    public ApiResponse<List<PartnerCheckinDO>> getWeekly(
+        @CurrentUser UserDO user,
+        @RequestParam(defaultValue = "7") int days
+    ) {
+        return ApiResponse.ok(service.getWeekly(user.getId(), days));
     }
 
     @Data
