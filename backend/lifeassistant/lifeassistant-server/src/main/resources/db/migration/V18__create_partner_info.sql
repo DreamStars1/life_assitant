@@ -21,7 +21,11 @@ SELECT
     COALESCE((
         SELECT SUM(p.points_change)
         FROM partner_points p
-        WHERE p.created_by IN (a.id, b.id)
+        -- ponytail: partner_points.created_by 与 user.id 校对集不一致时 IN 会炸
+        WHERE p.created_by IN (
+            a.id COLLATE utf8mb4_unicode_ci,
+            b.id COLLATE utf8mb4_unicode_ci
+        )
     ), 0),
     NOW(),
     NOW()

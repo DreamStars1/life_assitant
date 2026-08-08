@@ -4,8 +4,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.lifeassistant.partner.mapper.PartnerPointsMapper;
+import top.lifeassistant.partner.model.entity.PartnerPointsDO;
 import top.lifeassistant.partner.service.PartnerInfoService;
-import top.lifeassistant.partner.service.PartnerPointsService;
 import top.lifeassistant.sharedrecord.service.SharedRecordService;
 import top.lifeassistant.system.mapper.user.UserMapper;
 import top.lifeassistant.system.model.entity.user.UserDO;
@@ -21,7 +22,8 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final SharedRecordService sharedRecordService;
     private final PartnerInfoService partnerInfoService;
-    private final PartnerPointsService partnerPointsService;
+    // ponytail: 直接用 Mapper，避免 UserService ↔ PartnerPointsService 环
+    private final PartnerPointsMapper partnerPointsMapper;
 
     @Override
     public UserDO getByEmail(String email) { return userMapper.selectByEmail(email); }
@@ -46,7 +48,7 @@ public class UserServiceImpl implements UserService {
         if (user.getPartnerId() != null) {
             UserDO partner = getById(user.getPartnerId());
             partnerInfoService.deleteForPair(user.getId(), partner.getId());
-            partnerPointsService.deleteByUsers(user.getId(), partner.getId());
+            deletePartnerPoints(user.getId(), partner.getId());
             partner.setPartnerId(null);
             userMapper.updateById(partner);
         }
@@ -67,12 +69,17 @@ public class UserServiceImpl implements UserService {
         }
         UserDO partner = getById(me.getPartnerId());
         partnerInfoService.deleteForPair(me.getId(), partner.getId());
-        partnerPointsService.deleteByUsers(me.getId(), partner.getId());
+        deletePartnerPoints(me.getId(), partner.getId());
         sharedRecordService.deleteByCreatedBy(me.getId(), partner.getId());
         // 双向解除
         me.setPartnerId(null);
         partner.setPartnerId(null);
         userMapper.updateById(me);
         userMapper.updateById(partner);
+    }
+
+    private void deletePartnerPoints(String userId1, String userId2) {
+        partnerPointsMapper.delete(new LambdaQueryWrapper<PartnerPointsDO>()
+            .in(PartnerPointsDO::getCreatedBy, userId1, userId2));
     }
 }
