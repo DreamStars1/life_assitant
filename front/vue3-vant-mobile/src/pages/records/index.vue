@@ -151,7 +151,7 @@ async function onAddMedia() {
     showToast('已添加')
     showAddMedia.value = false
     addMediaForm.title = ''
-    addMediaForm.mediaType = 'movie'
+    addMediaForm.mediaType = mediaTypeFilter.value || 'movie'
     addMediaForm.description = ''
     addMediaForm.lastWatchedAt = toLocalDateStr(new Date())
     addMediaForm.isPrivate = false
@@ -165,6 +165,7 @@ async function onAddMedia() {
 }
 
 function openAddMedia() {
+  addMediaForm.mediaType = mediaTypeFilter.value || 'movie'
   addMediaForm.lastWatchedAt = toLocalDateStr(new Date())
   showAddMedia.value = true
 }
