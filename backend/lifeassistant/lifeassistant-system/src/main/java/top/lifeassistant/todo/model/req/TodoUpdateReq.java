@@ -22,4 +22,7 @@ public class TodoUpdateReq {
     @Schema(description = "截止时间")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime dueDate;
+
+    @Schema(description = "指派给（伴侣用户 ID）；传空串表示取消指派。仅创建者且对方未确认前可改")
+    private String assignedTo;
 }

@@ -35,7 +35,8 @@ const showForm = ref(false)
 const showEdit = ref(false)
 const editId = ref('')
 const expandedId = ref<string | null>(null)
-const editInitial = ref<{ title: string, description?: string, priority: string, dueDate?: string } | undefined>(undefined)
+const editInitial = ref<{ title: string, description?: string, priority: string, dueDate?: string, assignedTo?: string } | undefined>(undefined)
+const editShowAssign = ref<string | false>(false)
 const showPageSize = ref(false)
 
 const scheduleRangeTab = ref(0)
@@ -221,11 +222,22 @@ function onCreate(data: { title: string, description?: string, priority: string,
 
 function openEdit(todo: any) {
   editId.value = todo.id
-  editInitial.value = { title: todo.title, description: todo.description || '', priority: todo.priority, dueDate: todo.dueDate || '' }
+  const myId = userStore.userInfo.id
+  const pid = partnerId.value
+  // 创建者且对方未确认前，可改「交给 TA」
+  const canAssign = !!(pid && todo.userId === myId && todo.ackStatus !== 'confirmed')
+  editShowAssign.value = canAssign ? pid : false
+  editInitial.value = {
+    title: todo.title,
+    description: todo.description || '',
+    priority: todo.priority,
+    dueDate: todo.dueDate || '',
+    assignedTo: canAssign && todo.assignedTo === pid ? pid : '',
+  }
   showEdit.value = true
 }
 
-async function onEdit(data: { title: string, description?: string, priority: string, dueDate?: string, assignedTo?: string }) {
+async function onEdit(data: { title: string, description?: string, priority: string, dueDate?: string, assignedTo?: string | null }) {
   try {
     await updateTodo(editId.value, data)
     showToast('已更新')
@@ -570,7 +582,13 @@ if (primaryTab.value === 1)
     </van-action-sheet>
 
     <van-action-sheet v-model:show="showEdit" title="编辑待办" close-on-popup-safe>
-      <TodoForm v-if="editInitial" :key="`edit-${editId}`" :initial="editInitial" @save="onEdit" />
+      <TodoForm
+        v-if="editInitial"
+        :key="`edit-${editId}`"
+        :initial="editInitial"
+        :show-assign="editShowAssign"
+        @save="onEdit"
+      />
     </van-action-sheet>
 
     <van-action-sheet v-model:show="showPageSize" title="每页显示">

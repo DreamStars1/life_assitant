@@ -1,12 +1,12 @@
 <script setup lang="ts">
 const props = defineProps<{
-  initial?: { title?: string, description?: string, priority?: string, dueDate?: string }
+  initial?: { title?: string, description?: string, priority?: string, dueDate?: string, assignedTo?: string }
   showAssign?: boolean | string
   loading?: boolean
 }>()
 
 const emit = defineEmits<{
-  save: [data: { title: string, description?: string, priority: string, dueDate?: string, assignedTo?: string }]
+  save: [data: { title: string, description?: string, priority: string, dueDate?: string, assignedTo?: string | null }]
 }>()
 
 const showCalendar = ref(false)
@@ -15,7 +15,7 @@ const title = ref(props.initial?.title ?? '')
 const description = ref(props.initial?.description ?? '')
 const priority = ref(props.initial?.priority ?? 'medium')
 const dueDate = ref(props.initial?.dueDate ?? '')
-const assignedTo = ref('')
+const assignedTo = ref(props.initial?.assignedTo ?? '')
 
 function splitDueDate(v: string) {
   const sep = v.includes('T') ? 'T' : v.includes(' ') ? ' ' : null
@@ -56,7 +56,10 @@ function onSave() {
     description: description.value || undefined,
     priority: priority.value,
     dueDate: dueDate.value ? dueDate.value.replace(' ', 'T') : undefined,
-    assignedTo: assignedTo.value || undefined,
+    // 编辑：空串=取消指派；新建：关闭开关不传字段
+    assignedTo: props.showAssign
+      ? (assignedTo.value || (props.initial != null ? '' : undefined))
+      : undefined,
   })
 }
 

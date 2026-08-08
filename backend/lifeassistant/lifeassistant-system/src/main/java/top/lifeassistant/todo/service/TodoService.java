@@ -1,6 +1,7 @@
 package top.lifeassistant.todo.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -88,9 +89,47 @@ public class TodoService {
         if (req.getDescription() != null) todo.setDescription(req.getDescription());
         if (req.getPriority() != null) todo.setPriority(req.getPriority());
         if (req.getDueDate() != null) todo.setDueDate(req.getDueDate());
+        boolean clearAssign = false;
+        if (req.getAssignedTo() != null) {
+            clearAssign = applyAssignmentUpdate(user, todo, req.getAssignedTo());
+        }
         todo.setUpdateTime(LocalDateTime.now());
         mapper.updateById(todo);
+        // ponytail: MP 默认忽略 null，取消指派需显式 set null
+        if (clearAssign) {
+            mapper.update(null, new LambdaUpdateWrapper<TodoDO>()
+                .eq(TodoDO::getId, id)
+                .set(TodoDO::getAssignedTo, null)
+                .set(TodoDO::getAssignedBy, null)
+                .set(TodoDO::getAckMessage, null));
+            todo = mapper.selectById(id);
+        }
         return TodoResp.from(todo);
+    }
+
+    /**
+     * 空串=取消指派；非空=指派给伴侣。仅创建者且未确认前可改。
+     * @return true 表示需要把指派字段写库为 null
+     */
+    private boolean applyAssignmentUpdate(UserDO user, TodoDO todo, String assignedTo) {
+        if (!user.getId().equals(todo.getUserId())) {
+            throw new BadRequestException("只有创建者可以修改指派");
+        }
+        if ("confirmed".equals(todo.getAckStatus())) {
+            throw new BadRequestException("对方已确认，无法修改指派");
+        }
+        if (assignedTo.isBlank()) {
+            todo.setAckStatus("none");
+            return true;
+        }
+        if (user.getPartnerId() == null || !assignedTo.equals(user.getPartnerId())) {
+            throw new BadRequestException("只能指派给已绑定伴侣");
+        }
+        todo.setAssignedTo(assignedTo);
+        todo.setAssignedBy(user.getId());
+        todo.setAckStatus("unconfirmed");
+        todo.setAckMessage(null);
+        return false;
     }
 
     public void delete(UserDO user, String id) {

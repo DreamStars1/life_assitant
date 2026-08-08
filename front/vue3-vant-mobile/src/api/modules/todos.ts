@@ -39,7 +39,13 @@ export function createTodo(data: { title: string, description?: string, priority
   return request.post<ApiResponse<TodoItem>>('/todos', data)
 }
 
-export function updateTodo(id: string, data: { title?: string, description?: string, priority?: string, dueDate?: string }) {
+export function updateTodo(id: string, data: {
+  title?: string
+  description?: string
+  priority?: string
+  dueDate?: string
+  assignedTo?: string | null
+}) {
   return request.patch<ApiResponse<TodoItem>>(`/todos/${id}`, data)
 }
 
