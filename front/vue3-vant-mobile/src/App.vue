@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useRouteCacheStore } from '@/stores'
+import FloatingShibaPet from '@/components/shiba-pet/FloatingShibaPet.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -43,6 +44,7 @@ const mode = computed<'light' | 'dark'>(() => 'light')
       </section>
     </router-view>
     <tab-bar v-if="showLayout" />
+    <FloatingShibaPet />
   </van-config-provider>
 </template>
 
