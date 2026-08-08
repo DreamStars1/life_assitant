@@ -13,6 +13,7 @@ import top.lifeassistant.partner.model.entity.PartnerPointsDO;
 import top.lifeassistant.system.model.entity.user.UserDO;
 import top.lifeassistant.system.service.UserService;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -49,16 +50,36 @@ public class PartnerPointsService {
     }
 
     @Transactional
-    public void addPoints(String userId, int pointsChange, String reason) {
+    public void addPoints(String userId, int pointsChange, String reason, LocalDate recordDate) {
         String partnerId = getPartnerId(userId);
+        LocalDateTime now = LocalDateTime.now();
         PartnerPointsDO record = new PartnerPointsDO();
         record.setId(UUID.randomUUID().toString());
         record.setCreatedBy(userId);
         record.setPointsChange(pointsChange);
         record.setReason(reason);
-        record.setCreatedAt(LocalDateTime.now());
+        record.setCreatedAt(PartnerPointsRules.resolveCreatedAt(recordDate, now.toLocalDate(), now));
         mapper.insert(record);
         partnerInfoService.addPointsBalance(userId, partnerId, pointsChange);
+    }
+
+    @Transactional
+    public void updateRecordDate(String userId, String recordId, LocalDate recordDate) {
+        if (recordDate == null) {
+            throw new BadRequestException("记录日期不能为空");
+        }
+        String partnerId = getPartnerId(userId);
+        PartnerPointsDO record = mapper.selectById(recordId);
+        if (record == null) {
+            throw new BadRequestException("积分记录不存在");
+        }
+        String by = record.getCreatedBy();
+        if (!userId.equals(by) && !partnerId.equals(by)) {
+            throw new BadRequestException("无权修改该积分记录");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        record.setCreatedAt(PartnerPointsRules.resolveCreatedAt(recordDate, now.toLocalDate(), now));
+        mapper.updateById(record);
     }
 
     public void deleteByUsers(String userId1, String userId2) {

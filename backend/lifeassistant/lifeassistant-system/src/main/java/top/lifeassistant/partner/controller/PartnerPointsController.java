@@ -15,6 +15,8 @@ import top.lifeassistant.partner.model.entity.PartnerPointsDO;
 import top.lifeassistant.partner.service.PartnerPointsService;
 import top.lifeassistant.system.model.entity.user.UserDO;
 
+import java.time.LocalDate;
+
 @Tag(name = "伴侣积分 API")
 @RestController
 @RequiredArgsConstructor
@@ -39,7 +41,17 @@ public class PartnerPointsController {
     @Operation(summary = "记录积分变动")
     @PostMapping("/partner/points")
     public ApiResponse<Void> addPoints(@CurrentUser UserDO user, @Valid @RequestBody PointsChangeRequest req) {
-        service.addPoints(user.getId(), req.getPointsChange(), req.getReason());
+        service.addPoints(user.getId(), req.getPointsChange(), req.getReason(), req.getRecordDate());
+        return ApiResponse.ok();
+    }
+
+    @Operation(summary = "修改积分流水记录日期")
+    @PatchMapping("/partner/points/{id}")
+    public ApiResponse<Void> updateRecordDate(
+            @CurrentUser UserDO user,
+            @PathVariable String id,
+            @Valid @RequestBody PointsRecordDateRequest req) {
+        service.updateRecordDate(user.getId(), id, req.getRecordDate());
         return ApiResponse.ok();
     }
 
@@ -49,5 +61,12 @@ public class PartnerPointsController {
         private Integer pointsChange;
         @NotBlank
         private String reason;
+        private LocalDate recordDate;
+    }
+
+    @Data
+    public static class PointsRecordDateRequest {
+        @NotNull
+        private LocalDate recordDate;
     }
 }
