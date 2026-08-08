@@ -8,8 +8,9 @@ WORKDIR /app
 COPY . .
 
 ENV HUSKY=0 CI=true
+# ponytail: Docker 内 npm registry 慢时 trustPolicy 校验易超时；锁文件已入库，用 --trust-lockfile 跳过联网复核
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install --no-frozen-lockfile --ignore-scripts && \
+    pnpm install --frozen-lockfile --ignore-scripts --trust-lockfile && \
     pnpm build:pro
 
 FROM nginx:alpine

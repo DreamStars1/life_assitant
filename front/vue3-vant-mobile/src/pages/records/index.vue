@@ -7,6 +7,9 @@ import { createCategory, deleteCategory, fetchCategories, updateCategory } from 
 import type { MediaCategory } from '@/api/modules/media-category'
 import { useRouter } from 'vue-router'
 
+// keep-alive include 按组件 name 匹配路由名
+defineOptions({ name: 'Records' })
+
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo)
 const router = useRouter()
@@ -71,11 +74,17 @@ const visibleMedia = computed(() =>
   ),
 )
 
+function isPrivateMedia(item: SharedMediaItem): boolean {
+  return item.isPrivate === true
+}
+
 function formatMediaTimeLine(item: SharedMediaItem): string {
-  if (item.isPrivate) {
+  if (isPrivateMedia(item)) {
     if (item.lastWatchedAt)
-      return `上次观看：${item.lastWatchedAt.slice(0, 10)}`
-    return `更新于：${item.updateTime.slice(0, 10)}`
+      return `时间：${item.lastWatchedAt.slice(0, 10)}`
+    if (item.updateTime)
+      return `更新于：${item.updateTime.slice(0, 10)}`
+    return ''
   }
   if (item.lastWatchedAt)
     return `上次一起看：${item.lastWatchedAt.slice(0, 10)}`
@@ -453,7 +462,7 @@ watch(partnerId, async (val) => {
             is-link
             readonly
             clearable
-            label="上次一起看"
+            :label="addMediaForm.isPrivate ? '时间' : '上次一起看'"
             placeholder="可选日期"
             @click="showAddLastWatchedCalendar = true"
             @clear="addMediaForm.lastWatchedAt = ''"
@@ -505,7 +514,7 @@ watch(partnerId, async (val) => {
             is-link
             readonly
             clearable
-            label="上次一起看"
+            :label="editMediaForm.isPrivate ? '时间' : '上次一起看'"
             placeholder="可选日期"
             @click="showEditLastWatchedCalendar = true"
             @clear="editMediaForm.lastWatchedAt = ''"
@@ -601,6 +610,9 @@ watch(partnerId, async (val) => {
 
 <route lang="json5">
 {
-  name: 'Records'
+  name: 'Records',
+  meta: {
+    keepAlive: true,
+  },
 }
 </route>

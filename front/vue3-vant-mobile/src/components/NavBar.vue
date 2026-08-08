@@ -29,6 +29,8 @@ const showLeftArrow = computed(() => {
   return true
 })
 
+const isHealth = computed(() => route.name === 'Health')
+
 function onBack() {
   if (window.history.state.back) {
     history.back()
@@ -44,7 +46,18 @@ function onBack() {
     :title="title"
     :fixed="true"
     :left-arrow="showLeftArrow"
-    placeholder clickable
+    :class="{ 'nav-bar--health': isHealth }"
+    placeholder
+    clickable
     @click-left="onBack"
   />
 </template>
+
+<style scoped>
+.nav-bar--health {
+  --van-nav-bar-background: #315d43;
+  --van-nav-bar-title-text-color: #fff;
+  --van-nav-bar-icon-color: #fff;
+  --van-border-color: transparent;
+}
+</style>

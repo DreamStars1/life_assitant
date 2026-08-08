@@ -3,6 +3,8 @@ repos:
     rev: v5.0.0
     hooks:
       - id: check-added-large-files
+        # shiba pet anim webp ~600–700KB; keep ceiling intentional, not unlimited
+        args: [--maxkb=1024]
       - id: check-case-conflict
       - id: check-merge-conflict
       - id: check-toml

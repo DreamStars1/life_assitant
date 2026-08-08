@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { showConfirmDialog, showNotify, showToast } from 'vant'
+import {  showNotify, showToast } from 'vant'
 import { useUserStore } from '@/stores'
 import request from '@/utils/request'
 import { createSharedRecord, deleteSharedRecord, fetchSharedRecords, updateSharedRecord } from '@/api/modules/shared-records'

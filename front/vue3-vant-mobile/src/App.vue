@@ -8,7 +8,7 @@ const { t } = useI18n()
 const route = useRoute()
 
 const PUBLIC_ROUTES = ['Login', 'ForgotPassword']
-const LAYOUT_WITHOUT_NAVBAR = ['MediaDetail']
+const LAYOUT_WITHOUT_NAVBAR = ['MediaDetail', 'MediaProgressTimeline']
 const showLayout = computed(() => !PUBLIC_ROUTES.includes(route.name as string))
 const showNavBar = computed(() => showLayout.value && !LAYOUT_WITHOUT_NAVBAR.includes(route.name as string))
 
@@ -37,7 +37,7 @@ const mode = computed<'light' | 'dark'>(() => 'light')
   <van-config-provider :theme="mode">
     <nav-bar v-if="showNavBar" />
     <router-view v-slot="{ Component }">
-      <section class="app-wrapper">
+      <section class="app-wrapper" :class="{ 'app-wrapper--flush': route.name === 'Health' }">
         <keep-alive :include="keepAliveRouteNames">
           <component :is="Component" />
         </keep-alive>
@@ -53,5 +53,8 @@ const mode = computed<'light' | 'dark'>(() => 'light')
   width: 100%;
   position: relative;
   padding: 0 0 16px;
+}
+.app-wrapper--flush {
+  padding-bottom: 0;
 }
 </style>

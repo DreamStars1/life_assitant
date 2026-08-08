@@ -16,6 +16,7 @@
     "ForgotPassword": "忘记密码",
     "Settings": "设置",
     "Share": "伴侣",
+    "Records": "记录",
     "PartnerDetail": "伴侣详情",
     "AckTemplates": "确认回复模板",
     "404": "页面未找到",
@@ -23,7 +24,9 @@
     "PartnerDashboard": "看板",
     "PartnerDashboardPoints": "积分详情",
     "PartnerDashboardSleep": "作息打卡",
-    "Health": "健康管家"
+    "Health": "健康管家",
+    "MediaDetail": "媒体详情",
+    "MediaProgressTimeline": "进度时间轴"
   },
 
   "tabbar": {

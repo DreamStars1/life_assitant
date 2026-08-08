@@ -16,12 +16,15 @@
     "ForgotPassword": "Forgot Password",
     "Settings": "Settings",
     "Share": "Partner",
+    "Records": "Records",
     "404": "Page Not Found",
     "Undefined": "Undefined title",
     "PartnerDashboard": "Dashboard",
     "PartnerDashboardPoints": "Points",
     "PartnerDashboardSleep": "Sleep Check-in",
-    "Health": "Health"
+    "Health": "Health",
+    "MediaDetail": "Media Detail",
+    "MediaProgressTimeline": "Progress Timeline"
   },
 
   "tabbar": {

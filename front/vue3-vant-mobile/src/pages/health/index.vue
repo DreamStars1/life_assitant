@@ -32,9 +32,19 @@ import type {
   HealthTrigger,
   HealthWeight,
 } from '@/api/modules/health'
+import { useUserStore } from '@/stores'
 
 type MealType = '早餐' | '午餐' | '晚餐'
 type WeightFilter = 'morning' | 'evening' | 'all'
+
+const userStore = useUserStore()
+const userDisplayName = computed(() => {
+  const fn = userStore.userInfo.fullName
+  const email = userStore.userInfo.email
+  if (fn && fn !== email)
+    return fn
+  return email || '未设置昵称'
+})
 
 const tab = ref(0)
 const PAGE_SIZE = { memory: 5, tolerance: 4, trigger: 3 }
@@ -86,7 +96,7 @@ function onCalendarConfirm(d: Date): void {
 // ---------- Profile ----------
 const profile = ref<HealthProfile>({})
 const showProfileEdit = ref(false)
-const profileForm = reactive({ displayName: '', motto: '', heightCm: '', targetKg: '', restingKcal: '' })
+const profileForm = reactive({ motto: '', heightCm: '', targetKg: '', restingKcal: '' })
 
 async function loadProfile(): Promise<void> {
   try {
@@ -99,7 +109,6 @@ async function loadProfile(): Promise<void> {
 }
 
 function openProfileEdit(): void {
-  profileForm.displayName = profile.value.displayName ?? ''
   profileForm.motto = profile.value.motto ?? ''
   profileForm.heightCm = profile.value.heightCm == null ? '' : String(profile.value.heightCm)
   profileForm.targetKg = profile.value.targetKg == null ? '' : String(profile.value.targetKg)
@@ -109,7 +118,6 @@ function openProfileEdit(): void {
 
 async function onProfileEdit(): Promise<void> {
   const body: HealthProfile = {
-    displayName: profileForm.displayName.trim() || undefined,
     motto: profileForm.motto.trim() || undefined,
     heightCm: profileForm.heightCm === '' ? null : Number(profileForm.heightCm),
     targetKg: profileForm.targetKg === '' ? null : Number(profileForm.targetKg),
@@ -363,12 +371,20 @@ async function loadWeights(): Promise<void> {
   }
 }
 
+/** 图表用：随晨重/晚重/全部切换 */
 const filteredWeights = computed<HealthWeight[]>(() =>
   weights.value
     .filter(w => weightFilter.value === 'all'
       || (weightFilter.value === 'morning' ? w.weightType === '晨重' : w.weightType === '晚重'))
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date)),
+)
+
+/** 明细用：始终全部，不随上方筛选切换 */
+const allWeightsSorted = computed<HealthWeight[]>(() =>
+  weights.value
+    .slice()
+    .sort((a, b) => a.date.localeCompare(b.date) || a.weightType.localeCompare(b.weightType)),
 )
 
 const todayMorningWeight = computed<HealthWeight | undefined>(() =>
@@ -810,8 +826,8 @@ onMounted(() => {
             🌿
           </div>
           <div>
-            <h2>{{ profile.displayName || '未设置' }}</h2>
-            <p>{{ profile.motto || '点击编辑设置昵称与座右铭' }}</p>
+            <h2>{{ userDisplayName }}</h2>
+            <p>{{ profile.motto || '慢慢来，身体会给你反馈' }}</p>
           </div>
         </div>
         <div class="stats">
@@ -969,12 +985,12 @@ onMounted(() => {
       <div class="trend-card">
         <div class="section-head" style="margin-top:0">
           <h2>体重明细</h2>
-          <span class="count-tag">共 {{ filteredWeights.length }} 条</span>
+          <span class="count-tag">共 {{ allWeightsSorted.length }} 条</span>
         </div>
-        <div v-if="filteredWeights.length === 0" class="empty">
+        <div v-if="allWeightsSorted.length === 0" class="empty">
           暂无记录
         </div>
-        <div v-for="w in [...filteredWeights].reverse()" :key="w.id" class="risk" @click="onWeightDelete(w.id)">
+        <div v-for="w in [...allWeightsSorted].reverse()" :key="w.id" class="risk" @click="onWeightDelete(w.id)">
           <span>{{ w.date.slice(5).replace('-', '/') }} · {{ w.weightType }}<br><small>{{ w.standard ? '趋势' : '' }}</small></span>
           <b>{{ kg(w.kg) }} kg</b>
         </div>
@@ -993,7 +1009,7 @@ onMounted(() => {
     </section>
 
     <!-- ===== In-page tabbar ===== -->
-    <van-tabbar v-model="tab" :fixed="false" safe-area-inset-bottom class="health-tabbar">
+    <van-tabbar v-model="tab" fixed placeholder safe-area-inset-bottom class="health-tabbar">
       <van-tabbar-item icon="notes-o">
         今日情况
       </van-tabbar-item>
@@ -1016,7 +1032,6 @@ onMounted(() => {
     <!-- ===== Profile edit ===== -->
     <van-dialog v-model:show="showProfileEdit" title="编辑档案" show-cancel-button @confirm="onProfileEdit">
       <div class="dialog-form">
-        <van-field v-model="profileForm.displayName" placeholder="昵称" clearable />
         <van-field v-model="profileForm.motto" placeholder="座右铭（可选）" clearable />
         <van-field v-model="profileForm.heightCm" type="number" placeholder="身高 cm" clearable />
         <van-field v-model="profileForm.targetKg" type="number" placeholder="目标体重 kg（留空取消）" clearable />
@@ -1154,10 +1169,11 @@ onMounted(() => {
   --muted: #7a877d;
   --paper: #fcfdf9;
   --shadow: 0 10px 35px rgba(32, 53, 39, 0.08);
-  min-height: 100vh;
+  /* ponytail: fill viewport so global #fff8f0 doesn't peek under short content / tall screens */
+  min-height: calc(100dvh - var(--van-nav-bar-height, 46px));
   background: #f0f3ed;
   color: var(--ink);
-  padding: 16px 16px 96px;
+  padding: 16px;
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
@@ -1564,8 +1580,11 @@ onMounted(() => {
 
 /* ----- In-page tabbar ----- */
 .health-tabbar {
-  position: relative;
-  margin-top: 12px;
+  z-index: 10;
+}
+.health-tabbar :deep(.van-tabbar),
+:deep(.van-tabbar.van-tabbar--fixed) {
+  background: #fff;
 }
 
 /* ----- Dialog forms ----- */

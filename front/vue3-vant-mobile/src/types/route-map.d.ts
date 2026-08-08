@@ -129,6 +129,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'Register': RouteRecordInfo<
+      'Register',
+      '/register',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     'Settings': RouteRecordInfo<
       'Settings',
       '/settings',
@@ -148,11 +155,11 @@ declare module 'vue-router/auto-routes' {
       '/share/media/:id',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
-      | 'MediaProgressTimeline'
+      | never
     >,
     'MediaProgressTimeline': RouteRecordInfo<
       'MediaProgressTimeline',
-      '/share/media/:id/timeline',
+      '/share/media-timeline/:id',
       { id: ParamValue<true> },
       { id: ParamValue<false> },
       | never
@@ -289,6 +296,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/register/index.vue': {
+      routes:
+        | 'Register'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/settings/index.vue': {
       routes:
         | 'Settings'
@@ -308,19 +323,18 @@ declare module 'vue-router/auto-routes' {
     'src/pages/share/media/[id].vue': {
       routes:
         | 'MediaDetail'
-        | 'MediaProgressTimeline'
       views:
-        | 'default'
+        | never
       pathParamNames:
         | 'id'
     }
-    'src/pages/share/media/[id]/timeline.vue': {
+    'src/pages/share/media-timeline/[id].vue': {
       routes:
         | 'MediaProgressTimeline'
       views:
         | never
       pathParamNames:
-        | never
+        | 'id'
     }
     'src/pages/todos/index.vue': {
       routes:
