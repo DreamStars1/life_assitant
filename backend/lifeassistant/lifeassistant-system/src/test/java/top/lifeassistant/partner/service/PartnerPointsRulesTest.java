@@ -31,7 +31,8 @@ class PartnerPointsRulesTest {
 
     @Test
     void futureDate_throws() {
-        assertThrows(BadRequestException.class,
+        BadRequestException ex = assertThrows(BadRequestException.class,
             () -> PartnerPointsRules.resolveCreatedAt(TODAY.plusDays(1), TODAY, NOW));
+        assertEquals("记录日期不能晚于今天", ex.getMessage());
     }
 }
