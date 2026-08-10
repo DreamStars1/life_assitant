@@ -430,6 +430,7 @@ watch(partnerId, async (val) => {
               :src="mediaCoverUrl(item.coverPath)"
               alt=""
               class="media-cover flex-shrink-0"
+              @click.stop="previewCover(mediaCoverUrl(item.coverPath))"
             >
             <div v-else class="media-cover-placeholder">
               <van-icon name="photo-o" size="24" />
@@ -440,6 +441,12 @@ watch(partnerId, async (val) => {
               </div>
               <div class="text-xs text-gray-500 mt-1">
                 {{ formatMediaType(item.mediaType, item.mediaTypeLabel) }}
+              </div>
+              <div
+                v-if="previewDescription(item.description)"
+                class="text-xs text-gray-500 mt-1"
+              >
+                {{ previewDescription(item.description) }}
               </div>
               <div class="text-xs mt-1">
                 <van-tag :type="item.isFinished ? 'success' : 'warning'">
