@@ -1,6 +1,5 @@
 package top.lifeassistant.partner.controller;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -11,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import top.lifeassistant.common.annotation.CurrentUser;
 import top.lifeassistant.common.base.model.resp.ApiResponse;
-import top.lifeassistant.partner.model.entity.PartnerPointsDO;
+import top.lifeassistant.partner.model.resp.PartnerPointsHistoryResp;
+import top.lifeassistant.partner.model.resp.PointsDateApproveAllResult;
+import top.lifeassistant.partner.model.resp.PointsDateChangeResult;
 import top.lifeassistant.partner.service.PartnerPointsService;
 import top.lifeassistant.system.model.entity.user.UserDO;
 
@@ -31,11 +32,11 @@ public class PartnerPointsController {
 
     @Operation(summary = "查询积分变动历史")
     @GetMapping("/partner/points/history")
-    public ApiResponse<Page<PartnerPointsDO>> getHistory(
+    public ApiResponse<PartnerPointsHistoryResp> getHistory(
             @CurrentUser UserDO user,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok(service.getHistory(user.getId(), page, size));
+        return ApiResponse.ok(service.getHistoryResp(user.getId(), page, size));
     }
 
     @Operation(summary = "记录积分变动")
@@ -47,12 +48,33 @@ public class PartnerPointsController {
 
     @Operation(summary = "修改积分流水记录日期")
     @PatchMapping("/partner/points/{id}")
-    public ApiResponse<Void> updateRecordDate(
+    public ApiResponse<PointsDateChangeResult> updateRecordDate(
             @CurrentUser UserDO user,
             @PathVariable String id,
             @Valid @RequestBody PointsRecordDateRequest req) {
-        service.updateRecordDate(user.getId(), id, req.getRecordDate());
+        return ApiResponse.ok(service.updateRecordDate(user.getId(), id, req.getRecordDate()));
+    }
+
+    @Operation(summary = "确认伴侣发起的积分日期变更")
+    @PostMapping("/partner/points/{id}/date-change/approve")
+    public ApiResponse<Void> approveDateChange(@CurrentUser UserDO user, @PathVariable String id) {
+        service.approveDateChange(user.getId(), id);
         return ApiResponse.ok();
+    }
+
+    @Operation(summary = "拒绝伴侣发起的积分日期变更")
+    @PostMapping("/partner/points/{id}/date-change/reject")
+    public ApiResponse<Void> rejectDateChange(@CurrentUser UserDO user, @PathVariable String id) {
+        service.rejectDateChange(user.getId(), id);
+        return ApiResponse.ok();
+    }
+
+    @Operation(summary = "批量确认伴侣发起的积分日期变更")
+    @PostMapping("/partner/points/date-change/approve-all")
+    public ApiResponse<PointsDateApproveAllResult> approveAllDateChanges(@CurrentUser UserDO user) {
+        PointsDateApproveAllResult r = new PointsDateApproveAllResult();
+        r.setApprovedCount(service.approveAllDateChanges(user.getId()));
+        return ApiResponse.ok(r);
     }
 
     @Data
