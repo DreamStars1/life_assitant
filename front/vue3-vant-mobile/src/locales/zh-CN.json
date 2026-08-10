@@ -265,6 +265,7 @@
     "editRecordDate": "修改日期",
     "dateChangePending": "申请改为 {date} · 待确认",
     "dateChangeSubmitted": "已提交，等待对方确认",
+    "dateChangeApplied": "已更新日期",
     "dateChangeApproved": "已确认日期修改",
     "dateChangeRejected": "已拒绝日期修改",
     "approveDateChange": "同意",

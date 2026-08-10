@@ -68,7 +68,7 @@ async function onEditDateConfirm(val: Date) {
     return
   try {
     const res = await updatePointsRecordDate(editingId.value, formatYmd(val))
-    showToast(res.data?.status === 'PENDING' ? t('dashboard.dateChangeSubmitted') : '已更新日期')
+    showToast(res.data?.status === 'PENDING' ? t('dashboard.dateChangeSubmitted') : t('dashboard.dateChangeApplied'))
     showEditCalendar.value = false
     editingId.value = null
     page.value = 1

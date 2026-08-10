@@ -257,6 +257,7 @@
     "editRecordDate": "Edit date",
     "dateChangePending": "Requested change to {date} · Pending",
     "dateChangeSubmitted": "Submitted, waiting for partner's confirmation",
+    "dateChangeApplied": "Date updated",
     "dateChangeApproved": "Date change approved",
     "dateChangeRejected": "Date change rejected",
     "approveDateChange": "Approve",
