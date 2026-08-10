@@ -7,6 +7,7 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -37,4 +38,13 @@ public class PartnerPointsDO implements Serializable {
     /** 创建时间 */
     @TableField("created_at")
     private LocalDateTime createdAt;
+
+    @TableField("pending_record_date")
+    private LocalDate pendingRecordDate;
+
+    @TableField("pending_requested_by")
+    private String pendingRequestedBy;
+
+    @TableField("pending_requested_at")
+    private LocalDateTime pendingRequestedAt;
 }
