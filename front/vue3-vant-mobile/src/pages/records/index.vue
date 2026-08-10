@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { showConfirmDialog, showToast } from 'vant'
+import { showConfirmDialog, showImagePreview, showToast } from 'vant'
+import type { UploaderFileListItem } from 'vant'
 import { useUserStore } from '@/stores'
 import { createSharedMedia, deleteSharedMedia, fetchSharedMediaList, updateSharedMedia } from '@/api/modules/shared-media'
 import type { SharedMediaItem } from '@/api/modules/shared-media'
@@ -32,13 +33,14 @@ const categories = ref<MediaCategory[]>([])
 
 const showAddMedia = ref(false)
 const addMediaForm = reactive({ title: '', mediaType: 'movie', description: '', lastWatchedAt: '', isPrivate: false })
-const addMediaCoverList = ref<{ file?: File }[]>([])
+const addMediaCoverList = ref<UploaderFileListItem[]>([])
 const showAddLastWatchedCalendar = ref(false)
 const showEditMedia = ref(false)
 const editingMediaId = ref('')
 const editMediaForm = reactive({ title: '', mediaType: 'movie', description: '', lastWatchedAt: '', isPrivate: false })
 const showEditLastWatchedCalendar = ref(false)
-const editMediaCoverList = ref<{ file?: File }[]>([])
+const editMediaCoverList = ref<UploaderFileListItem[]>([])
+const editMediaExistingCoverPath = ref<string | null>(null)
 const showMediaTypePicker = ref(false)
 const showEditMediaTypePicker = ref(false)
 
@@ -187,6 +189,7 @@ function openEditMedia(item: SharedMediaItem) {
   editMediaForm.description = item.description || ''
   editMediaForm.lastWatchedAt = item.lastWatchedAt ? item.lastWatchedAt.slice(0, 10) : ''
   editMediaForm.isPrivate = item.isPrivate
+  editMediaExistingCoverPath.value = item.coverPath
   editMediaCoverList.value = []
   showEditMedia.value = true
 }
@@ -327,6 +330,45 @@ function mediaCoverUrl(path: string | null): string {
     return path
   return path
 }
+
+const PREVIEW_LEN = 40
+
+function previewDescription(desc: string | null | undefined): string {
+  if (desc == null)
+    return ''
+  if (!desc.trim())
+    return ''
+  if (desc.length <= PREVIEW_LEN)
+    return desc
+  return `${desc.slice(0, PREVIEW_LEN)}…`
+}
+
+function uploaderPreviewUrl(list: UploaderFileListItem[]): string {
+  const item = list[0]
+  if (!item)
+    return ''
+  return item.objectUrl || item.content || item.url || ''
+}
+
+function previewCover(url: string) {
+  if (!url)
+    return
+  showImagePreview({
+    images: [url],
+    startPosition: 0,
+    closeable: true,
+    teleport: 'body',
+  })
+}
+
+const addDialogCoverSrc = computed(() => uploaderPreviewUrl(addMediaCoverList.value))
+
+const editDialogCoverSrc = computed(() => {
+  const fromUpload = uploaderPreviewUrl(editMediaCoverList.value)
+  if (fromUpload)
+    return fromUpload
+  return mediaCoverUrl(editMediaExistingCoverPath.value)
+})
 
 onMounted(async () => {
   await userStore.info()
