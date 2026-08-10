@@ -45,14 +45,6 @@ public class PartnerPointsService {
         return info.getPointsBalance() != null ? info.getPointsBalance() : 0;
     }
 
-    public Page<PartnerPointsDO> getHistory(String userId, int page, int size) {
-        String partnerId = getPartnerId(userId);
-        LambdaQueryWrapper<PartnerPointsDO> wrapper = new LambdaQueryWrapper<PartnerPointsDO>()
-            .in(PartnerPointsDO::getCreatedBy, userId, partnerId)
-            .orderByDesc(PartnerPointsDO::getCreatedAt);
-        return mapper.selectPage(new Page<>(page, size), wrapper);
-    }
-
     public PartnerPointsHistoryResp getHistoryResp(String userId, int page, int size) {
         String partnerId = getPartnerId(userId);
         LocalDateTime now = LocalDateTime.now();
@@ -133,14 +125,16 @@ public class PartnerPointsService {
         return PointsDateChangeResult.pending();
     }
 
-    @Transactional
+    // noRollbackFor: requireConfirmablePending() may persist an expired-pending clear and then throw
+    // BadRequestException("申请已过期") in the same call; the clear must commit, not roll back with the 400.
+    @Transactional(noRollbackFor = BadRequestException.class)
     public void approveDateChange(String userId, String recordId) {
         String partnerId = getPartnerId(userId);
         PartnerPointsDO record = requirePairRecord(userId, partnerId, recordId);
         approveOneUnlocked(userId, record, LocalDateTime.now());
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = BadRequestException.class)
     public void rejectDateChange(String userId, String recordId) {
         String partnerId = getPartnerId(userId);
         PartnerPointsDO record = requirePairRecord(userId, partnerId, recordId);
