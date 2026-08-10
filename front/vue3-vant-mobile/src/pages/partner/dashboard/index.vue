@@ -64,6 +64,7 @@ async function onPartnerSinceConfirm(d: Date) {
 // Points
 const pointsBalance = ref(0)
 const historyList = ref<PointsRecord[]>([])
+const pendingConfirmCount = ref(0)
 const showAddPopup = ref(false)
 const showSubPopup = ref(false)
 const popupAmount = ref(1)
@@ -336,10 +337,13 @@ async function loadData() {
 
   try {
     const res = await getPointsHistory(1, 5)
-    historyList.value = res.data?.records ?? []
+    const data = res.data
+    historyList.value = data?.records ?? []
+    pendingConfirmCount.value = data?.pendingConfirmCount ?? 0
   }
   catch {
     historyList.value = []
+    pendingConfirmCount.value = 0
   }
 
   try {
@@ -495,7 +499,10 @@ onUnmounted(() => {
       <!-- Row 2: 积分记录 (full width) -->
       <div class="card card-wide" @click="router.push('/partner/dashboard/points')">
         <div class="wide-header">
-          <span>{{ $t('dashboard.pointsHistory') }}</span>
+          <span class="wide-title-with-badge">
+            {{ $t('dashboard.pointsHistory') }}
+            <van-badge v-if="pendingConfirmCount > 0" :content="pendingConfirmCount" />
+          </span>
           <van-icon name="arrow" color="#ccc" />
         </div>
         <div v-if="historyList.length === 0" class="empty-hint">
@@ -736,6 +743,12 @@ onUnmounted(() => {
   font-weight: 500;
   color: var(--van-text-color);
   margin-bottom: 6px;
+}
+
+.wide-title-with-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .history-scroll {
