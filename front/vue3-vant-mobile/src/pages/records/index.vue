@@ -497,6 +497,22 @@ watch(partnerId, async (val) => {
         @confirm="onAddMedia"
       >
         <div class="px-4 py-3 space-y-3">
+          <div class="dialog-cover-block">
+            <img
+              v-if="addDialogCoverSrc"
+              :src="addDialogCoverSrc"
+              alt=""
+              class="media-cover dialog-cover"
+              @click="previewCover(addDialogCoverSrc)"
+            >
+            <div v-else class="media-cover-placeholder dialog-cover">
+              <van-icon name="photo-o" size="24" />
+            </div>
+            <div class="text-sm text-gray-500 mt-2 mb-1">
+              封面图
+            </div>
+            <van-uploader v-model="addMediaCoverList" accept="image/*" :max-count="1" />
+          </div>
           <van-field v-model="addMediaForm.title" placeholder="名称（如：盗梦空间）" clearable />
           <van-field
             :model-value="formatMediaType(addMediaForm.mediaType)"
@@ -527,10 +543,6 @@ watch(partnerId, async (val) => {
               <van-switch v-model="addMediaForm.isPrivate" size="20" />
             </template>
           </van-field>
-          <div class="text-sm text-gray-500 mb-1">
-            封面图
-          </div>
-          <van-uploader v-model="addMediaCoverList" accept="image/*" max-count="1" />
         </div>
       </van-dialog>
 
@@ -549,6 +561,22 @@ watch(partnerId, async (val) => {
         @confirm="onEditMedia"
       >
         <div class="px-4 py-3 space-y-3">
+          <div class="dialog-cover-block">
+            <img
+              v-if="editDialogCoverSrc"
+              :src="editDialogCoverSrc"
+              alt=""
+              class="media-cover dialog-cover"
+              @click="previewCover(editDialogCoverSrc)"
+            >
+            <div v-else class="media-cover-placeholder dialog-cover">
+              <van-icon name="photo-o" size="24" />
+            </div>
+            <div class="text-sm text-gray-500 mt-2 mb-1">
+              封面图（不选则保留原图）
+            </div>
+            <van-uploader v-model="editMediaCoverList" accept="image/*" :max-count="1" />
+          </div>
           <van-field v-model="editMediaForm.title" placeholder="名称" clearable />
           <van-field
             :model-value="formatMediaType(editMediaForm.mediaType)"
@@ -579,10 +607,6 @@ watch(partnerId, async (val) => {
               <van-switch v-model="editMediaForm.isPrivate" size="20" />
             </template>
           </van-field>
-          <div class="text-sm text-gray-500 mb-1">
-            封面图（不选则保留原图）
-          </div>
-          <van-uploader v-model="editMediaCoverList" accept="image/*" max-count="1" />
         </div>
       </van-dialog>
 
@@ -655,6 +679,17 @@ watch(partnerId, async (val) => {
   color: var(--van-gray-5);
   padding: 8px;
   margin-right: -8px;
+}
+
+.dialog-cover-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dialog-cover {
+  width: 96px;
+  height: 120px;
 }
 </style>
 
