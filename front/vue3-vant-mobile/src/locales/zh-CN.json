@@ -262,6 +262,14 @@
     "sleepTime": "睡觉时间",
     "notCheckedIn": "未打卡",
     "recordDate": "记录日期",
-    "editRecordDate": "修改日期"
+    "editRecordDate": "修改日期",
+    "dateChangePending": "申请改为 {date} · 待确认",
+    "dateChangeSubmitted": "已提交，等待对方确认",
+    "dateChangeApproved": "已确认日期修改",
+    "dateChangeRejected": "已拒绝日期修改",
+    "approveDateChange": "同意",
+    "rejectDateChange": "拒绝",
+    "approveAllDateChanges": "全部确认",
+    "approveAllDone": "已确认 {n} 条"
   }
 }

@@ -1,10 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { showToast } from 'vant'
-import { addPoints, getPointsBalance, getPointsHistory, updatePointsRecordDate } from '@/api/modules/partner-points'
+import {
+  addPoints,
+  approveAllPointsDateChanges,
+  approvePointsDateChange,
+  getPointsBalance,
+  getPointsHistory,
+  rejectPointsDateChange,
+  updatePointsRecordDate,
+} from '@/api/modules/partner-points'
 import type { PointsRecord } from '@/api/modules/partner-points'
+import { useUserStore } from '@/stores/modules/user'
 
-useI18n()
+const { t } = useI18n()
+const userStore = useUserStore()
 
 const balance = ref(0)
 const amount = ref(1)
@@ -16,6 +26,7 @@ const total = ref(0)
 const page = ref(1)
 const loading = ref(false)
 const finished = ref(false)
+const pendingConfirmCount = ref(0)
 
 function formatYmd(d: Date): string {
   const y = d.getFullYear()
@@ -56,13 +67,46 @@ async function onEditDateConfirm(val: Date) {
   if (!editingId.value)
     return
   try {
-    await updatePointsRecordDate(editingId.value, formatYmd(val))
-    showToast('已更新日期')
+    const res = await updatePointsRecordDate(editingId.value, formatYmd(val))
+    showToast(res.data?.status === 'PENDING' ? t('dashboard.dateChangeSubmitted') : '已更新日期')
     showEditCalendar.value = false
     editingId.value = null
     page.value = 1
     finished.value = false
     await loadHistory()
+  }
+  catch { /* interceptor */ }
+}
+
+async function refreshHistory() {
+  page.value = 1
+  finished.value = false
+  await loadHistory()
+}
+
+async function approveOne(id: string) {
+  try {
+    await approvePointsDateChange(id)
+    showToast(t('dashboard.dateChangeApproved'))
+    await refreshHistory()
+  }
+  catch { /* interceptor */ }
+}
+
+async function rejectOne(id: string) {
+  try {
+    await rejectPointsDateChange(id)
+    showToast(t('dashboard.dateChangeRejected'))
+    await refreshHistory()
+  }
+  catch { /* interceptor */ }
+}
+
+async function approveAll() {
+  try {
+    const res = await approveAllPointsDateChanges()
+    showToast(t('dashboard.approveAllDone', { n: res.data?.approvedCount ?? 0 }))
+    await refreshHistory()
   }
   catch { /* interceptor */ }
 }
@@ -83,6 +127,7 @@ async function loadHistory(append = false) {
     const res = await getPointsHistory(page.value, 20)
     const records = res.data?.records ?? []
     total.value = res.data?.total ?? 0
+    pendingConfirmCount.value = res.data?.pendingConfirmCount ?? 0
     if (append)
       history.value.push(...records)
     else
@@ -216,8 +261,20 @@ onMounted(() => {
     </div>
 
     <div class="history-section">
-      <div class="history-title">
-        {{ $t('dashboard.pointsHistory') }}
+      <div class="history-title-row">
+        <div class="history-title">
+          {{ $t('dashboard.pointsHistory') }}
+          <van-badge v-if="pendingConfirmCount > 0" :content="pendingConfirmCount" />
+        </div>
+        <van-button
+          v-if="pendingConfirmCount > 0"
+          size="mini"
+          type="primary"
+          plain
+          @click="approveAll"
+        >
+          {{ $t('dashboard.approveAllDateChanges') }}
+        </van-button>
       </div>
       <div v-if="history.length === 0 && !loading" class="empty-hint">
         {{ $t('common.noData') }}
@@ -241,6 +298,19 @@ onMounted(() => {
             </div>
             <div class="hi-time">
               {{ formatDisplayDate(item.createdAt) }}
+            </div>
+            <div v-if="item.pendingRecordDate && item.pendingRequestedBy" class="hi-pending">
+              <span class="hi-pending-text">
+                {{ $t('dashboard.dateChangePending', { date: item.pendingRecordDate }) }}
+              </span>
+              <div v-if="item.pendingRequestedBy !== userStore.userInfo.id" class="hi-pending-actions">
+                <van-button size="mini" type="primary" @click.stop="approveOne(item.id)">
+                  {{ $t('dashboard.approveDateChange') }}
+                </van-button>
+                <van-button size="mini" plain type="danger" @click.stop="rejectOne(item.id)">
+                  {{ $t('dashboard.rejectDateChange') }}
+                </van-button>
+              </div>
             </div>
           </div>
           <div class="hi-change" :class="{ add: item.pointsChange > 0, sub: item.pointsChange < 0 }">
@@ -379,11 +449,17 @@ onMounted(() => {
   border: 1px solid var(--van-border-color);
 }
 
+.history-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
 .history-title {
   font-size: 15px;
   font-weight: 600;
   color: var(--van-text-color);
-  margin-bottom: 8px;
 }
 
 .empty-hint {
@@ -419,6 +495,23 @@ onMounted(() => {
 .hi-time {
   font-size: 12px;
   color: var(--van-text-color-3);
+}
+
+.hi-pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.hi-pending-text {
+  font-size: 12px;
+  color: var(--van-tag-warning-color, #ff976a);
+}
+
+.hi-pending-actions {
+  display: flex;
+  gap: 6px;
 }
 
 .hi-change {

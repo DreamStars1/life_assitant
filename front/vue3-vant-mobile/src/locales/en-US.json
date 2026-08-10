@@ -254,6 +254,14 @@
     "sleepTime": "Sleep Time",
     "notCheckedIn": "Not checked in",
     "recordDate": "Record date",
-    "editRecordDate": "Edit date"
+    "editRecordDate": "Edit date",
+    "dateChangePending": "Requested change to {date} · Pending",
+    "dateChangeSubmitted": "Submitted, waiting for partner's confirmation",
+    "dateChangeApproved": "Date change approved",
+    "dateChangeRejected": "Date change rejected",
+    "approveDateChange": "Approve",
+    "rejectDateChange": "Reject",
+    "approveAllDateChanges": "Approve all",
+    "approveAllDone": "Approved {n} item(s)"
   }
 }
