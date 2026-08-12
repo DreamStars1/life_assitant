@@ -12,6 +12,7 @@ import {
   uploadCommentImages,
 } from '@/api/modules/shared-media'
 import type { MediaComment, MediaProgress, SharedMediaItem } from '@/api/modules/shared-media'
+import { buildCommentImageGallery } from './commentImageGallery'
 
 const MAX_COMMENT_IMAGES = 9
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
@@ -175,8 +176,12 @@ function imageGridClass(count: number): string {
   return 'image-grid-3'
 }
 
-function previewCommentImages(imageUrls: string[], startPosition: number) {
-  const images = imageUrls.filter(Boolean)
+function previewCommentImages(commentId: string | undefined, localIndex: number) {
+  const { images, startPosition } = buildCommentImageGallery(
+    comments.value,
+    commentId,
+    localIndex,
+  )
   if (!images.length)
     return
   showImagePreview({
@@ -411,7 +416,7 @@ watch(mediaId, (id, prev) => {
               :key="`${comment.id}-${imgIndex}`"
               :src="url"
               class="comment-image"
-              @click.stop="previewCommentImages(comment.imageUrls, imgIndex)"
+              @click.stop="previewCommentImages(comment.id, imgIndex)"
             >
           </div>
           <div v-else-if="comment.content" class="message-content">
