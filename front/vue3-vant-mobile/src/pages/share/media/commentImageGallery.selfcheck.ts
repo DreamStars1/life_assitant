@@ -16,6 +16,9 @@ assert.equal(g.startPosition, 2)
 g = buildCommentImageGallery(comments, 'a', 0)
 assert.equal(g.startPosition, 0)
 
+g = buildCommentImageGallery(comments, 'a', 1)
+assert.equal(g.startPosition, 0)
+
 g = buildCommentImageGallery(comments, 'missing', 0)
 assert.deepEqual(g.images, ['u1', 'u2', 'u3'])
 assert.equal(g.startPosition, 0)

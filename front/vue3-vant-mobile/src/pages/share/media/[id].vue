@@ -168,6 +168,10 @@ function afterReadImage(_file: UploaderFileListItem | UploaderFileListItem[]) {
   }, 0)
 }
 
+function commentDisplayImages(urls: string[] | null | undefined): string[] {
+  return (urls ?? []).filter((u): u is string => !!u)
+}
+
 function imageGridClass(count: number): string {
   if (count === 1)
     return 'image-grid-1'
@@ -403,16 +407,16 @@ watch(mediaId, (id, prev) => {
       >
         <div
           class="message-bubble"
-          :class="{ 'has-images': comment.imageUrls?.length }"
+          :class="{ 'has-images': commentDisplayImages(comment.imageUrls).length }"
           @longpress="confirmDeleteComment(comment.id)"
         >
           <div
-            v-if="comment.imageUrls?.length"
+            v-if="commentDisplayImages(comment.imageUrls).length"
             class="image-grid"
-            :class="imageGridClass(comment.imageUrls.length)"
+            :class="imageGridClass(commentDisplayImages(comment.imageUrls).length)"
           >
             <img
-              v-for="(url, imgIndex) in comment.imageUrls"
+              v-for="(url, imgIndex) in commentDisplayImages(comment.imageUrls)"
               :key="`${comment.id}-${imgIndex}`"
               :src="url"
               class="comment-image"
