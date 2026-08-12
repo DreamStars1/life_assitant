@@ -14,6 +14,7 @@ alwaysApply: true
 | `front/vue3-vant-mobile/package.json` → `version` | 产品/设置页展示的版本；**minor** `x.Y.0` 用于新功能，patch `x.y.Z` 用于小修复 |
 | `backend/.../config/application.yml` → `application.version` | 后端应用版本，与前端同一次发版对齐 bump（当前习惯带 `-SNAPSHOT`） |
 | 根目录 `CHANGELOG.md` | 顶部新增一节 `## vX.Y.Z (YYYY-MM-DD)`，按现有格式写新特性 / 后端 / 前端 |
+| `docs/USER_CHANGELOG.md` | **用户向**更新说明；同一次发版顶部新增对应版本节，用人话写「能感知到什么」，不写 API/路径/类名 |
 
 不要改 `backend/lifeassistant/pom.xml` 的 `4.3.0-SNAPSHOT`（那是 ContiNew 框架父版本，不是产品版本）。
 不要改 `backend/lifeassistant/CHANGELOG.md`（上游框架日志）。
@@ -23,6 +24,13 @@ alwaysApply: true
 - **要**：新页面/新 API 能力、伴侣/健康等产品功能、用户能感知的行为修正且值得记一笔
 - **不要**：纯文档、纯 refactor、仅改 Cursor rule/skill、未合并的实验分支
 
+## 维护义务（必做）
+
+- bump 版本并写根 `CHANGELOG.md` 时，**同步**更新 `docs/USER_CHANGELOG.md`（版本号与日期对齐）
+- `USER_CHANGELOG` 只记用户能感知的变化；开发细节只留在 `CHANGELOG.md`
+- 漏写用户向日志视为发版未完成
+
 ## 写法
 
-对照最近一节（如 `v1.6.0`）抄结构：日期用当天；版本号写清「旧 → 新」。
+- 根 `CHANGELOG.md`：对照最近一节（如 `v1.6.0`）抄结构；日期用当天；版本号写清「旧 → 新」
+- `docs/USER_CHANGELOG.md`：对照最近一节抄结构；用短句/列表，避免后端/前端分栏和技术词
