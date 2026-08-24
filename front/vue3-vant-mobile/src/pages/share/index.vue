@@ -317,10 +317,18 @@ watch(partnerId, async (val) => {
           class="message-row"
           :class="{ 'message-own': isOwnMessage(msg), 'message-partner': !isOwnMessage(msg) }"
         >
+          <button
+            v-if="isOwnMessage(msg)"
+            type="button"
+            class="message-delete-btn"
+            aria-label="删除留言"
+            @click.stop="confirmDeleteMessage(msg)"
+          >
+            <van-icon name="delete-o" size="16" />
+          </button>
           <div
             class="message-bubble"
             :class="{ 'has-images': displayImages(msg.imageUrls).length }"
-            @longpress="confirmDeleteMessage(msg)"
           >
             <div
               v-if="displayImages(msg.imageUrls).length"
@@ -452,7 +460,30 @@ watch(partnerId, async (val) => {
 
 .message-row {
   display: flex;
+  align-items: flex-end;
+  gap: 6px;
   margin-bottom: 14px;
+}
+
+.message-delete-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--van-text-color-3);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.message-delete-btn:active {
+  color: var(--van-danger-color);
 }
 
 .message-own {
