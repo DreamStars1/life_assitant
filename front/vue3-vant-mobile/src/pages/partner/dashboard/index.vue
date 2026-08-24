@@ -521,7 +521,7 @@ onUnmounted(() => {
       <!-- Row 3: 2-col grid -->
       <div class="card-grid">
         <!-- 数据统计 Card -->
-        <div class="card card-stats" @click="router.push('/share')">
+        <div class="card card-stats" @click="router.push('/partner/dashboard/shared-records')">
           <div class="card-icon">
             📊
           </div>
