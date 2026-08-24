@@ -52,6 +52,7 @@ public class UserServiceImpl implements UserService {
             UserDO partner = getById(user.getPartnerId());
             partnerInfoService.deleteForPair(user.getId(), partner.getId());
             deletePartnerPoints(user.getId(), partner.getId());
+            deletePartnerMessages(user.getId(), partner.getId());
             partner.setPartnerId(null);
             userMapper.updateById(partner);
         }

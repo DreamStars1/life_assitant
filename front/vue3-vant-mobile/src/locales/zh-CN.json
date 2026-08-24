@@ -24,6 +24,7 @@
     "PartnerDashboard": "看板",
     "PartnerDashboardPoints": "积分详情",
     "PartnerDashboardSleep": "作息打卡",
+    "PartnerDashboardSharedRecords": "一起做过的事",
     "Health": "健康管家",
     "MediaDetail": "媒体详情",
     "MediaProgressTimeline": "进度时间轴"
@@ -158,7 +159,21 @@
     "unbindConfirm": "确认解除伴侣？",
     "unbindWarning": "解除后将删除双方所有的共同记录，此操作不可恢复。对方不会收到通知。",
     "unbindSuccess": "已解除伴侣绑定",
-    "goToBind": "去绑定伴侣"
+    "goToBind": "去绑定伴侣",
+    "messageBoard": "留言板",
+    "publishRecord": "记到一起做过的事",
+    "publishTodo": "建待办",
+    "todoAssignSelf": "自己",
+    "todoAssignPartner": "对方",
+    "todoAssignNone": "不指定",
+    "publishPoints": "改积分",
+    "pointsAdd": "加分",
+    "pointsSub": "扣分",
+    "pointsValue": "分值",
+    "pointsValuePlaceholder": "填写非零整数",
+    "pointsReason": "原因",
+    "pointsReasonPlaceholder": "可选，默认同留言内容",
+    "pointsValueRequired": "请填写非零积分"
   },
 
   "profile": {
@@ -231,23 +246,6 @@
     "bound": "已绑定",
     "confirmDelete": "确认删除？",
     "noData": "暂无记录"
-  },
-
-  "share": {
-    "messageBoard": "留言板",
-    "publishRecord": "记到一起做过的事",
-    "publishTodo": "建待办",
-    "todoAssignSelf": "自己",
-    "todoAssignPartner": "对方",
-    "todoAssignNone": "不指定",
-    "publishPoints": "改积分",
-    "pointsAdd": "加分",
-    "pointsSub": "扣分",
-    "pointsValue": "分值",
-    "pointsValuePlaceholder": "填写非零整数",
-    "pointsReason": "原因",
-    "pointsReasonPlaceholder": "可选，默认同留言内容",
-    "pointsValueRequired": "请填写非零积分"
   },
 
   "dashboard": {

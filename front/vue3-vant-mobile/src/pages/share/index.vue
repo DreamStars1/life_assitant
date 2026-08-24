@@ -173,14 +173,14 @@ async function loadMessages() {
     const list = messageListFromResponse(res)
     if (list)
       messages.value = list
-    await nextTick()
-    scrollChatToBottom()
   }
   catch {
     showToast('加载留言失败')
   }
   finally {
     messagesLoading.value = false
+    await nextTick()
+    scrollChatToBottom()
   }
 }
 

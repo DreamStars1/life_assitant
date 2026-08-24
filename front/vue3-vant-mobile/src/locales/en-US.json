@@ -22,6 +22,7 @@
     "PartnerDashboard": "Dashboard",
     "PartnerDashboardPoints": "Points",
     "PartnerDashboardSleep": "Sleep Check-in",
+    "PartnerDashboardSharedRecords": "Shared activities",
     "Health": "Health",
     "MediaDetail": "Media Detail",
     "MediaProgressTimeline": "Progress Timeline"
@@ -156,7 +157,21 @@
     "unbindConfirm": "Unbind partner?",
     "unbindWarning": "All shared records will be deleted. This action cannot be undone.",
     "unbindSuccess": "Partner unbound",
-    "goToBind": "Bind Partner"
+    "goToBind": "Bind Partner",
+    "messageBoard": "Message board",
+    "publishRecord": "Log a shared activity",
+    "publishTodo": "Create a todo",
+    "todoAssignSelf": "Me",
+    "todoAssignPartner": "Partner",
+    "todoAssignNone": "Unassigned",
+    "publishPoints": "Adjust points",
+    "pointsAdd": "Add",
+    "pointsSub": "Deduct",
+    "pointsValue": "Amount",
+    "pointsValuePlaceholder": "Non-zero integer",
+    "pointsReason": "Reason",
+    "pointsReasonPlaceholder": "Optional; defaults to message",
+    "pointsValueRequired": "Enter a non-zero amount"
   },
 
   "profile": {
@@ -223,23 +238,6 @@
 
   "common": {
     "noData": "No records yet"
-  },
-
-  "share": {
-    "messageBoard": "Message board",
-    "publishRecord": "Log a shared activity",
-    "publishTodo": "Create a todo",
-    "todoAssignSelf": "Me",
-    "todoAssignPartner": "Partner",
-    "todoAssignNone": "Unassigned",
-    "publishPoints": "Adjust points",
-    "pointsAdd": "Add",
-    "pointsSub": "Deduct",
-    "pointsValue": "Amount",
-    "pointsValuePlaceholder": "Non-zero integer",
-    "pointsReason": "Reason",
-    "pointsReasonPlaceholder": "Optional; defaults to message",
-    "pointsValueRequired": "Enter a non-zero amount"
   },
 
   "dashboard": {

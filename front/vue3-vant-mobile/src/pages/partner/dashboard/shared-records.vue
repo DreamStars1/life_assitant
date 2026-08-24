@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { createSharedRecord, deleteSharedRecord, fetchSharedRecords, updateSharedRecord } from '@/api/modules/shared-records'
 import type { SharedRecordItem } from '@/api/modules/shared-records'
-
-const router = useRouter()
 
 function toLocalDateStr(d: Date): string {
   const y = d.getFullYear()
@@ -189,8 +186,6 @@ onMounted(() => loadRecords())
 
 <template>
   <div>
-    <van-nav-bar title="一起做过的事" left-arrow @click-left="router.back()" />
-
     <div class="px-4 pb-1 pt-3 space-y-2">
       <van-field
         v-model="searchKeyword"

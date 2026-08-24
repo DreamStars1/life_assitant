@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -53,9 +54,10 @@ public class PartnerMessageService {
         Page<PartnerMessageDO> mp = new Page<>(p, s);
         LambdaQueryWrapper<PartnerMessageDO> qw = new LambdaQueryWrapper<>();
         qw.in(PartnerMessageDO::getCreatedBy, List.of(user.getId(), user.getPartnerId()))
-            .orderByAsc(PartnerMessageDO::getCreatedAt);
-        return mapper.selectPage(mp, qw).getRecords().stream()
-            .map(PartnerMessageResp::from).toList();
+            .orderByDesc(PartnerMessageDO::getCreatedAt);
+        List<PartnerMessageDO> records = mapper.selectPage(mp, qw).getRecords();
+        Collections.reverse(records);
+        return records.stream().map(PartnerMessageResp::from).toList();
     }
 
     public PartnerMessageImagesUploadResp uploadImages(UserDO user, MultipartFile[] files) throws IOException {
