@@ -13,11 +13,18 @@ import top.lifeassistant.partner.model.entity.PartnerMessageDO;
 import top.lifeassistant.partner.model.req.PartnerMessageCreateReq;
 import top.lifeassistant.partner.model.resp.PartnerMessageImagesUploadResp;
 import top.lifeassistant.partner.model.resp.PartnerMessageResp;
+import top.lifeassistant.sharedrecord.model.req.SharedRecordCreateReq;
+import top.lifeassistant.sharedrecord.model.resp.SharedRecordResp;
+import top.lifeassistant.sharedrecord.service.SharedRecordService;
 import top.lifeassistant.system.model.entity.user.UserDO;
+import top.lifeassistant.todo.model.req.TodoCreateReq;
+import top.lifeassistant.todo.model.resp.TodoResp;
+import top.lifeassistant.todo.service.TodoService;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +36,9 @@ public class PartnerMessageService {
 
     private final PartnerMessageMapper mapper;
     private final UploadStorage uploadStorage;
+    private final SharedRecordService sharedRecordService;
+    private final TodoService todoService;
+    private final PartnerPointsService partnerPointsService;
 
     private void requirePartner(UserDO user) {
         if (user.getPartnerId() == null) {
@@ -80,7 +90,36 @@ public class PartnerMessageService {
         msg.setImageUrls(PartnerMessageImageRules.serializeImageUrls(req.getImageUrls()));
         msg.setCreatedAt(LocalDateTime.now());
         mapper.insert(msg);
-        // Task 4: orchestrate publish flags and updateById association ids
+        if (pubShared) {
+            SharedRecordCreateReq sr = new SharedRecordCreateReq();
+            sr.setTitle(PartnerMessageImageRules.truncateTitle(msg.getContent(), 255));
+            SharedRecordResp created = sharedRecordService.create(user, sr);
+            msg.setSharedRecordId(created.getId());
+        }
+        if (pubTodo) {
+            String assign = req.getTodoAssignedTo() == null ? "none" : req.getTodoAssignedTo();
+            TodoCreateReq tr = new TodoCreateReq();
+            tr.setTitle(PartnerMessageImageRules.truncateTitle(msg.getContent(), 255));
+            tr.setPriority("medium");
+            if ("partner".equals(assign)) {
+                tr.setAssignedTo(user.getPartnerId());
+            }
+            TodoResp created = todoService.create(user, tr);
+            msg.setTodoId(created.getId());
+        }
+        if (pubPoints) {
+            if (req.getPointsChange() == null || req.getPointsChange() == 0) {
+                throw new BadRequestException("积分变更不能为 0");
+            }
+            String reason = (req.getPointsReason() == null || req.getPointsReason().isBlank())
+                ? msg.getContent() : req.getPointsReason().trim();
+            String pointsId = partnerPointsService.addPoints(
+                user.getId(), req.getPointsChange(), reason, LocalDate.now());
+            msg.setPointsId(pointsId);
+        }
+        if (pubShared || pubTodo || pubPoints) {
+            mapper.updateById(msg);
+        }
         return PartnerMessageResp.from(msg);
     }
 

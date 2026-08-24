@@ -83,17 +83,19 @@ public class PartnerPointsService {
     }
 
     @Transactional
-    public void addPoints(String userId, int pointsChange, String reason, LocalDate recordDate) {
+    public String addPoints(String userId, int pointsChange, String reason, LocalDate recordDate) {
         String partnerId = getPartnerId(userId);
         LocalDateTime now = LocalDateTime.now();
+        String id = UUID.randomUUID().toString();
         PartnerPointsDO record = new PartnerPointsDO();
-        record.setId(UUID.randomUUID().toString());
+        record.setId(id);
         record.setCreatedBy(userId);
         record.setPointsChange(pointsChange);
         record.setReason(reason);
         record.setCreatedAt(PartnerPointsRules.resolveCreatedAt(recordDate, now.toLocalDate(), now));
         mapper.insert(record);
         partnerInfoService.addPointsBalance(userId, partnerId, pointsChange);
+        return id;
     }
 
     @Transactional

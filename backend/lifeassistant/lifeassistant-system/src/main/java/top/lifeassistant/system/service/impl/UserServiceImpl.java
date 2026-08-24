@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import top.lifeassistant.partner.mapper.PartnerPointsMapper;
 import top.lifeassistant.partner.model.entity.PartnerPointsDO;
 import top.lifeassistant.partner.service.PartnerInfoService;
+import top.lifeassistant.partner.service.PartnerMessageService;
 import top.lifeassistant.sharedrecord.service.SharedRecordService;
 import top.lifeassistant.system.mapper.user.UserMapper;
 import top.lifeassistant.system.model.entity.user.UserDO;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final SharedRecordService sharedRecordService;
+    private final PartnerMessageService partnerMessageService;
     private final PartnerInfoService partnerInfoService;
     // ponytail: 直接用 Mapper，避免 UserService ↔ PartnerPointsService 环
     private final PartnerPointsMapper partnerPointsMapper;
@@ -71,6 +73,7 @@ public class UserServiceImpl implements UserService {
         partnerInfoService.deleteForPair(me.getId(), partner.getId());
         deletePartnerPoints(me.getId(), partner.getId());
         sharedRecordService.deleteByCreatedBy(me.getId(), partner.getId());
+        partnerMessageService.deleteByCreatedBy(me.getId(), partner.getId());
         // 双向解除
         me.setPartnerId(null);
         partner.setPartnerId(null);
