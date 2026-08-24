@@ -94,6 +94,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'PartnerDashboardSharedRecords': RouteRecordInfo<
+      'PartnerDashboardSharedRecords',
+      '/partner/dashboard/shared-records',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     'PartnerDashboardSleep': RouteRecordInfo<
       'PartnerDashboardSleep',
       '/partner/dashboard/sleep',
@@ -139,6 +146,13 @@ declare module 'vue-router/auto-routes' {
     'Settings': RouteRecordInfo<
       'Settings',
       '/settings',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    'SettingsChangelog': RouteRecordInfo<
+      'SettingsChangelog',
+      '/settings/changelog',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -256,6 +270,14 @@ declare module 'vue-router/auto-routes' {
       pathParamNames:
         | never
     }
+    'src/pages/partner/dashboard/shared-records.vue': {
+      routes:
+        | 'PartnerDashboardSharedRecords'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
     'src/pages/partner/dashboard/sleep.vue': {
       routes:
         | 'PartnerDashboardSleep'
@@ -307,6 +329,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/settings/index.vue': {
       routes:
         | 'Settings'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/settings/changelog.vue': {
+      routes:
+        | 'SettingsChangelog'
       views:
         | never
       pathParamNames:

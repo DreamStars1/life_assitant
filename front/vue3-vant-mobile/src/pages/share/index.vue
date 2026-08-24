@@ -83,7 +83,6 @@ const messages = ref<PartnerMessage[]>([])
 const messagesLoading = ref(false)
 const messageText = ref('')
 const sending = ref(false)
-const composeMode = ref<'text' | 'image'>('text')
 const pendingFileList = ref<UploaderFileListItem[]>([])
 const chatContainer = ref<HTMLElement | null>(null)
 
@@ -218,19 +217,6 @@ function previewMessageImages(msg: PartnerMessage, localIndex: number) {
   })
 }
 
-function switchComposeMode(mode: 'text' | 'image') {
-  if (composeMode.value === mode)
-    return
-  composeMode.value = mode
-  if (mode === 'image') {
-    messageText.value = ''
-    resetPublishFlags()
-  }
-  else {
-    pendingFileList.value = []
-  }
-}
-
 function beforeReadImage(file: File | File[]) {
   const files = Array.isArray(file) ? file : [file]
   if (pendingFileList.value.length + files.length > MAX_MESSAGE_IMAGES) {
@@ -250,6 +236,19 @@ function beforeReadImage(file: File | File[]) {
     }
   }
   return true
+}
+
+// ponytail: 多选时 after-read 可能逐张回调，合并到下一 macrotask 再发（对齐影音评论）
+let imageSendTimer: ReturnType<typeof setTimeout> | null = null
+function afterReadImage(_file: UploaderFileListItem | UploaderFileListItem[]) {
+  messageText.value = ''
+  resetPublishFlags()
+  if (imageSendTimer)
+    clearTimeout(imageSendTimer)
+  imageSendTimer = setTimeout(() => {
+    imageSendTimer = null
+    void sendImageMessage()
+  }, 0)
 }
 
 async function sendTextMessage() {
@@ -339,6 +338,40 @@ async function confirmDeleteMessage(msg: PartnerMessage) {
   catch { /* cancelled or failed */ }
 }
 
+let longPressTimer: ReturnType<typeof setTimeout> | null = null
+let longPressFired = false
+
+function clearLongPressTimer() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
+}
+
+function onBubblePointerDown(msg: PartnerMessage) {
+  if (!isOwnMessage(msg))
+    return
+  longPressFired = false
+  clearLongPressTimer()
+  longPressTimer = setTimeout(() => {
+    longPressTimer = null
+    longPressFired = true
+    void confirmDeleteMessage(msg)
+  }, 550)
+}
+
+function onBubblePointerUp() {
+  clearLongPressTimer()
+}
+
+function onBubbleClickCapture(e: MouseEvent) {
+  if (!longPressFired)
+    return
+  longPressFired = false
+  e.preventDefault()
+  e.stopPropagation()
+}
+
 function parseDateTime(value: string): Date {
   if (!value)
     return new Date(Number.NaN)
@@ -405,18 +438,14 @@ watch(partnerId, async (val) => {
           class="message-row"
           :class="{ 'message-own': isOwnMessage(msg), 'message-partner': !isOwnMessage(msg) }"
         >
-          <button
-            v-if="isOwnMessage(msg)"
-            type="button"
-            class="message-delete-btn"
-            aria-label="删除留言"
-            @click.stop="confirmDeleteMessage(msg)"
-          >
-            <van-icon name="delete-o" size="16" />
-          </button>
           <div
             class="message-bubble"
             :class="{ 'has-images': displayImages(msg.imageUrls).length }"
+            @pointerdown="onBubblePointerDown(msg)"
+            @pointerup="onBubblePointerUp"
+            @pointerleave="onBubblePointerUp"
+            @pointercancel="onBubblePointerUp"
+            @click.capture="onBubbleClickCapture"
           >
             <div
               v-if="displayImages(msg.imageUrls).length"
@@ -446,131 +475,109 @@ watch(partnerId, async (val) => {
       </div>
 
       <div class="input-bar">
-        <div class="mode-toggle">
-          <button
-            type="button"
-            class="mode-btn"
-            :class="{ active: composeMode === 'text' }"
-            @click="switchComposeMode('text')"
-          >
-            文字
-          </button>
-          <button
-            type="button"
-            class="mode-btn"
-            :class="{ active: composeMode === 'image' }"
-            @click="switchComposeMode('image')"
-          >
-            图片
-          </button>
+        <div class="publish-toggles">
+          <van-checkbox v-model="publishSharedRecord" shape="square" icon-size="16">
+            {{ t('share.publishRecord') }}
+          </van-checkbox>
+          <van-checkbox v-model="publishTodo" shape="square" icon-size="16">
+            {{ t('share.publishTodo') }}
+          </van-checkbox>
+          <van-checkbox v-model="publishPoints" shape="square" icon-size="16">
+            {{ t('share.publishPoints') }}
+          </van-checkbox>
+        </div>
+        <van-radio-group
+          v-if="publishTodo"
+          v-model="todoAssignedTo"
+          direction="horizontal"
+          class="todo-assign-group"
+        >
+          <van-radio name="self">
+            {{ t('share.todoAssignSelf') }}
+          </van-radio>
+          <van-radio name="partner">
+            {{ t('share.todoAssignPartner') }}
+          </van-radio>
+          <van-radio name="none">
+            {{ t('share.todoAssignNone') }}
+          </van-radio>
+        </van-radio-group>
+        <div v-if="publishPoints" class="points-fields">
+          <div class="points-sign-row">
+            <button
+              type="button"
+              class="sign-btn"
+              :class="{ active: pointsSign === 1 }"
+              @click="pointsSign = 1"
+            >
+              {{ t('share.pointsAdd') }}
+            </button>
+            <button
+              type="button"
+              class="sign-btn"
+              :class="{ active: pointsSign === -1 }"
+              @click="pointsSign = -1"
+            >
+              {{ t('share.pointsSub') }}
+            </button>
+          </div>
+          <van-field
+            v-model="pointsValue"
+            type="digit"
+            :label="t('share.pointsValue')"
+            :placeholder="t('share.pointsValuePlaceholder')"
+            input-align="right"
+          />
+          <van-field
+            v-model="pointsReason"
+            :label="t('share.pointsReason')"
+            :placeholder="t('share.pointsReasonPlaceholder')"
+          />
         </div>
 
-        <div v-if="composeMode === 'text'" class="compose-text">
-          <div class="publish-toggles">
-            <van-checkbox v-model="publishSharedRecord" shape="square" icon-size="16">
-              {{ t('share.publishRecord') }}
-            </van-checkbox>
-            <van-checkbox v-model="publishTodo" shape="square" icon-size="16">
-              {{ t('share.publishTodo') }}
-            </van-checkbox>
-            <van-radio-group
-              v-if="publishTodo"
-              v-model="todoAssignedTo"
-              direction="horizontal"
-              class="todo-assign-group"
-            >
-              <van-radio name="self">
-                {{ t('share.todoAssignSelf') }}
-              </van-radio>
-              <van-radio name="partner">
-                {{ t('share.todoAssignPartner') }}
-              </van-radio>
-              <van-radio name="none">
-                {{ t('share.todoAssignNone') }}
-              </van-radio>
-            </van-radio-group>
-            <van-checkbox v-model="publishPoints" shape="square" icon-size="16">
-              {{ t('share.publishPoints') }}
-            </van-checkbox>
-            <div v-if="publishPoints" class="points-fields">
-              <div class="points-sign-row">
-                <button
-                  type="button"
-                  class="sign-btn"
-                  :class="{ active: pointsSign === 1 }"
-                  @click="pointsSign = 1"
-                >
-                  {{ t('share.pointsAdd') }}
-                </button>
-                <button
-                  type="button"
-                  class="sign-btn"
-                  :class="{ active: pointsSign === -1 }"
-                  @click="pointsSign = -1"
-                >
-                  {{ t('share.pointsSub') }}
-                </button>
-              </div>
-              <van-field
-                v-model="pointsValue"
-                type="digit"
-                :label="t('share.pointsValue')"
-                :placeholder="t('share.pointsValuePlaceholder')"
-                input-align="right"
-              />
-              <van-field
-                v-model="pointsReason"
-                :label="t('share.pointsReason')"
-                :placeholder="t('share.pointsReasonPlaceholder')"
-              />
-            </div>
-          </div>
-
-          <div class="input-row">
-            <van-field
-              v-model="messageText"
-              class="input-field"
-              type="textarea"
-              rows="1"
-              :autosize="{ maxHeight: 96 }"
-              placeholder="输入留言..."
-              :disabled="sending || messagesLoading"
-              clearable
-            >
-              <template #button>
-                <van-button
-                  size="small"
-                  type="primary"
-                  :loading="sending"
-                  :disabled="!canSendText"
-                  @click="sendTextMessage"
-                >
-                  发送
-                </van-button>
-              </template>
-            </van-field>
-          </div>
-        </div>
-
-        <div v-else class="input-row input-row-image">
+        <div class="input-row">
           <van-uploader
             v-model="pendingFileList"
             :max-count="MAX_MESSAGE_IMAGES"
+            :preview-image="false"
             multiple
             accept="image/*"
             :before-read="beforeReadImage"
+            :after-read="afterReadImage"
             :disabled="sending || messagesLoading"
             class="image-uploader"
-          />
-          <van-button
-            size="small"
-            type="primary"
-            :loading="sending"
-            :disabled="!pendingFileList.length || sending"
-            @click="sendImageMessage"
           >
-            发送
-          </van-button>
+            <button
+              type="button"
+              class="image-btn"
+              :disabled="sending || messagesLoading"
+              aria-label="选择图片"
+            >
+              <van-icon name="photo-o" size="22" />
+            </button>
+          </van-uploader>
+          <van-field
+            v-model="messageText"
+            class="input-field"
+            type="textarea"
+            rows="1"
+            :autosize="{ maxHeight: 96 }"
+            placeholder="输入留言..."
+            :disabled="sending || messagesLoading"
+            clearable
+          >
+            <template #button>
+              <van-button
+                size="small"
+                type="primary"
+                :loading="sending"
+                :disabled="!canSendText"
+                @click="sendTextMessage"
+              >
+                发送
+              </van-button>
+            </template>
+          </van-field>
         </div>
       </div>
     </div>
@@ -581,9 +588,9 @@ watch(partnerId, async (val) => {
 .board-page {
   display: flex;
   flex-direction: column;
-  /* ponytail: 伴侣 tab 内留言板；nav/tab placeholder 由外层占位 */
-  height: calc(100dvh - var(--van-nav-bar-height, 46px) - var(--van-tabbar-height, 50px) - 16px);
-  max-height: calc(100dvh - var(--van-nav-bar-height, 46px) - var(--van-tabbar-height, 50px) - 16px);
+  /* ponytail: 伴侣 tab 内留言板；外层 Share 已 flush，不再减 16px */
+  height: calc(100dvh - var(--van-nav-bar-height, 46px) - var(--van-tabbar-height, 50px));
+  max-height: calc(100dvh - var(--van-nav-bar-height, 46px) - var(--van-tabbar-height, 50px));
   overflow: hidden;
   background: var(--van-background);
 }
@@ -615,27 +622,6 @@ watch(partnerId, async (val) => {
   margin-bottom: 14px;
 }
 
-.message-delete-btn {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  margin: 0;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--van-text-color-3);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.message-delete-btn:active {
-  color: var(--van-danger-color);
-}
-
 .message-own {
   justify-content: flex-end;
 }
@@ -665,6 +651,10 @@ watch(partnerId, async (val) => {
   background: #1989fa;
   color: #fff;
   border-bottom-right-radius: 4px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
 }
 
 .message-partner .message-bubble {
@@ -739,57 +729,31 @@ watch(partnerId, async (val) => {
   flex-shrink: 0;
   background: var(--van-cell-background);
   border-top: 1px solid var(--van-border-color);
+  /* Tab 页底部已由 tabbar 吃 safe-area，勿再叠一层 */
   padding: 6px 12px;
-  padding-bottom: calc(6px + env(safe-area-inset-bottom));
-}
-
-.mode-toggle {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.mode-btn {
-  padding: 4px 12px;
-  font-size: 13px;
-  border: 1px solid var(--van-border-color);
-  border-radius: 16px;
-  background: var(--van-background-2);
-  color: var(--van-text-color-2);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.mode-btn.active {
-  border-color: var(--van-primary-color);
-  color: var(--van-primary-color);
-  background: color-mix(in srgb, var(--van-primary-color) 12%, transparent);
-}
-
-.compose-text {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .publish-toggles {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 2px 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 2px 0 6px;
 }
 
 .publish-toggles :deep(.van-checkbox) {
   align-items: center;
+  flex-shrink: 0;
 }
 
 .publish-toggles :deep(.van-checkbox__label) {
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.3;
 }
 
 .todo-assign-group {
-  margin-left: 24px;
+  margin: 0 0 6px;
   gap: 8px;
 }
 
@@ -802,10 +766,78 @@ watch(partnerId, async (val) => {
 }
 
 .points-fields {
-  margin-left: 24px;
+  margin: 0 0 6px;
   border: 1px solid var(--van-border-color);
   border-radius: 8px;
   overflow: hidden;
+}
+
+.input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.image-uploader {
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-bottom: 2px;
+}
+
+.image-uploader :deep(.van-uploader__wrapper),
+.image-uploader :deep(.van-uploader__input-wrapper) {
+  display: block;
+}
+
+.image-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--van-border-color);
+  border-radius: 8px;
+  background: var(--van-background-2);
+  color: var(--van-text-color-2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.image-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.input-field {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.input-field :deep(.van-cell) {
+  padding: 4px 0;
+  background: transparent;
+}
+
+.input-field :deep(.van-field__body) {
+  align-items: center;
+  min-height: 36px;
+}
+
+.input-field :deep(.van-field__control) {
+  max-height: 96px;
+  overflow-y: auto;
+  line-height: 22px;
+  padding: 7px 0;
+}
+
+.input-field :deep(.van-field__button) {
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
 }
 
 .points-sign-row {
@@ -833,35 +865,6 @@ watch(partnerId, async (val) => {
 .points-fields :deep(.van-field) {
   padding-top: 4px;
   padding-bottom: 4px;
-}
-
-.input-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.input-row-image {
-  align-items: center;
-}
-
-.image-uploader {
-  flex: 1;
-  min-width: 0;
-}
-
-.input-field {
-  flex: 1;
-  padding: 0;
-}
-
-.input-field :deep(.van-field__body) {
-  align-items: flex-end;
-}
-
-.input-field :deep(.van-field__control) {
-  max-height: 96px;
-  overflow-y: auto;
 }
 </style>
 

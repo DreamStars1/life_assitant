@@ -37,7 +37,10 @@ const mode = computed<'light' | 'dark'>(() => 'light')
   <van-config-provider :theme="mode">
     <nav-bar v-if="showNavBar" />
     <router-view v-slot="{ Component }">
-      <section class="app-wrapper" :class="{ 'app-wrapper--flush': route.name === 'Health' }">
+      <section
+        class="app-wrapper"
+        :class="{ 'app-wrapper--flush': route.name === 'Health' || route.name === 'MediaDetail' || route.name === 'Share' }"
+      >
         <keep-alive :include="keepAliveRouteNames">
           <component :is="Component" />
         </keep-alive>
