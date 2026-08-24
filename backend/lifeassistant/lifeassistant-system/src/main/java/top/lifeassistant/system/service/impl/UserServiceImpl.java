@@ -4,10 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import top.lifeassistant.partner.mapper.PartnerMessageMapper;
 import top.lifeassistant.partner.mapper.PartnerPointsMapper;
+import top.lifeassistant.partner.model.entity.PartnerMessageDO;
 import top.lifeassistant.partner.model.entity.PartnerPointsDO;
 import top.lifeassistant.partner.service.PartnerInfoService;
-import top.lifeassistant.partner.service.PartnerMessageService;
 import top.lifeassistant.sharedrecord.service.SharedRecordService;
 import top.lifeassistant.system.mapper.user.UserMapper;
 import top.lifeassistant.system.model.entity.user.UserDO;
@@ -22,10 +23,10 @@ import java.time.LocalDateTime;
 public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final SharedRecordService sharedRecordService;
-    private final PartnerMessageService partnerMessageService;
     private final PartnerInfoService partnerInfoService;
-    // ponytail: 直接用 Mapper，避免 UserService ↔ PartnerPointsService 环
+    // ponytail: 直接用 Mapper，避免 UserService ↔ PartnerPointsService / PartnerMessageService 环
     private final PartnerPointsMapper partnerPointsMapper;
+    private final PartnerMessageMapper partnerMessageMapper;
 
     @Override
     public UserDO getByEmail(String email) { return userMapper.selectByEmail(email); }
@@ -73,7 +74,7 @@ public class UserServiceImpl implements UserService {
         partnerInfoService.deleteForPair(me.getId(), partner.getId());
         deletePartnerPoints(me.getId(), partner.getId());
         sharedRecordService.deleteByCreatedBy(me.getId(), partner.getId());
-        partnerMessageService.deleteByCreatedBy(me.getId(), partner.getId());
+        deletePartnerMessages(me.getId(), partner.getId());
         // 双向解除
         me.setPartnerId(null);
         partner.setPartnerId(null);
@@ -84,5 +85,10 @@ public class UserServiceImpl implements UserService {
     private void deletePartnerPoints(String userId1, String userId2) {
         partnerPointsMapper.delete(new LambdaQueryWrapper<PartnerPointsDO>()
             .in(PartnerPointsDO::getCreatedBy, userId1, userId2));
+    }
+
+    private void deletePartnerMessages(String userId1, String userId2) {
+        partnerMessageMapper.delete(new LambdaQueryWrapper<PartnerMessageDO>()
+            .in(PartnerMessageDO::getCreatedBy, userId1, userId2));
     }
 }
