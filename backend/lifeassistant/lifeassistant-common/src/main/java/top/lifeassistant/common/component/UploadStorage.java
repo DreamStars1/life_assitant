@@ -14,6 +14,7 @@ public class UploadStorage {
 
     private static final String SHARED_MEDIA_SUBDIR = "shared-media";
     private static final String MEDIA_COMMENTS_SUBDIR = "media-comments";
+    private static final String PARTNER_MESSAGES_SUBDIR = "partner-messages";
 
     private final Path root;
 
@@ -35,6 +36,14 @@ public class UploadStorage {
 
     public String mediaCommentUrl(String filename) {
         return "/uploads/" + MEDIA_COMMENTS_SUBDIR + "/" + filename;
+    }
+
+    public Path partnerMessagesDir() {
+        return root.resolve(PARTNER_MESSAGES_SUBDIR);
+    }
+
+    public String partnerMessageUrl(String filename) {
+        return "/uploads/" + PARTNER_MESSAGES_SUBDIR + "/" + filename;
     }
 
     public String resourceLocation() {
