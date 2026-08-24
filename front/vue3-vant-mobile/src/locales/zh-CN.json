@@ -233,6 +233,23 @@
     "noData": "暂无记录"
   },
 
+  "share": {
+    "messageBoard": "留言板",
+    "publishRecord": "记到一起做过的事",
+    "publishTodo": "建待办",
+    "todoAssignSelf": "自己",
+    "todoAssignPartner": "对方",
+    "todoAssignNone": "不指定",
+    "publishPoints": "改积分",
+    "pointsAdd": "加分",
+    "pointsSub": "扣分",
+    "pointsValue": "分值",
+    "pointsValuePlaceholder": "填写非零整数",
+    "pointsReason": "原因",
+    "pointsReasonPlaceholder": "可选，默认同留言内容",
+    "pointsValueRequired": "请填写非零积分"
+  },
+
   "dashboard": {
     "title": "看板",
     "points": "积分",

@@ -225,6 +225,23 @@
     "noData": "No records yet"
   },
 
+  "share": {
+    "messageBoard": "Message board",
+    "publishRecord": "Log a shared activity",
+    "publishTodo": "Create a todo",
+    "todoAssignSelf": "Me",
+    "todoAssignPartner": "Partner",
+    "todoAssignNone": "Unassigned",
+    "publishPoints": "Adjust points",
+    "pointsAdd": "Add",
+    "pointsSub": "Deduct",
+    "pointsValue": "Amount",
+    "pointsValuePlaceholder": "Non-zero integer",
+    "pointsReason": "Reason",
+    "pointsReasonPlaceholder": "Optional; defaults to message",
+    "pointsValueRequired": "Enter a non-zero amount"
+  },
+
   "dashboard": {
     "title": "Partner Dashboard",
     "points": "Points",

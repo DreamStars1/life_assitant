@@ -16,6 +16,7 @@ const MAX_MESSAGE_IMAGES = 9
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif'])
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const userInfo = computed(() => userStore.userInfo)
 const myId = computed(() => userInfo.value.id)
@@ -86,6 +87,73 @@ const composeMode = ref<'text' | 'image'>('text')
 const pendingFileList = ref<UploaderFileListItem[]>([])
 const chatContainer = ref<HTMLElement | null>(null)
 
+const publishSharedRecord = ref(false)
+const publishTodo = ref(false)
+const todoAssignedTo = ref<'self' | 'partner' | 'none'>('none')
+const publishPoints = ref(false)
+const pointsSign = ref<1 | -1>(1)
+const pointsValue = ref('')
+const pointsReason = ref('')
+
+interface PublishFlagsSnapshot {
+  publishSharedRecord: boolean
+  publishTodo: boolean
+  todoAssignedTo: 'self' | 'partner' | 'none'
+  publishPoints: boolean
+  pointsSign: 1 | -1
+  pointsValue: string
+  pointsReason: string
+}
+
+function snapshotPublishFlags(): PublishFlagsSnapshot {
+  return {
+    publishSharedRecord: publishSharedRecord.value,
+    publishTodo: publishTodo.value,
+    todoAssignedTo: todoAssignedTo.value,
+    publishPoints: publishPoints.value,
+    pointsSign: pointsSign.value,
+    pointsValue: pointsValue.value,
+    pointsReason: pointsReason.value,
+  }
+}
+
+function restorePublishFlags(flags: PublishFlagsSnapshot) {
+  publishSharedRecord.value = flags.publishSharedRecord
+  publishTodo.value = flags.publishTodo
+  todoAssignedTo.value = flags.todoAssignedTo
+  publishPoints.value = flags.publishPoints
+  pointsSign.value = flags.pointsSign
+  pointsValue.value = flags.pointsValue
+  pointsReason.value = flags.pointsReason
+}
+
+function resetPublishFlags() {
+  publishSharedRecord.value = false
+  publishTodo.value = false
+  todoAssignedTo.value = 'none'
+  publishPoints.value = false
+  pointsSign.value = 1
+  pointsValue.value = ''
+  pointsReason.value = ''
+}
+
+function computePointsChange(flags: PublishFlagsSnapshot): number | undefined {
+  if (!flags.publishPoints)
+    return undefined
+  const n = Number(flags.pointsValue)
+  if (!Number.isFinite(n) || n === 0)
+    return 0
+  return flags.pointsSign * Math.abs(Math.trunc(n))
+}
+
+const canSendText = computed(() => {
+  if (!messageText.value.trim() || sending.value)
+    return false
+  if (publishPoints.value && computePointsChange(snapshotPublishFlags()) === 0)
+    return false
+  return true
+})
+
 function messageListFromResponse(res: unknown): PartnerMessage[] | null {
   if (Array.isArray(res))
     return res as PartnerMessage[]
@@ -154,10 +222,13 @@ function switchComposeMode(mode: 'text' | 'image') {
   if (composeMode.value === mode)
     return
   composeMode.value = mode
-  if (mode === 'image')
+  if (mode === 'image') {
     messageText.value = ''
-  else
+    resetPublishFlags()
+  }
+  else {
     pendingFileList.value = []
+  }
 }
 
 function beforeReadImage(file: File | File[]) {
@@ -183,15 +254,31 @@ function beforeReadImage(file: File | File[]) {
 
 async function sendTextMessage() {
   const text = messageText.value.trim()
-  if (!text || sending.value)
+  if (!canSendText.value)
     return
+
+  const flags = snapshotPublishFlags()
+  const pointsChange = computePointsChange(flags)
+  if (flags.publishPoints && pointsChange === 0) {
+    showToast(t('share.pointsValueRequired'))
+    return
+  }
 
   sending.value = true
   const draft = text
   messageText.value = ''
+  resetPublishFlags()
   const previous = messages.value
   try {
-    const created = await createPartnerMessage({ content: draft })
+    const created = await createPartnerMessage({
+      content: draft,
+      publishSharedRecord: flags.publishSharedRecord,
+      publishTodo: flags.publishTodo,
+      todoAssignedTo: flags.publishTodo ? flags.todoAssignedTo : undefined,
+      publishPoints: flags.publishPoints,
+      pointsChange,
+      pointsReason: flags.publishPoints ? (flags.pointsReason.trim() || draft) : undefined,
+    })
     if (created.data)
       messages.value = [...previous, created.data]
     else
@@ -201,6 +288,7 @@ async function sendTextMessage() {
   }
   catch {
     messageText.value = draft
+    restorePublishFlags(flags)
     showToast('发送失败')
   }
   finally {
@@ -377,29 +465,91 @@ watch(partnerId, async (val) => {
           </button>
         </div>
 
-        <div v-if="composeMode === 'text'" class="input-row">
-          <van-field
-            v-model="messageText"
-            class="input-field"
-            type="textarea"
-            rows="1"
-            :autosize="{ maxHeight: 96 }"
-            placeholder="输入留言..."
-            :disabled="sending || messagesLoading"
-            clearable
-          >
-            <template #button>
-              <van-button
-                size="small"
-                type="primary"
-                :loading="sending"
-                :disabled="!messageText.trim() || sending"
-                @click="sendTextMessage"
-              >
-                发送
-              </van-button>
-            </template>
-          </van-field>
+        <div v-if="composeMode === 'text'" class="compose-text">
+          <div class="publish-toggles">
+            <van-checkbox v-model="publishSharedRecord" shape="square" icon-size="16">
+              {{ t('share.publishRecord') }}
+            </van-checkbox>
+            <van-checkbox v-model="publishTodo" shape="square" icon-size="16">
+              {{ t('share.publishTodo') }}
+            </van-checkbox>
+            <van-radio-group
+              v-if="publishTodo"
+              v-model="todoAssignedTo"
+              direction="horizontal"
+              class="todo-assign-group"
+            >
+              <van-radio name="self">
+                {{ t('share.todoAssignSelf') }}
+              </van-radio>
+              <van-radio name="partner">
+                {{ t('share.todoAssignPartner') }}
+              </van-radio>
+              <van-radio name="none">
+                {{ t('share.todoAssignNone') }}
+              </van-radio>
+            </van-radio-group>
+            <van-checkbox v-model="publishPoints" shape="square" icon-size="16">
+              {{ t('share.publishPoints') }}
+            </van-checkbox>
+            <div v-if="publishPoints" class="points-fields">
+              <div class="points-sign-row">
+                <button
+                  type="button"
+                  class="sign-btn"
+                  :class="{ active: pointsSign === 1 }"
+                  @click="pointsSign = 1"
+                >
+                  {{ t('share.pointsAdd') }}
+                </button>
+                <button
+                  type="button"
+                  class="sign-btn"
+                  :class="{ active: pointsSign === -1 }"
+                  @click="pointsSign = -1"
+                >
+                  {{ t('share.pointsSub') }}
+                </button>
+              </div>
+              <van-field
+                v-model="pointsValue"
+                type="digit"
+                :label="t('share.pointsValue')"
+                :placeholder="t('share.pointsValuePlaceholder')"
+                input-align="right"
+              />
+              <van-field
+                v-model="pointsReason"
+                :label="t('share.pointsReason')"
+                :placeholder="t('share.pointsReasonPlaceholder')"
+              />
+            </div>
+          </div>
+
+          <div class="input-row">
+            <van-field
+              v-model="messageText"
+              class="input-field"
+              type="textarea"
+              rows="1"
+              :autosize="{ maxHeight: 96 }"
+              placeholder="输入留言..."
+              :disabled="sending || messagesLoading"
+              clearable
+            >
+              <template #button>
+                <van-button
+                  size="small"
+                  type="primary"
+                  :loading="sending"
+                  :disabled="!canSendText"
+                  @click="sendTextMessage"
+                >
+                  发送
+                </van-button>
+              </template>
+            </van-field>
+          </div>
         </div>
 
         <div v-else class="input-row input-row-image">
@@ -614,6 +764,75 @@ watch(partnerId, async (val) => {
   border-color: var(--van-primary-color);
   color: var(--van-primary-color);
   background: color-mix(in srgb, var(--van-primary-color) 12%, transparent);
+}
+
+.compose-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.publish-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.publish-toggles :deep(.van-checkbox) {
+  align-items: center;
+}
+
+.publish-toggles :deep(.van-checkbox__label) {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.todo-assign-group {
+  margin-left: 24px;
+  gap: 8px;
+}
+
+.todo-assign-group :deep(.van-radio) {
+  margin-right: 8px;
+}
+
+.todo-assign-group :deep(.van-radio__label) {
+  font-size: 12px;
+}
+
+.points-fields {
+  margin-left: 24px;
+  border: 1px solid var(--van-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.points-sign-row {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px 0;
+}
+
+.sign-btn {
+  padding: 2px 10px;
+  font-size: 12px;
+  border: 1px solid var(--van-border-color);
+  border-radius: 12px;
+  background: var(--van-background-2);
+  color: var(--van-text-color-2);
+  cursor: pointer;
+}
+
+.sign-btn.active {
+  border-color: var(--van-primary-color);
+  color: var(--van-primary-color);
+  background: color-mix(in srgb, var(--van-primary-color) 12%, transparent);
+}
+
+.points-fields :deep(.van-field) {
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .input-row {
