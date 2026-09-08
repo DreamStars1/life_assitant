@@ -17,6 +17,10 @@ export default ({ mode }: ConfigEnv): UserConfig => {
       host: true,
       port: 3000,
       allowedHosts: ['760329wrxu23.vicp.fun'],
+      // ponytail: 允许 import 仓库根 docs/
+      fs: {
+        allow: [path.join(__dirname, '../..')],
+      },
       proxy: {
         '/api': {
           target: 'http://localhost:8000',
@@ -37,6 +41,8 @@ export default ({ mode }: ConfigEnv): UserConfig => {
         '@': path.join(__dirname, './src'),
         '~': path.join(__dirname, './src/assets'),
         '~root': path.join(__dirname, '.'),
+        // ponytail: 设置页读仓库 docs/USER_CHANGELOG.md，避免前端再抄一份
+        '~docs': path.join(__dirname, '../../docs'),
       },
     },
 

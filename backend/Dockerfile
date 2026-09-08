@@ -1,5 +1,7 @@
+# ponytail: 国内直连 hub 易挂；默认走镜像站，海外/CI 可 --build-arg REGISTRY_PREFIX=
+ARG REGISTRY_PREFIX=docker.1ms.run/library/
 # ===== 构建阶段 =====
-FROM maven:3.9-eclipse-temurin-17-alpine AS build
+FROM ${REGISTRY_PREFIX}maven:3.9-eclipse-temurin-17-alpine AS build
 
 WORKDIR /build
 
@@ -20,7 +22,8 @@ RUN cd lifeassistant && mvn package -P fat-jar -DskipTests -B -q && \
     find lifeassistant-server/target -name 'lifeassistant.jar' -exec cp {} /build/app.jar \;
 
 # ===== 运行阶段 =====
-FROM eclipse-temurin:17-jre-alpine
+ARG REGISTRY_PREFIX=docker.1ms.run/library/
+FROM ${REGISTRY_PREFIX}eclipse-temurin:17-jre-alpine
 
 RUN addgroup -g 1001 appgroup && \
     adduser -u 1001 -G appgroup -s /bin/sh -D appuser && \

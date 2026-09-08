@@ -115,12 +115,7 @@ public class SharedMediaService {
             media.setIsFinished(isFinished);
             media.setFinishedAt(isFinished ? LocalDateTime.now() : null);
         }
-        if (req.getIsPrivate() != null) {
-            if (!user.getId().equals(media.getCreatedBy())) {
-                throw new BadRequestException("仅创建者可修改私密设置");
-            }
-            media.setIsPrivate(req.getIsPrivate());
-        }
+        applyIsPrivateUpdate(media, user, req.getIsPrivate());
 
         String lw = req.getLastWatchedAt();
         if (lw != null) {
@@ -155,6 +150,24 @@ public class SharedMediaService {
         media.setId(mediaId);
         media.setLastWatchedAt(LocalDate.now());
         mapper.updateById(media);
+    }
+
+    /**
+     * 仅在实际变更私密状态时校验创建者；伴侣更新其他字段时附带 isPrivate 不应被拒。
+     */
+    static void applyIsPrivateUpdate(SharedMediaDO media, UserDO user, Boolean requested) {
+        if (requested == null) {
+            return;
+        }
+        boolean next = Boolean.TRUE.equals(requested);
+        boolean current = Boolean.TRUE.equals(media.getIsPrivate());
+        if (next == current) {
+            return;
+        }
+        if (!user.getId().equals(media.getCreatedBy())) {
+            throw new BadRequestException("仅创建者可修改私密设置");
+        }
+        media.setIsPrivate(next);
     }
 
     /** 评论、进度等互动时刷新列表排序用的更新时间 */

@@ -15,6 +15,7 @@
     "Register": "注册",
     "ForgotPassword": "忘记密码",
     "Settings": "设置",
+    "SettingsChangelog": "更新日志",
     "Share": "伴侣",
     "Records": "记录",
     "PartnerDetail": "伴侣详情",
@@ -173,7 +174,12 @@
     "pointsValuePlaceholder": "填写非零整数",
     "pointsReason": "原因",
     "pointsReasonPlaceholder": "可选，默认同留言内容",
-    "pointsValueRequired": "请填写非零积分"
+    "pointsValueRequired": "请填写非零积分",
+    "recordTitle": "标题",
+    "recordTitlePlaceholder": "如：一起看了电影",
+    "recordContent": "详细描述",
+    "recordContentPlaceholder": "可选",
+    "loadMoreMessages": "加载更早的留言…"
   },
 
   "profile": {
@@ -235,7 +241,8 @@
   "settings": {
     "logout": "退出登录",
     "currentVersion": "当前版本",
-    "confirmTitle": "确认退出？"
+    "confirmTitle": "确认退出？",
+    "changelog": "更新日志"
   },
 
   "common": {

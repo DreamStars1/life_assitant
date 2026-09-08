@@ -3,7 +3,7 @@ application:
   id: lifeassistant
   name: Life Assistant
   description: 智能生活助手后端服务
-  version: 1.10.0-SNAPSHOT
+  version: 1.11.0-SNAPSHOT
   base-package: top.lifeassistant
 
 lifeassistant:
@@ -32,6 +32,11 @@ spring:
     allow-circular-references: true
   jackson:
     big-number-serialize-mode: FLEXIBLE
+  # 与 Nginx client_max_body_size、评论图 9×5MB 对齐；默认 1m/10m 会卡多图上传
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 50MB
 
 --- ## 线程池配置
 spring.task:

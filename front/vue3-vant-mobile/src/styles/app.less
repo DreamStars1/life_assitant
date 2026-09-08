@@ -34,6 +34,12 @@ html {
   overflow: hidden;
 }
 
+/* ponytail: 封面预览模糊底图铺满；前景图走 Vant 默认 contain，不拉比例 */
+.records-cover-preview-overlay {
+  filter: blur(24px);
+  transform: scale(1.08);
+}
+
 /* ponytail: van-dialog 默认不限高；长表单（如简介 autosize）会撑出视口且无法滚动 */
 .van-dialog__content {
   max-height: min(60vh, 480px);

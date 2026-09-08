@@ -1,0 +1,4 @@
+# ponytail: 本地 mvn 打 fat-jar 后只换 jar 层；基础运行时沿用 TCR 已有镜像，避免拉 maven 基础镜像
+# 用法见 build-and-push.bat 第 1 步
+FROM ccr.ccs.tencentyun.com/life-assistant/lifeassistant-backend:latest
+COPY app.jar /app/app.jar

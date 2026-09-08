@@ -240,6 +240,10 @@ function formatDate(dateStr: string) {
     </van-cell-group>
 
     <van-cell-group :inset="true" class="!mt-4">
+      <van-cell :title="$t('settings.changelog')" is-link to="/settings/changelog" />
+    </van-cell-group>
+
+    <van-cell-group :inset="true" class="!mt-4">
       <van-cell v-if="userInfo.id" :title="$t('settings.logout')" clickable class="danger-text" @click="Logout" />
     </van-cell-group>
 

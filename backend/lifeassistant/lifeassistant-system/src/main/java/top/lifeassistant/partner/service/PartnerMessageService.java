@@ -93,15 +93,27 @@ public class PartnerMessageService {
         msg.setCreatedAt(LocalDateTime.now());
         mapper.insert(msg);
         if (pubShared) {
+            String recordTitle = req.getSharedRecordTitle();
+            if (recordTitle == null || recordTitle.isBlank()) {
+                recordTitle = msg.getContent();
+            }
+            if (recordTitle == null || recordTitle.isBlank()) {
+                throw new BadRequestException("一起做过的事需要标题");
+            }
             SharedRecordCreateReq sr = new SharedRecordCreateReq();
-            sr.setTitle(PartnerMessageImageRules.truncateTitle(msg.getContent(), 255));
+            sr.setTitle(PartnerMessageImageRules.truncateTitle(recordTitle, 255));
+            if (req.getSharedRecordContent() != null && !req.getSharedRecordContent().isBlank()) {
+                sr.setContent(req.getSharedRecordContent().trim());
+            }
             SharedRecordResp created = sharedRecordService.create(user, sr);
             msg.setSharedRecordId(created.getId());
         }
         if (pubTodo) {
             String assign = req.getTodoAssignedTo() == null ? "none" : req.getTodoAssignedTo();
             TodoCreateReq tr = new TodoCreateReq();
-            tr.setTitle(PartnerMessageImageRules.truncateTitle(msg.getContent(), 255));
+            String[] todoParts = PartnerMessageImageRules.splitTodoTitleAndDescription(msg.getContent());
+            tr.setTitle(todoParts[0]);
+            tr.setDescription(todoParts[1]);
             tr.setPriority("medium");
             if ("partner".equals(assign)) {
                 tr.setAssignedTo(user.getPartnerId());

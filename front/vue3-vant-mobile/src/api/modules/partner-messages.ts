@@ -16,6 +16,8 @@ export interface PartnerMessageCreateBody {
   content?: string
   imageUrls?: string[]
   publishSharedRecord?: boolean
+  sharedRecordTitle?: string
+  sharedRecordContent?: string
   publishTodo?: boolean
   todoAssignedTo?: 'self' | 'partner' | 'none'
   publishPoints?: boolean

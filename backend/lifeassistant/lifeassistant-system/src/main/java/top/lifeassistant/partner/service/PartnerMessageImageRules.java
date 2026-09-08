@@ -74,4 +74,14 @@ final class PartnerMessageImageRules {
         String t = text.trim();
         return t.length() <= max ? t : t.substring(0, max);
     }
+
+    /** ponytail: title 255 + description 1024；超长正文截到 description 上限 */
+    static String[] splitTodoTitleAndDescription(String text) {
+        String t = text == null ? "" : text.trim();
+        if (t.length() <= 255) {
+            return new String[] { t, null };
+        }
+        String desc = t.length() > 255 + 1024 ? t.substring(255, 255 + 1024) : t.substring(255);
+        return new String[] { t.substring(0, 255), desc.isEmpty() ? null : desc };
+    }
 }

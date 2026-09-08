@@ -463,10 +463,12 @@ watch(mediaId, (id, prev) => {
         <van-field
           v-model="messageText"
           class="input-field"
+          type="textarea"
+          rows="1"
+          :autosize="{ maxHeight: 96 }"
           placeholder="输入留言..."
           :disabled="sending || loading"
           clearable
-          @keydown.enter.prevent="sendMessage"
         >
           <template #button>
             <van-button
@@ -520,8 +522,10 @@ watch(mediaId, (id, prev) => {
 .media-detail-page {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
-  margin-bottom: -16px;
+  /* ponytail: 钉死视口高度，聊天区内部滚；min-height 会让整页变高、输入栏被顶出屏幕 */
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   background: var(--van-background);
 }
 
@@ -674,6 +678,7 @@ watch(mediaId, (id, prev) => {
   font-size: 14px;
   line-height: 1.5;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .message-time {
@@ -740,7 +745,7 @@ watch(mediaId, (id, prev) => {
 
 .input-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
 }
 
@@ -777,6 +782,15 @@ watch(mediaId, (id, prev) => {
 .input-field {
   flex: 1;
   padding: 0;
+}
+
+.input-field :deep(.van-field__body) {
+  align-items: flex-end;
+}
+
+.input-field :deep(.van-field__control) {
+  max-height: 96px;
+  overflow-y: auto;
 }
 
 .progress-form {

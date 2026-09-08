@@ -1,0 +1,4 @@
+# ponytail: 本地 pnpm build 后只换静态资源；基础 nginx 沿用 TCR 已有镜像
+# 用法见 build-and-push.bat 第 2 步
+FROM ccr.ccs.tencentyun.com/life-assistant/lifeassistant-frontend:latest
+COPY dist/ /usr/share/nginx/html/

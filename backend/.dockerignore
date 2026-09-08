@@ -1,6 +1,7 @@
 # Maven 构建产物
 target/
 *.jar
+!app.jar
 *.war
 
 # IDE

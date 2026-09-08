@@ -15,6 +15,7 @@
     "Register": "Register",
     "ForgotPassword": "Forgot Password",
     "Settings": "Settings",
+    "SettingsChangelog": "Changelog",
     "Share": "Partner",
     "Records": "Records",
     "404": "Page Not Found",
@@ -171,7 +172,12 @@
     "pointsValuePlaceholder": "Non-zero integer",
     "pointsReason": "Reason",
     "pointsReasonPlaceholder": "Optional; defaults to message",
-    "pointsValueRequired": "Enter a non-zero amount"
+    "pointsValueRequired": "Enter a non-zero amount",
+    "recordTitle": "Title",
+    "recordTitlePlaceholder": "e.g. Watched a movie together",
+    "recordContent": "Details",
+    "recordContentPlaceholder": "Optional",
+    "loadMoreMessages": "Loading earlier messages…"
   },
 
   "profile": {
@@ -233,7 +239,8 @@
   "settings": {
     "logout": "Sign Out",
     "currentVersion": "Current Version",
-    "confirmTitle": "Confirm Exit?"
+    "confirmTitle": "Confirm Exit?",
+    "changelog": "Changelog"
   },
 
   "common": {

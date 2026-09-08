@@ -37,6 +37,7 @@ const addMediaCoverList = ref<UploaderFileListItem[]>([])
 const showAddLastWatchedCalendar = ref(false)
 const showEditMedia = ref(false)
 const editingMediaId = ref('')
+const editingMediaCreatedBy = ref('')
 const editMediaForm = reactive({ title: '', mediaType: 'movie', description: '', lastWatchedAt: '', isPrivate: false })
 const showEditLastWatchedCalendar = ref(false)
 const editMediaCoverList = ref<UploaderFileListItem[]>([])
@@ -182,8 +183,13 @@ function onEditLastWatchedConfirm(d: Date) {
   showEditLastWatchedCalendar.value = false
 }
 
+function isMediaCreator(createdBy: string): boolean {
+  return createdBy === userStore.userInfo.id
+}
+
 function openEditMedia(item: SharedMediaItem) {
   editingMediaId.value = item.id
+  editingMediaCreatedBy.value = item.createdBy
   editMediaForm.title = item.title
   editMediaForm.mediaType = item.mediaType
   editMediaForm.description = item.description || ''
@@ -207,7 +213,8 @@ async function onEditMedia() {
     if (editMediaCoverList.value[0]?.file)
       fd.append('cover', editMediaCoverList.value[0].file)
     fd.append('lastWatchedAt', editMediaForm.lastWatchedAt || '')
-    fd.append('isPrivate', String(editMediaForm.isPrivate))
+    if (isMediaCreator(editingMediaCreatedBy.value))
+      fd.append('isPrivate', String(editMediaForm.isPrivate))
     await updateSharedMedia(editingMediaId.value, fd)
     showToast('已更新')
     showEditMedia.value = false
@@ -357,7 +364,17 @@ function previewCover(url: string) {
     images: [url],
     startPosition: 0,
     closeable: true,
+    showIndex: false,
     teleport: 'body',
+    className: 'records-cover-preview',
+    overlayClass: 'records-cover-preview-overlay',
+    // ponytail: 模糊原图铺底，前景仍 contain，避免黑边又不拉比例
+    overlayStyle: {
+      backgroundImage: `url("${url}")`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundColor: '#000',
+    },
   })
 }
 
@@ -436,17 +453,22 @@ watch(partnerId, async (val) => {
               <van-icon name="photo-o" size="24" />
             </div>
             <div class="ml-3 flex-1 min-w-0">
-              <div class="font-medium truncate">
-                {{ item.title }}
+              <div class="flex items-start gap-2 min-w-0">
+                <div
+                  class="font-medium shrink-0 break-words"
+                  :class="previewDescription(item.description) ? 'w-1/2' : 'w-full'"
+                >
+                  {{ item.title }}
+                </div>
+                <div
+                  v-if="previewDescription(item.description)"
+                  class="text-xs text-gray-500 w-1/2 min-w-0 break-words whitespace-pre-wrap"
+                >
+                  {{ previewDescription(item.description) }}
+                </div>
               </div>
               <div class="text-xs text-gray-500 mt-1">
                 {{ formatMediaType(item.mediaType, item.mediaTypeLabel) }}
-              </div>
-              <div
-                v-if="previewDescription(item.description)"
-                class="text-xs text-gray-500 mt-1"
-              >
-                {{ previewDescription(item.description) }}
               </div>
               <div class="text-xs mt-1">
                 <van-tag :type="item.isFinished ? 'success' : 'warning'">
@@ -602,7 +624,7 @@ watch(partnerId, async (val) => {
             :min-date="new Date('2020-01-01')"
             @confirm="onEditLastWatchedConfirm"
           />
-          <van-field label="仅自己可见">
+          <van-field v-if="isMediaCreator(editingMediaCreatedBy)" label="仅自己可见">
             <template #input>
               <van-switch v-model="editMediaForm.isPrivate" size="20" />
             </template>

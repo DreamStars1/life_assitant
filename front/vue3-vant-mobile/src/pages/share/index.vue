@@ -15,6 +15,7 @@ import { buildCommentImageGallery } from '@/pages/share/media/commentImageGaller
 const MAX_MESSAGE_IMAGES = 9
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif'])
+const MESSAGE_PAGE_SIZE = 30
 
 const { t } = useI18n()
 const userStore = useUserStore()
@@ -81,12 +82,17 @@ const partnerId = computed(() => userInfo.value.partnerId)
 // ---- 留言板 ----
 const messages = ref<PartnerMessage[]>([])
 const messagesLoading = ref(false)
+const loadingMore = ref(false)
+const currentPage = ref(1)
+const hasMore = ref(true)
 const messageText = ref('')
 const sending = ref(false)
 const pendingFileList = ref<UploaderFileListItem[]>([])
 const chatContainer = ref<HTMLElement | null>(null)
 
 const publishSharedRecord = ref(false)
+const recordTitle = ref('')
+const recordContent = ref('')
 const publishTodo = ref(false)
 const todoAssignedTo = ref<'self' | 'partner' | 'none'>('none')
 const publishPoints = ref(false)
@@ -96,6 +102,8 @@ const pointsReason = ref('')
 
 interface PublishFlagsSnapshot {
   publishSharedRecord: boolean
+  recordTitle: string
+  recordContent: string
   publishTodo: boolean
   todoAssignedTo: 'self' | 'partner' | 'none'
   publishPoints: boolean
@@ -107,6 +115,8 @@ interface PublishFlagsSnapshot {
 function snapshotPublishFlags(): PublishFlagsSnapshot {
   return {
     publishSharedRecord: publishSharedRecord.value,
+    recordTitle: recordTitle.value,
+    recordContent: recordContent.value,
     publishTodo: publishTodo.value,
     todoAssignedTo: todoAssignedTo.value,
     publishPoints: publishPoints.value,
@@ -118,6 +128,8 @@ function snapshotPublishFlags(): PublishFlagsSnapshot {
 
 function restorePublishFlags(flags: PublishFlagsSnapshot) {
   publishSharedRecord.value = flags.publishSharedRecord
+  recordTitle.value = flags.recordTitle
+  recordContent.value = flags.recordContent
   publishTodo.value = flags.publishTodo
   todoAssignedTo.value = flags.todoAssignedTo
   publishPoints.value = flags.publishPoints
@@ -128,6 +140,8 @@ function restorePublishFlags(flags: PublishFlagsSnapshot) {
 
 function resetPublishFlags() {
   publishSharedRecord.value = false
+  recordTitle.value = ''
+  recordContent.value = ''
   publishTodo.value = false
   todoAssignedTo.value = 'none'
   publishPoints.value = false
@@ -163,23 +177,58 @@ function messageListFromResponse(res: unknown): PartnerMessage[] | null {
   return null
 }
 
-async function loadMessages() {
+async function loadMessages(reset = true) {
   if (!partnerId.value)
     return
-  messagesLoading.value = true
+  if (reset) {
+    currentPage.value = 1
+    hasMore.value = true
+    messagesLoading.value = true
+  }
+  else {
+    if (!hasMore.value || loadingMore.value)
+      return
+    loadingMore.value = true
+  }
   try {
-    const res = await fetchPartnerMessages({ page: 1, size: 50 })
-    const list = messageListFromResponse(res)
-    if (list)
+    const page = reset ? 1 : currentPage.value
+    const res = await fetchPartnerMessages({ page, size: MESSAGE_PAGE_SIZE })
+    const list = messageListFromResponse(res) ?? []
+    if (reset) {
       messages.value = list
+    }
+    else {
+      const el = chatContainer.value
+      const prevHeight = el?.scrollHeight ?? 0
+      messages.value = [...list, ...messages.value]
+      await nextTick()
+      if (el)
+        el.scrollTop = el.scrollHeight - prevHeight
+    }
+    hasMore.value = list.length >= MESSAGE_PAGE_SIZE
+    if (!reset)
+      currentPage.value = page
   }
   catch {
     showToast('加载留言失败')
   }
   finally {
     messagesLoading.value = false
-    await nextTick()
-    scrollChatToBottom()
+    loadingMore.value = false
+    if (reset) {
+      await nextTick()
+      scrollChatToBottom()
+    }
+  }
+}
+
+function onChatScroll() {
+  const el = chatContainer.value
+  if (!el || loadingMore.value || !hasMore.value || messagesLoading.value)
+    return
+  if (el.scrollTop < 60) {
+    currentPage.value++
+    void loadMessages(false)
   }
 }
 
@@ -272,6 +321,12 @@ async function sendTextMessage() {
     const created = await createPartnerMessage({
       content: draft,
       publishSharedRecord: flags.publishSharedRecord,
+      sharedRecordTitle: flags.publishSharedRecord
+        ? (flags.recordTitle.trim() || draft)
+        : undefined,
+      sharedRecordContent: flags.publishSharedRecord
+        ? (flags.recordContent.trim() || undefined)
+        : undefined,
       publishTodo: flags.publishTodo,
       todoAssignedTo: flags.publishTodo ? flags.todoAssignedTo : undefined,
       publishPoints: flags.publishPoints,
@@ -427,7 +482,11 @@ watch(partnerId, async (val) => {
     </div>
 
     <div v-else class="board-page">
-      <div v-if="!messagesLoading" ref="chatContainer" class="chat-container">
+      <div v-if="!messagesLoading" ref="chatContainer" class="chat-container" @scroll="onChatScroll">
+        <div v-if="loadingMore" class="load-more-hint">
+          <van-loading type="spinner" size="16" />
+          <span>{{ t('share.loadMoreMessages') }}</span>
+        </div>
         <div v-if="messages.length === 0" class="chat-empty">
           <van-icon name="chat-o" size="48" color="var(--van-gray-4)" />
           <p>还没有留言，说点什么吧</p>
@@ -502,6 +561,21 @@ watch(partnerId, async (val) => {
             {{ t('share.todoAssignNone') }}
           </van-radio>
         </van-radio-group>
+        <div v-if="publishSharedRecord" class="record-fields">
+          <van-field
+            v-model="recordTitle"
+            :label="t('share.recordTitle')"
+            :placeholder="t('share.recordTitlePlaceholder')"
+          />
+          <van-field
+            v-model="recordContent"
+            type="textarea"
+            rows="1"
+            :autosize="{ maxHeight: 72 }"
+            :label="t('share.recordContent')"
+            :placeholder="t('share.recordContentPlaceholder')"
+          />
+        </div>
         <div v-if="publishPoints" class="points-fields">
           <div class="points-sign-row">
             <button
@@ -602,6 +676,16 @@ watch(partnerId, async (val) => {
   padding: 12px 16px;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
+}
+
+.load-more-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0 12px;
+  font-size: 12px;
+  color: var(--van-text-color-3);
 }
 
 .chat-empty {
@@ -763,6 +847,18 @@ watch(partnerId, async (val) => {
 
 .todo-assign-group :deep(.van-radio__label) {
   font-size: 12px;
+}
+
+.record-fields {
+  margin: 0 0 6px;
+  border: 1px solid var(--van-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.record-fields :deep(.van-field) {
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .points-fields {
