@@ -28,4 +28,4 @@ if (sections[1]!.version !== 'v1.8.0' || sections[1]!.items[0] !== 'ascii 括号
 if (parseUserChangelog('').length !== 0)
   throw new Error('empty should be []')
 
-console.log('parseUserChangelog.selfcheck: ok')
+console.warn('parseUserChangelog.selfcheck: ok')

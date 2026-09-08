@@ -266,7 +266,8 @@ async function onAcknowledge(todo: any) {
 }
 
 function dueDateDiff(iso: string | null | undefined): number | null {
-  if (!iso) return null
+  if (!iso)
+    return null
   const d = new Date(`${iso.slice(0, 10)}T00:00:00`)
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -275,20 +276,29 @@ function dueDateDiff(iso: string | null | undefined): number | null {
 
 function dueLabelClass(iso: string | null | undefined): string {
   const diff = dueDateDiff(iso)
-  if (diff == null) return ''
-  if (diff < 0) return 'due-overdue'
-  if (diff === 0) return 'due-today'
-  if (diff === 1) return 'due-tomorrow'
+  if (diff == null)
+    return ''
+  if (diff < 0)
+    return 'due-overdue'
+  if (diff === 0)
+    return 'due-today'
+  if (diff === 1)
+    return 'due-tomorrow'
   return 'due-later'
 }
 
 function formatDateLabel(iso: string | null | undefined): string {
   const diff = dueDateDiff(iso)
-  if (diff == null) return ''
-  if (diff < 0) return `已逾期 ${Math.abs(diff)} 天`
-  if (diff === 0) return '今天'
-  if (diff === 1) return '明天'
-  if (diff === 2) return '后天'
+  if (diff == null)
+    return ''
+  if (diff < 0)
+    return `已逾期 ${Math.abs(diff)} 天`
+  if (diff === 0)
+    return '今天'
+  if (diff === 1)
+    return '明天'
+  if (diff === 2)
+    return '后天'
   const d = new Date(`${iso!.slice(0, 10)}T00:00:00`)
   return `${d.getMonth() + 1}/${d.getDate()}`
 }
@@ -619,7 +629,7 @@ if (primaryTab.value === 1)
             <van-button block type="primary" @click="onInviteAck('accept')">
               {{ t('schedule.accept') }}
             </van-button>
-            <van-button block plain type="danger" @click="onInviteAck('reject')">
+            <van-button plain block type="danger" @click="onInviteAck('reject')">
               {{ t('schedule.reject') }}
             </van-button>
           </template>
@@ -627,10 +637,10 @@ if (primaryTab.value === 1)
             <van-button block type="primary" @click="openScheduleEdit">
               {{ t('events.edit') }}
             </van-button>
-            <van-button v-if="partnerId" block plain type="primary" @click="onScheduleInvite">
+            <van-button v-if="partnerId" plain block type="primary" @click="onScheduleInvite">
               {{ t('schedule.invite') }}
             </van-button>
-            <van-button block plain type="danger" @click="onScheduleDelete">
+            <van-button plain block type="danger" @click="onScheduleDelete">
               {{ t('schedule.delete') }}
             </van-button>
           </template>
@@ -823,10 +833,21 @@ if (primaryTab.value === 1)
 .meta-item .van-icon {
   font-size: 11px;
 }
-.meta-item.due-overdue { color: #ee0a24; font-weight: 500; }
-.meta-item.due-today { color: #ff976a; font-weight: 500; }
-.meta-item.due-tomorrow { color: #f2c97d; font-weight: 500; }
-.meta-item.due-later { color: var(--van-gray-5); }
+.meta-item.due-overdue {
+  color: #ee0a24;
+  font-weight: 500;
+}
+.meta-item.due-today {
+  color: #ff976a;
+  font-weight: 500;
+}
+.meta-item.due-tomorrow {
+  color: #f2c97d;
+  font-weight: 500;
+}
+.meta-item.due-later {
+  color: var(--van-gray-5);
+}
 .expand-arrow {
   font-size: 14px;
   color: var(--van-gray-5);

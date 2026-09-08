@@ -6,8 +6,8 @@ import {
   ANIM_MS,
   applyClick,
   BRUISE_MS,
-  clearBruise,
   clampPos,
+  clearBruise,
   createShibaPetLogicState,
   defaultPos,
   DRAG_THRESHOLD_PX,
@@ -22,9 +22,9 @@ import {
   pickPetAnim,
   savePos,
   SHIBA_GREET_EVENT,
-  type ShibaAnim,
-  type ShibaPetLogicState,
+
 } from './shibaPetLogic'
+import type { ShibaAnim, ShibaPetLogicState } from './shibaPetLogic'
 
 const userStore = useUserStore()
 const visible = computed(() => isShibaPetAllowed(userStore.userInfo.fullName))
@@ -440,20 +440,42 @@ function onPointerUp(e: PointerEvent) {
 }
 
 @keyframes bubble-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 @keyframes shiba-knock {
-  0% { transform: scale(1) rotate(0deg) translate(0, 0); }
-  20% { transform: scale(0.92, 1.06) rotate(-6deg) translate(-6px, 3px); }
-  45% { transform: scale(1.04, 0.96) rotate(4deg) translate(4px, -2px); }
-  70% { transform: scale(0.98, 1.02) rotate(-2deg) translate(-2px, 1px); }
-  100% { transform: scale(1) rotate(0deg) translate(0, 0); }
+  0% {
+    transform: scale(1) rotate(0deg) translate(0, 0);
+  }
+  20% {
+    transform: scale(0.92, 1.06) rotate(-6deg) translate(-6px, 3px);
+  }
+  45% {
+    transform: scale(1.04, 0.96) rotate(4deg) translate(4px, -2px);
+  }
+  70% {
+    transform: scale(0.98, 1.02) rotate(-2deg) translate(-2px, 1px);
+  }
+  100% {
+    transform: scale(1) rotate(0deg) translate(0, 0);
+  }
 }
 
 @keyframes shiba-burst {
-  0% { opacity: 0.9; transform: scale(0.6); }
-  100% { opacity: 0; transform: scale(1.35); }
+  0% {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
 }
 </style>

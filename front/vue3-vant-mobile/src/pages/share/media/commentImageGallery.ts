@@ -1,5 +1,5 @@
 // commentImageGallery.ts
-export type CommentImageSource = {
+export interface CommentImageSource {
   id?: string
   imageUrls?: string[] | null
 }
@@ -8,7 +8,7 @@ export function buildCommentImageGallery(
   comments: CommentImageSource[],
   activeCommentId: string | undefined,
   localIndex: number,
-): { images: string[]; startPosition: number } {
+): { images: string[], startPosition: number } {
   const images: string[] = []
   let startPosition = 0
   let anchored = false

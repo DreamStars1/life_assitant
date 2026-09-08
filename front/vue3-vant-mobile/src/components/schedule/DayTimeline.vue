@@ -9,8 +9,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'create-at': [iso: string]
-  'open-event': [event: ScheduleEventItem]
+  createAt: [iso: string]
+  openEvent: [event: ScheduleEventItem]
 }>()
 
 const { t } = useI18n()
@@ -59,11 +59,11 @@ const mineBlocks = computed(() => positionEvents(props.mine))
 const partnerBlocks = computed(() => positionEvents(props.partner))
 
 function onSlotClick(hour: number) {
-  emit('create-at', `${props.date}T${pad(hour)}:00:00`)
+  emit('createAt', `${props.date}T${pad(hour)}:00:00`)
 }
 
 function onEventClick(event: ScheduleEventItem) {
-  emit('open-event', event)
+  emit('openEvent', event)
 }
 
 onMounted(() => {

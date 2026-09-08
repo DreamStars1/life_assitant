@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import {
   afterHitFlash,
   applyClick,
-  clearBruise,
   clampPos,
+  clearBruise,
   createShibaPetLogicState,
   HITS_TO_BRUISE,
   isShibaPetAllowed,
@@ -72,4 +72,4 @@ assert.equal(c.x, 8)
 assert.equal(c.y, 800 - PET_HEIGHT - 8)
 assert.ok(PET_WIDTH > 0)
 
-console.log('shibaPetLogic.selfcheck: ok')
+console.warn('shibaPetLogic.selfcheck: ok')

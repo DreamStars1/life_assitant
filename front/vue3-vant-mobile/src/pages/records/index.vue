@@ -453,7 +453,7 @@ watch(partnerId, async (val) => {
               <van-icon name="photo-o" size="24" />
             </div>
             <div class="ml-3 flex-1 min-w-0">
-              <div class="flex items-start gap-2 min-w-0">
+              <div class="flex gap-2 min-w-0 items-start">
                 <div
                   class="font-medium shrink-0 break-words"
                   :class="previewDescription(item.description) ? 'w-1/2' : 'w-full'"
@@ -462,7 +462,7 @@ watch(partnerId, async (val) => {
                 </div>
                 <div
                   v-if="previewDescription(item.description)"
-                  class="text-xs text-gray-500 w-1/2 min-w-0 break-words whitespace-pre-wrap"
+                  class="text-xs text-gray-500 min-w-0 w-1/2 whitespace-pre-wrap break-words"
                 >
                   {{ previewDescription(item.description) }}
                 </div>
@@ -530,7 +530,7 @@ watch(partnerId, async (val) => {
             <div v-else class="media-cover-placeholder dialog-cover">
               <van-icon name="photo-o" size="24" />
             </div>
-            <div class="text-sm text-gray-500 mt-2 mb-1">
+            <div class="text-sm text-gray-500 mb-1 mt-2">
               封面图
             </div>
             <van-uploader v-model="addMediaCoverList" accept="image/*" :max-count="1" />
@@ -594,7 +594,7 @@ watch(partnerId, async (val) => {
             <div v-else class="media-cover-placeholder dialog-cover">
               <van-icon name="photo-o" size="24" />
             </div>
-            <div class="text-sm text-gray-500 mt-2 mb-1">
+            <div class="text-sm text-gray-500 mb-1 mt-2">
               封面图（不选则保留原图）
             </div>
             <van-uploader v-model="editMediaCoverList" accept="image/*" :max-count="1" />
@@ -645,7 +645,7 @@ watch(partnerId, async (val) => {
           <div class="text-base font-medium mb-3">
             管理分类
           </div>
-          <div class="flex gap-2 mb-3">
+          <div class="mb-3 flex gap-2">
             <van-field v-model="newCategoryName" placeholder="新分类名" clearable class="flex-1" />
             <van-button type="primary" size="small" @click="onAddCategory">
               添加

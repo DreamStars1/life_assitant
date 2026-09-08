@@ -127,7 +127,7 @@ export function clampPos(
   width = PET_WIDTH,
   height = PET_HEIGHT,
   margin = VIEWPORT_MARGIN,
-): { x: number; y: number } {
+): { x: number, y: number } {
   const maxX = Math.max(margin, viewportW - width - margin)
   const maxY = Math.max(margin, viewportH - height - margin)
   return {
@@ -136,7 +136,7 @@ export function clampPos(
   }
 }
 
-export function defaultPos(viewportW: number, viewportH: number): { x: number; y: number } {
+export function defaultPos(viewportW: number, viewportH: number): { x: number, y: number } {
   return clampPos(
     viewportW - PET_WIDTH - DEFAULT_RIGHT_OFFSET,
     viewportH - PET_HEIGHT - DEFAULT_BOTTOM_OFFSET,
@@ -145,14 +145,14 @@ export function defaultPos(viewportW: number, viewportH: number): { x: number; y
   )
 }
 
-export function loadPos(): { x: number; y: number } | null {
+export function loadPos(): { x: number, y: number } | null {
   if (typeof localStorage === 'undefined')
     return null
   try {
     const raw = localStorage.getItem(POS_STORAGE_KEY)
     if (!raw)
       return null
-    const parsed = JSON.parse(raw) as { x?: unknown; y?: unknown }
+    const parsed = JSON.parse(raw) as { x?: unknown, y?: unknown }
     if (typeof parsed.x !== 'number' || typeof parsed.y !== 'number')
       return null
     if (!Number.isFinite(parsed.x) || !Number.isFinite(parsed.y))

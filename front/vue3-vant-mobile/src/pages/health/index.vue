@@ -1009,7 +1009,7 @@ onMounted(() => {
     </section>
 
     <!-- ===== In-page tabbar ===== -->
-    <van-tabbar v-model="tab" fixed placeholder safe-area-inset-bottom class="health-tabbar">
+    <van-tabbar v-model="tab" placeholder safe-area-inset-bottom fixed class="health-tabbar">
       <van-tabbar-item icon="notes-o">
         今日情况
       </van-tabbar-item>

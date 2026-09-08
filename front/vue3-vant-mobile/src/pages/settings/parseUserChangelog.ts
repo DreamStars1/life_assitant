@@ -1,4 +1,4 @@
-export type ChangelogSection = {
+export interface ChangelogSection {
   version: string
   date: string
   items: string[]
@@ -18,9 +18,12 @@ export function parseUserChangelog(raw: string): ChangelogSection[] {
     }
     if (!current)
       continue
-    const item = line.match(/^-\s+(.+)$/)
-    if (item)
-      current.items.push(item[1]!.trim())
+    // ponytail: avoid /^-\s+(.+)$/ — eslint flags \s+/ .+ backtracking
+    if (!line.startsWith('-'))
+      continue
+    const text = line.slice(1).trim()
+    if (text)
+      current.items.push(text)
   }
 
   return sections

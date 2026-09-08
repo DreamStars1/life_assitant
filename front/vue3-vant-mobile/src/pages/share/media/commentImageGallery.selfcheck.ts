@@ -27,4 +27,4 @@ g = buildCommentImageGallery([], 'a', 0)
 assert.deepEqual(g.images, [])
 assert.equal(g.startPosition, 0)
 
-console.log('commentImageGallery.selfcheck: ok')
+console.warn('commentImageGallery.selfcheck: ok')

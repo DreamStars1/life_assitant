@@ -9,8 +9,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'select-day': [date: string]
-  'open-event': [event: ScheduleEventItem]
+  selectDay: [date: string]
+  openEvent: [event: ScheduleEventItem]
 }>()
 
 const { t, locale } = useI18n()
@@ -58,11 +58,11 @@ function dayNumber(dateStr: string): number {
 }
 
 function onSelectDay(date: string) {
-  emit('select-day', date)
+  emit('selectDay', date)
 }
 
 function onEventClick(event: ScheduleEventItem) {
-  emit('open-event', event)
+  emit('openEvent', event)
 }
 </script>
 
